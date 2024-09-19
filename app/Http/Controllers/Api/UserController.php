@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
 class UserController extends Controller
 {
@@ -88,6 +92,9 @@ class UserController extends Controller
         //
     }
 
+    /**
+     * Method Login users
+     */
     function login(Request $request)
     {
         //set validation
@@ -124,5 +131,30 @@ class UserController extends Controller
                 'token' => $token,
             ]
         ), 200);
+    }
+
+    function logout(Request $request)
+    {
+        $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
+
+        if ($removeToken) {
+            return response()->json(
+                new BaseResponse(
+                    200,
+                    "Logout has beed successfully",
+                    null
+                ),
+                200
+            );
+        } else {
+            return response()->json(
+                new BaseResponse(
+                    500,
+                    "Logout failed",
+                    null
+                ),
+                500
+            );
+        }
     }
 }

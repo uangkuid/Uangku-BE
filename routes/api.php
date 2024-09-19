@@ -16,6 +16,9 @@ Route::controller(UserController::class)->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('register', 'store');
         Route::post('login', 'login');
+        Route::post('logout', 'logout');
     });
-    Route::middleware('auth:api')->get('user', 'index');
+    Route::middleware('auth:api')->group(function () {
+        Route::get('user', 'index');
+    });
 });
