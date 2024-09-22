@@ -34,6 +34,9 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $attributes = [
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -54,7 +57,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function getJWTIdentifier()
     {
-        return bcrypt($this->getKey());
+        return $this->getKey();
     }
 
     /**

@@ -18,6 +18,7 @@ Route::controller(UserController::class)->group(function () {
         Route::post('login', 'login');
         Route::post('logout', 'logout');
     });
+
     Route::middleware('auth:api')->group(function () {
         Route::get('user', 'index');
     });

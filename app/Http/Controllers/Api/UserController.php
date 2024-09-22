@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
@@ -33,7 +34,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         //Set validation
         $validator = Validator::make($request->all(), [
@@ -95,7 +96,7 @@ class UserController extends Controller
     /**
      * Method Login users
      */
-    function login(Request $request)
+    function login(Request $request): JsonResponse
     {
         //set validation
         $validator = Validator::make($request->all(), [
@@ -128,12 +129,13 @@ class UserController extends Controller
             [
                 'id' => $user->id,
                 'name' => $user->name,
+                'avatar' => $user->avatar,
                 'token' => $token,
             ]
         ), 200);
     }
 
-    function logout(Request $request)
+    function logout(Request $request): JsonResponse
     {
         $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
 
