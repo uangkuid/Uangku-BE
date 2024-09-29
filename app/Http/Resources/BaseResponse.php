@@ -10,7 +10,7 @@ class BaseResponse extends JsonResource
     public $status;
     public $message;
 
-    public function __construct($status, $message, $resource)
+    public function __construct($status, $message, $resource = null)
     {
         parent::__construct($resource);
         $this->status  = $status;

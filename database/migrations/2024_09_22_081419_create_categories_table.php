@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->uuid('cash_flows');
+            $table->uuid('transaction_types');
             $table->timestamps();
 
-            $table->foreign('cash_flows')->references('id')->on('cash_flows');
+            $table->foreign('transaction_types')->references('id')->on('transaction_types');
         });
     }
 

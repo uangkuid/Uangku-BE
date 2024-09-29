@@ -53,6 +53,7 @@ erDiagram
         categories uuid FK
         sub_categories uuid FK
         cash_flows uuid FK
+        wallets uuid FK
         amount double
         note text
         created_at timestamp
