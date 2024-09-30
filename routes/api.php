@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Resources\BaseResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,13 @@ Route::controller(CategoryController::class)->group(function () {
     Route::middleware('auth:api')->group(function () {
         Route::get('categories', 'index');
         Route::get('categories/{transactionType}', 'show');
+
+        Route::post('categories', 'store');
+    });
+});
+
+Route::controller(TransactionTypeController::class)->group(function () {
+    Route::middleware('auth:api')->group(function () {
+        Route::get('transaction-type', 'index');
     });
 });

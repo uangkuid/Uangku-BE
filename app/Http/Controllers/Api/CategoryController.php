@@ -44,6 +44,13 @@ class CategoryController extends Controller
      */
     public function show(string $type)
     {
+        $isExist = TransactionType::where('name', $type)->exists();
+
+        if (!$isExist)
+        {
+            abort(404, "Category with transaction type $type not found");
+        }
+
         $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
             $query->where('name', $type);
         })->get();
