@@ -1,4 +1,4 @@
-```mermaid
+ ```mermaid
 erDiagram
     
     cash_flows {
@@ -42,6 +42,7 @@ erDiagram
     sub_categories {
         id uuid PK
         categories uuid FK
+        users uuid FK
         name string
         created_at timestamp
         updated_at timestamp
@@ -84,7 +85,8 @@ erDiagram
 
     users ||--o| family_member : has
     users ||--o{ transactions : has
-    users }|--o{ wallet_access : has
+    users ||--o{ wallet_access : has
+    users ||--o{ sub_categories : has
     
     family ||--o| family_member : has
 

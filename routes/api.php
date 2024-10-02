@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Resources\BaseResponse;
 use Illuminate\Http\Request;
@@ -32,16 +33,18 @@ Route::controller(UserController::class)->group(function () {
 });
 
 Route::controller(CategoryController::class)->group(function () {
+    Route::get('categories', 'getCategories');
     Route::middleware('auth:api')->group(function () {
-        Route::get('categories', 'index');
-        Route::get('categories/{transactionType}', 'show');
-
         Route::post('categories', 'store');
     });
 });
 
+Route::controller(SubCategoryController::class)->middleware('auth:api')->group(function () {
+    Route::get('categories/{id}', 'getSubCategories');
+});
+
 Route::controller(TransactionTypeController::class)->group(function () {
+    Route::get('transaction-type', 'index');
     Route::middleware('auth:api')->group(function () {
-        Route::get('transaction-type', 'index');
     });
 });

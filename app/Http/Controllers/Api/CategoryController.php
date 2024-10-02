@@ -15,12 +15,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::all();
-        return response()->json(new BaseResponse(
-            200,
-            "Success get categories",
-            $categories
-        ));
+
     }
 
     /**
@@ -42,24 +37,52 @@ class CategoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $type)
+    public function getCategories(Request $request)
     {
-        $isExist = TransactionType::where('name', $type)->exists();
+        $type = $request->query('filter');
 
-        if (!$isExist)
-        {
-            abort(404, "Category with transaction type $type not found");
+        if ($type != null) {
+            $isExist = TransactionType::where('name', $type)->exists();
+
+            if (!$isExist)
+            {
+                abort(404, "Category with transaction type $type not found");
+            }
+
+            $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
+                $query->where('name', $type);
+            })->orderBy('name')->paginate(10);
+
+            $categories = $categories->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'transaction_types' => [
+                        'id' => $category->transactionTypes->id,
+                        'name' => $category->transactionTypes->name,
+                    ],
+                    'created_at' => $category->created_at,
+                    'updated_at' => $category->updated_at,
+                ];
+            });
+
+            return response()->json(new BaseResponse(
+                200,
+                "Success get category",
+                $categories
+            ));
         }
 
-        $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
-            $query->where('name', $type);
-        })->get();
+        $categories = Category::has('transactionTypes')->orderBy('name')->paginate(10);
 
         $categories = $categories->map(function ($category) {
             return [
                 'id' => $category->id,
                 'name' => $category->name,
-                'transaction_types' => $category->transactionTypes, // Ambil nama transaction type
+                'transaction_types' => [
+                    'id' => $category->transactionTypes->id,
+                    'name' => $category->transactionTypes->name,
+                ], // Ambil nama transaction type
                 'created_at' => $category->created_at,
                 'updated_at' => $category->updated_at,
             ];
@@ -67,7 +90,7 @@ class CategoryController extends Controller
 
         return response()->json(new BaseResponse(
             200,
-            "Success get category",
+            "Success get categories",
             $categories
         ));
     }

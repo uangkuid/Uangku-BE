@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('sub_categories', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('categories');
+            $table->uuid('users')->nullable()->default(null);
             $table->string('name');
-            $table->string('categories');
             $table->timestamps();
 
             $table->foreign('categories')->references('id')->on('categories');
+            $table->foreign('users')->references('id')->on('users');
         });
     }
 
