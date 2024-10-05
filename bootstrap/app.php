@@ -2,6 +2,7 @@
 
 use App\Http\Resources\BaseResponse;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,5 +36,13 @@ return Application::configure(basePath: dirname(__DIR__))
                    $e->getMessage()
                ), 404);
            }
+        });
+        $exceptions->render(function (QueryException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(new BaseResponse(
+                    500,
+                    $e->getMessage()
+                ));
+            }
         });
     })->create();
