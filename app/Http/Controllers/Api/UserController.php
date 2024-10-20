@@ -18,7 +18,6 @@ class UserController extends Controller
      */
     public function index()
     {
-        JWTAuth::setToken();
         return response()->json(new BaseResponse(200, "User data", auth()->guard('api')->user()), 200);
     }
 
