@@ -25,6 +25,7 @@ Route::controller(UserController::class)->group(function () {
         Route::post('register', 'store');
         Route::post('login', 'login');
         Route::post('logout', 'logout');
+        Route::post('refresh-token', 'refreshToken');
     });
 
     Route::middleware('auth:api')->group(function () {

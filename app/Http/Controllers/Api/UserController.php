@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserSeasons;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
@@ -20,6 +18,7 @@ class UserController extends Controller
      */
     public function index()
     {
+        JWTAuth::setToken();
         return response()->json(new BaseResponse(200, "User data", auth()->guard('api')->user()), 200);
     }
 
@@ -100,8 +99,8 @@ class UserController extends Controller
     {
         //set validation
         $validator = Validator::make($request->all(), [
-            'email'     => 'required',
-            'password'  => 'required'
+            'email' => 'required',
+            'password' => 'required'
         ]);
 
         //if validation fails
@@ -122,6 +121,13 @@ class UserController extends Controller
         }
 
         $user = auth()->guard('api')->user();
+        $refresh_token = $this->generateRefreshToken($user);
+
+        //Save to user seasons
+        UserSeasons::create([
+            'refresh_token' => $refresh_token,
+            'users' => $user->id
+        ]);
 
         return response()->json(new BaseResponse(
             200,
@@ -131,22 +137,58 @@ class UserController extends Controller
                 'name' => $user->name,
                 'avatar' => $user->avatar,
                 'token' => $token,
+                'refresh_token' => $refresh_token
             ]
         ), 200);
     }
 
     function logout(Request $request): JsonResponse
     {
-        $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
+        //set validation
+        $validator = Validator::make($request->all(), [
+            'refresh_token' => 'required'
+        ]);
 
-        if ($removeToken) {
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to logout", $validator->errors()), 400);
+        }
+
+        $refreshToken = $request->input('refresh_token');
+
+        // Verifikasi refresh token
+        $isExist = UserSeasons::where('refresh_token', $refreshToken)->exists();
+
+        if (!$isExist) {
+            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+        }
+
+        $user = JWTAuth::setToken($refreshToken)->toUser();
+
+        if (!$user) {
+            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+        }
+
+        $userSeasons = UserSeasons::where('refresh_token', $refreshToken)
+            ->where('users', $user->id)
+            ->first();
+
+        if(!$userSeasons) {
+            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+        }
+
+        $userSeasons->delete();
+
+        $revokeToken = JWTAuth::invalidate(JWTAuth::getToken());
+        $revokeRefreshToken = JWTAuth::invalidate($refreshToken);
+
+        if ($revokeToken && $revokeRefreshToken) {
             return response()->json(
                 new BaseResponse(
                     200,
-                    "Logout has beed successfully",
+                    "Logout has been successfully",
                     null
-                ),
-                200
+                )
             );
         } else {
             return response()->json(
@@ -158,5 +200,93 @@ class UserController extends Controller
                 500
             );
         }
+    }
+
+    public function refreshToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'refresh_token' => 'required'
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to login", $validator->errors()), 400);
+        }
+
+        $refreshToken = $request->input('refresh_token');
+
+        try {
+            // Verifikasi refresh token dan buat access token baru
+            $isExist = UserSeasons::where('refresh_token', $refreshToken)->exists();
+
+            if (!$isExist) {
+                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+            }
+
+            $user = JWTAuth::setToken($refreshToken)->toUser();
+
+            if (!$user) {
+                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+            }
+
+            $userSeasons = UserSeasons::where('refresh_token', $refreshToken)
+                ->where('users', $user->id)
+                ->first();
+
+            if(!$userSeasons) {
+                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+            }
+
+            $userSeasons->delete();
+
+            //Revoke all token access
+            $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
+            $removeRefreshToken = JWTAuth::invalidate($refreshToken);
+
+            $newAccessToken = auth()->login($user);
+            $newRefreshToken = $this->generateRefreshToken($user);
+
+            //Save to user seasons
+            UserSeasons::create([
+                'refresh_token' => $newRefreshToken,
+                'users' => $user->id
+            ]);
+
+            if ($removeToken && $removeRefreshToken) {
+                return response()->json(new BaseResponse(
+                    200,
+                    "Refresh token successful",
+                    [
+                        'token' => $newAccessToken,
+                        'refresh_token' => $newRefreshToken
+                    ]
+                ), 200);
+            } else {
+                return response()->json(
+                    new BaseResponse(
+                        500,
+                        "Logout failed",
+                        null
+                    ),
+                    500
+                );
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(new BaseResponse(401, "Refresh token expired"), 401);
+        } catch (JWTException $e) {
+            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+        }
+    }
+
+    protected function generateRefreshToken(User $user)
+    {
+        // Set TTL untuk refresh token menjadi lebih panjang (misalnya 7 hari)
+        // Set masa berlaku refresh token secara manual (contoh: 7 hari)
+        $customClaims = ['exp' => now()->addDays(7)->timestamp];
+
+        // Buat refresh token dengan masa berlaku yang lebih panjang
+        $refreshToken = JWTAuth::claims($customClaims)->fromUser($user);
+
+        return $refreshToken;
     }
 }
