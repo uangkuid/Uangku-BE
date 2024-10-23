@@ -35,8 +35,8 @@ class EncryptionHelper
 
         // Return encrypted data and the IV used
         return [
-            'encrypted_data' => base64_encode($encryptedData),
             'iv' => base64_encode($iv),
+            'data' => base64_encode($encryptedData),
         ];
     }
 
