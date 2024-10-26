@@ -15,13 +15,13 @@ class WalletAccessSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::where('name', 'Administrator')->first();
-        $wallet_name = sprintf("%s's Cash", $admin->name);
-        $wallet = Wallet::where('name', $wallet_name)->firstOrFail();
-
-        WalletAccess::create([
-            'users' => $admin->id,
-            'wallets' => $wallet->id,
-        ]);
+//        $admin = User::where('name', 'Administrator')->first();
+//        $wallet_name = sprintf("%s's Cash", $admin->name);
+//        $wallet = Wallet::where('name', $wallet_name)->firstOrFail();
+//
+//        WalletAccess::create([
+//            'users' => $admin->id,
+//            'wallets' => $wallet->id,
+//        ]);
     }
 }

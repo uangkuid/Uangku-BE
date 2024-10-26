@@ -41,6 +41,37 @@ class EncryptionHelper
     }
 
     /**
+     * Encrypt the given data using AES-CBC.
+     *
+     * @param string $data
+     * @param string $key
+     * @return string with pattern iv + '.' + encryptedData
+     * @throws Exception
+     */
+    public static function encryptAsString(string $data, string $key = null, string $iv = null): string
+    {
+        // Use dynamic secret key from .env or default value
+        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+
+        // Ensure the key is the right length for AES-256
+        $key = substr(hash('sha256', $key, true), 0, 32);
+
+        // Generate a random Initialization Vector (IV)
+
+        $iv = $iv ?? random_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+
+        // Encrypt the data using AES-256-CBC
+        $encryptedData = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+
+        if ($encryptedData === false) {
+            throw new Exception('Encryption failed.');
+        }
+
+        // Return encrypted data and the IV used
+        return base64_encode($iv) . '.' . base64_encode($encryptedData);
+    }
+
+    /**
      * Decrypt the given data using AES-CBC.
      *
      * @param string $encryptedData
@@ -69,5 +100,93 @@ class EncryptionHelper
         }
 
         return $decryptedData;
+    }
+
+    /**
+     * Decrypt the given data using AES-CBC
+     *
+     * @param string $encryptedData
+     * @param string|null $key
+     * @return string
+     * @throws Exception
+     */
+    public static function decryptFromString(string $encryptedData, string $key = null): string {
+        // Use dynamic secret key from .env or default value
+        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+
+        // Ensure the key is the right length for AES-256
+        $key = substr(hash('sha256', $key, true), 0, 32);
+
+        $dataAsArray = explode('.', $encryptedData);
+
+        $iv = base64_decode($dataAsArray[0]);
+        $encryptedData = base64_decode($dataAsArray[1]);
+
+        // Decrypt the data using AES-256-CBC
+        $decryptedData = openssl_decrypt($encryptedData, 'aes-256-cbc', $key, 0, $iv);
+
+        if ($decryptedData === false) {
+            throw new Exception('Decryption failed.');
+        }
+
+        return $decryptedData;
+    }
+
+    /**
+     * Generate a secret key in the format "XXXX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX".
+     *
+     * @return string
+     */
+    public static function generateUsersSecretKey()
+    {
+        // Generate 20 random bytes and encode in Base32 for readability
+        $randomBytes = random_bytes(128);
+        $base32Key = strtoupper(str_replace(['=', '+', '/'], '', base64_encode($randomBytes)));
+
+        // Split the Base32 encoded string into blocks with specified length
+        return "UANGKU" . '-' .
+            substr($base32Key, 0, 6) . '-' .
+            substr($base32Key, 6, 6) . '-' .
+            substr($base32Key, 12, 5) . '-' .
+            substr($base32Key, 17, 5) . '-' .
+            substr($base32Key, 22, 5);
+    }
+
+    /**
+     * Get system secret key and salt.
+     * @return string
+     */
+    public static function getSystemSecretKey(): string {
+        return env('MAIN_SECRET_KEY') . env('MAIN_SALT_KEY');
+    }
+
+    /**
+     * Get Users salt using given secret key
+     * @param $secretKey
+     * @return string
+     */
+    public static function getUsersSalt($secretKey): string {
+        $secretKeyAsArray = explode("-", $secretKey);
+        return self::xorString($secretKeyAsArray[1] . "-" . $secretKeyAsArray[0] . "-" . end($secretKeyAsArray), 16);
+    }
+
+    /**
+     * XOR a string with an integer key.
+     *
+     * @param string $string The input string to be XORed.
+     * @param int $key The integer key for XOR operation.
+     * @return string The XORed result as a string.
+     */
+    public static function xorString(string $string, int $key): string
+    {
+        $result = '';
+
+        // Iterate over each character in the string
+        for ($i = 0; $i < strlen($string); $i++) {
+            // XOR each character with the key and append to result
+            $result .= chr(ord($string[$i]) ^ $key);
+        }
+
+        return $result;
     }
 }

@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Models\UserSeasons;
+use App\Models\Wallet;
+use App\Models\WalletAccess;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
@@ -32,7 +37,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
         //Set validation
         $validator = Validator::make($request->all(), [
@@ -46,17 +51,89 @@ class UserController extends Controller
             return response()->json(new BaseResponse(400, "Failed to create account", $validator->errors()), 400);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
+        try {
+            DB::beginTransaction();
 
-        if ($user) {
-            return response()->json(new BaseResponse(201, "Account created successfully", $user), 201);
+            /**
+             * Prepare data before create account
+             */
+            $secretKey = EncryptionHelper::generateUsersSecretKey();
+            $salt = EncryptionHelper::getUsersSalt($secretKey);
+            $secretKeySanitize = str_replace($secretKey, "-", "");
+            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+            $password = $request->password;
+            $encryptKey = $salt.$password.$secretKeySanitize;
+            $encryptedEmail = EncryptionHelper::encryptAsString(
+                data: $request->email,
+                key: EncryptionHelper::getSystemSecretKey(),
+                iv: $staticIv,
+            );
+
+            /**
+             * Find Existing Users
+             */
+            $user = User::where('email', $encryptedEmail);
+
+            //Throw error when email already taken
+            if ($user->count() > 0) {
+                return response()->json(new BaseResponse(409, "Failed to create account ", [
+                    "email" => "Email already taken!"
+                ]), 409);
+            }
+
+            /**
+             * Create Account
+             */
+            $user = User::create([
+                'name' => EncryptionHelper::encryptAsString(
+                    data: $request->name,
+                    key: EncryptionHelper::getSystemSecretKey(),
+                    iv: $staticIv,
+                ),
+                'email' => $encryptedEmail,
+                'password' => bcrypt($encryptKey)
+            ]);
+
+            $wallet_name = sprintf("%s's Cash", $request->name);
+
+            /**
+             * Create users wallet
+             */
+            $wallet = Wallet::create([
+                'name' => EncryptionHelper::encryptAsString(
+                    data: $wallet_name,
+                    key: $encryptKey
+                ),
+                'amount' => EncryptionHelper::encryptAsString(
+                    data: "0",
+                    key: $encryptKey
+                ),
+            ]);
+
+            /**
+             * Grant users access to wallet
+             */
+            $walletAccess = WalletAccess::create([
+                'users' => $user->id,
+                'wallets' => $wallet->id,
+            ]);
+
+            DB::commit();
+
+            return response()->json(new BaseResponse(201, "Account created successfully", [
+                "name" => $request->name,
+                "email" => $request->email,
+                "secret_key" => $secretKey,
+                'wallet' => [
+                    "id" => $wallet->id,
+                    "name" => $wallet_name,
+                    "amount" => "0",
+                ]
+            ]), 201);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(409, "Failed to create account " . $e->getMessage(), null), 409);
         }
-
-        return response()->json(new BaseResponse(409, "Failed to create account", null), 409);
     }
 
     /**
@@ -99,7 +176,8 @@ class UserController extends Controller
         //set validation
         $validator = Validator::make($request->all(), [
             'email' => 'required',
-            'password' => 'required'
+            'password' => 'required',
+            'secret_key' => 'required'
         ]);
 
         //if validation fails
@@ -107,8 +185,28 @@ class UserController extends Controller
             return response()->json(new BaseResponse(400, "Failed to login", $validator->errors()), 400);
         }
 
+        /**
+         * Prepare data before auth
+         */
+        $secretKey = $request->secret_key;
+        $salt = EncryptionHelper::getUsersSalt($secretKey);
+        $secretKeySanitize = str_replace($secretKey, "-", "");
+        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $password = $request->password;
+        $encryptKey = $salt.$password.$secretKeySanitize;
+
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $request->email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: $staticIv,
+        );
+
         //get credentials from request
-        $credentials = $request->only('email', 'password');
+//        $credentials = $request->only('email', 'password');
+        $credentials = [
+            'email' => $encryptedEmail,
+            'password' => $encryptKey,
+        ];
 
         //if auth failed
         if (!$token = auth()->guard('api')->attempt($credentials)) {
@@ -133,7 +231,7 @@ class UserController extends Controller
             "Login successful",
             [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => EncryptionHelper::decryptFromString($user->name, EncryptionHelper::getSystemSecretKey()),
                 'avatar' => $user->avatar,
                 'token' => $token,
                 'refresh_token' => $refresh_token
