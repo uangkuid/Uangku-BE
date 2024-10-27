@@ -116,6 +116,8 @@ class UserController extends Controller
             $walletAccess = WalletAccess::create([
                 'users' => $user->id,
                 'wallets' => $wallet->id,
+                'is_active' => true,
+                'role' => 'Admin'
             ]);
 
             DB::commit();

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\TransactionType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class TransactionTypeSeeder extends Seeder
 {
@@ -13,11 +14,13 @@ class TransactionTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        TransactionType::create([
-            'name' => 'Income'
-        ]);
-        TransactionType::create([
-            'name' => 'Spending'
-        ]);
+        DB::transaction(function () {
+            TransactionType::create([
+                'name' => 'Income'
+            ]);
+            TransactionType::create([
+                'name' => 'Spending'
+            ]);
+        });
     }
 }

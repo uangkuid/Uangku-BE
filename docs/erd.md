@@ -20,6 +20,7 @@ erDiagram
         id uuid PK
         name string
         avatar varchar
+        shared_key varchar
         created_at timestamp
         updated_at timestamp
     }
@@ -55,6 +56,7 @@ erDiagram
         sub_categories uuid FK
         cash_flows uuid FK
         wallets uuid FK
+        families uuid FK
         amount double
         note text
         created_at timestamp
@@ -73,6 +75,19 @@ erDiagram
         id uuid PK
         users uuid FK
         wallet uuid FK
+        families uuid FK
+        isActive boolean
+        role enum
+    }
+    
+    wallet_transactions {
+        id uuid PK
+        wallets uuid FK
+        accessId uuid FK
+        amount double
+        type enum
+        created_at timestamp
+        updated_at timestamp
     }
     
     cash_flows ||--o{ categories : has
@@ -89,7 +104,28 @@ erDiagram
     users ||--o{ sub_categories : has
     
     family ||--o| family_member : has
+    family ||--o{ transactions : has
+    family ||--o{ wallet_access : has
 
     wallet }|--o{ wallet_access : has
-    wallet ||--o{ transactions : has
+    wallet_access ||--o{ wallet_transactions : has
+    wallet_transactions ||--o| transactions : has
+    wallet ||--o{ wallet_transactions : has
 ```
+
+## Secret Keys
+
+Secret key only have 3 types:
+- **Users Secret Key** : Secret key account binding
+- **Families Secret Key** : Secret key family binding
+- **System Secret Key** : Secret key system binding
+
+## Secret Key Mapping
+**Table** :
+- **Users** : Secret key using System Secret Key
+- **Wallets** : Secret key using creator secret key, when creator is user using users secret key when using families secret key will using family secret key
+- **Family** : Secret key using System secret key
+- **Wallet_Transactions** : Secret key using wallet creator secret key
+- **Transactions** : Secret key using wallet creator secret key
+
+

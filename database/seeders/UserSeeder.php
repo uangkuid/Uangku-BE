@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
                 'amount' => EncryptionHelper::encryptAsString(
                     data: "0",
                     key: $encryptKey
-                ),
+                )
             ]);
 
             /**
@@ -66,6 +66,8 @@ class UserSeeder extends Seeder
             $walletAccess = WalletAccess::create([
                 'users' => $user->id,
                 'wallets' => $wallet->id,
+                'is_active' => true,
+                'role' => 'Admin'
             ]);
         });
     }

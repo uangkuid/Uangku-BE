@@ -11,18 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('wallet_accesses', function (Blueprint $table) {
+        Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('users');
             $table->uuid('wallets');
-            $table->uuid('families')->nullable();
-            $table->boolean("is_active");
-            $table->enum("role", ['Admin', 'Member']);
+            $table->uuid('access_id');
+            $table->string("amount");
+            $table->enum("type", ['Out', 'In']);
             $table->timestamps();
 
-            $table->foreign('users')->references('id')->on('users');
             $table->foreign('wallets')->references('id')->on('wallets');
-            $table->foreign('families')->references('id')->on('families');
+            $table->foreign('access_id')->references('id')->on('wallet_accesses');
         });
     }
 
@@ -31,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('wallet_accesses');
+        Schema::dropIfExists('wallet_transactions');
     }
 };
