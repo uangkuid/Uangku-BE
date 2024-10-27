@@ -13,7 +13,9 @@ class SubCategory extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'name'
+        'name',
+        'categories',
+        'users'
     ];
 
     public function category(): BelongsTo {

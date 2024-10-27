@@ -45,6 +45,7 @@ class EncryptionHelper
      *
      * @param string $data
      * @param string $key
+     * @param string $iv
      * @return string with pattern iv + '.' + encryptedData
      * @throws Exception
      */

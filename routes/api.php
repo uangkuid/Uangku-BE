@@ -44,9 +44,9 @@ Route::controller(CategoryController::class)->group(function () {
 
 Route::controller(SubCategoryController::class)->middleware('auth:api')->group(function () {
     Route::get('categories/{id}', 'getSubCategories');
-    Route::middleware('auth:api')->group(function () {
-        Route::post('categories/{id}', 'store');
-    });
+    Route::post('categories/{id}', 'store');
+    Route::put('categories/{categoryId}/{id}', 'update');
+    Route::delete('categories/{categoryId}/{id}', 'destroy');
 });
 
 Route::controller(TransactionTypeController::class)->group(function () {
