@@ -120,6 +120,17 @@ class UserController extends Controller
                 'role' => 'Admin'
             ]);
 
+            $accessToken = auth()->login($user);
+            $refreshToken = $this->generateRefreshToken($user);
+
+            /**
+             * Save users to seasons
+             */
+            UserSeasons::create([
+                'refresh_token' => $refreshToken,
+                'users' => $user->id
+            ]);
+
             DB::commit();
 
             return response()->json(new BaseResponse(201, "Account created successfully", [
@@ -130,7 +141,9 @@ class UserController extends Controller
                     "id" => $wallet->id,
                     "name" => $wallet_name,
                     "amount" => "0",
-                ]
+                ],
+                'token' => $accessToken,
+                'refresh_token' => $refreshToken
             ]), 201);
         } catch (Exception $e) {
             DB::rollBack();
