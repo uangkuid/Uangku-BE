@@ -59,7 +59,7 @@ class UserController extends Controller
              */
             $secretKey = EncryptionHelper::generateUsersSecretKey();
             $salt = EncryptionHelper::getUsersSalt($secretKey);
-            $secretKeySanitize = str_replace($secretKey, "-", "");
+            $secretKeySanitize = str_replace("-", "", $secretKey);
             $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
             $password = $request->password;
             $encryptKey = $salt.$password.$secretKeySanitize;
@@ -205,7 +205,7 @@ class UserController extends Controller
          */
         $secretKey = $request->secret_key;
         $salt = EncryptionHelper::getUsersSalt($secretKey);
-        $secretKeySanitize = str_replace($secretKey, "-", "");
+        $secretKeySanitize = str_replace("-", "", $secretKey);
         $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
         $password = $request->password;
         $encryptKey = $salt.$password.$secretKeySanitize;

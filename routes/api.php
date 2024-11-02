@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FamiliesController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Resources\BaseResponse;
@@ -53,4 +54,8 @@ Route::controller(TransactionTypeController::class)->group(function () {
     Route::get('transaction-type', 'index');
     Route::middleware('auth:api')->group(function () {
     });
+});
+
+Route::controller(FamiliesController::class)->middleware('auth:api')->group(function () {
+    Route::post('families', 'store');
 });

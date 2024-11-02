@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
         DB::transaction(function () {
             $secretKey = env('ADMIN_SECRET_KEY');
             $salt = EncryptionHelper::getUsersSalt($secretKey);
-            $secretKeySanitize = str_replace($secretKey, "-", "");
+            $secretKeySanitize = str_replace("-", "", $secretKey);
             $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
             $password = "Password123";
             $encryptKey = $salt.$password.$secretKeySanitize;
