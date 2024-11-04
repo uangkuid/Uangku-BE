@@ -26,8 +26,10 @@ erDiagram
     }
 
     family_member {
+        id uuid PK
         user uuid FK
         family uuid FK
+        role enum
         created_at timestamp
         updated_at timestamp
     }

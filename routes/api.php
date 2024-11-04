@@ -57,5 +57,9 @@ Route::controller(TransactionTypeController::class)->group(function () {
 });
 
 Route::controller(FamiliesController::class)->middleware('auth:api')->group(function () {
-    Route::post('families', 'store');
+    Route::post('family', 'store');
+
+    Route::middleware('family')->group(function () {
+        Route::post('family/{id}', 'authorized');
+    });
 });

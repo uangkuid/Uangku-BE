@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RoleWallet;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Models\UserSeasons;
@@ -117,7 +118,7 @@ class UserController extends Controller
                 'users' => $user->id,
                 'wallets' => $wallet->id,
                 'is_active' => true,
-                'role' => 'Admin'
+                'role' => RoleWallet::Admin
             ]);
 
             $accessToken = auth()->login($user);
@@ -134,6 +135,7 @@ class UserController extends Controller
             DB::commit();
 
             return response()->json(new BaseResponse(201, "Account created successfully", [
+                "id" => $user->id,
                 "name" => $request->name,
                 "email" => $request->email,
                 "secret_key" => $secretKey,
@@ -141,6 +143,7 @@ class UserController extends Controller
                     "id" => $wallet->id,
                     "name" => $wallet_name,
                     "amount" => "0",
+                    'role' => $walletAccess->role
                 ],
                 'token' => $accessToken,
                 'refresh_token' => $refreshToken

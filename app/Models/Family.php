@@ -12,7 +12,6 @@ class Family extends Model
 
     protected $fillable = [
         'name',
-        'avatar',
-        'shared_key'
+        'avatar'
     ];
 }

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name')->nullable();
             $table->string('avatar')->nullable();
-            $table->string('shared_key')->nullable();
             $table->timestamps();
         });
     }
