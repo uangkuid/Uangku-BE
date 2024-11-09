@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\FamilyAdminMiddleware;
 use App\Http\Middleware\FamilyMiddleware;
 use App\Http\Middleware\PersonalMiddleware;
 use App\Http\Resources\BaseResponse;
@@ -20,7 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->appendToGroup('family', [
-            FamilyMiddleware::class
+            FamilyMiddleware::class,
+        ]);
+        $middleware->appendToGroup('family-admin', [
+            FamilyAdminMiddleware::class
         ]);
         $middleware->appendToGroup('personal', [
             PersonalMiddleware::class

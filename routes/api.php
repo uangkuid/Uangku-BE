@@ -59,7 +59,16 @@ Route::controller(TransactionTypeController::class)->group(function () {
 Route::controller(FamiliesController::class)->middleware('auth:api')->group(function () {
     Route::post('family', 'store');
 
-    Route::middleware('family')->group(function () {
-        Route::post('family/{id}', 'authorized');
+    Route::middleware(['family'])->group(function () {
+        Route::post('family/{id}/leave', 'leave');
+        Route::get('family/{id}', 'show');
+    });
+
+    Route::middleware(['family', 'family-admin'])->group(function () {
+        Route::put('family/{id}', 'update');
+        Route::delete('family/{id}', 'destroy');
+
+        Route::post('family/{id}/grant', 'authorized');
+        Route::post('family/{id}/revoke', 'deauthorized');
     });
 });
