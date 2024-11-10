@@ -59,11 +59,8 @@ class UserController extends Controller
              * Prepare data before create account
              */
             $secretKey = EncryptionHelper::generateUsersSecretKey();
-            $salt = EncryptionHelper::getUsersSalt($secretKey);
-            $secretKeySanitize = str_replace("-", "", $secretKey);
             $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
-            $password = $request->password;
-            $encryptKey = $salt.$password.$secretKeySanitize;
+            $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $request->password);
             $encryptedEmail = EncryptionHelper::encryptAsString(
                 data: $request->email,
                 key: EncryptionHelper::getSystemSecretKey(),
@@ -207,11 +204,9 @@ class UserController extends Controller
          * Prepare data before auth
          */
         $secretKey = $request->secret_key;
-        $salt = EncryptionHelper::getUsersSalt($secretKey);
-        $secretKeySanitize = str_replace("-", "", $secretKey);
         $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
         $password = $request->password;
-        $encryptKey = $salt.$password.$secretKeySanitize;
+        $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
 
         $encryptedEmail = EncryptionHelper::encryptAsString(
             data: $request->email,
@@ -251,6 +246,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => EncryptionHelper::decryptFromString($user->name, EncryptionHelper::getSystemSecretKey()),
                 'avatar' => $user->avatar,
+                'kid' => EncryptionHelper::encryptAsString($encryptKey, EncryptionHelper::getSystemSecretKey()),
                 'token' => $token,
                 'refresh_token' => $refresh_token
             ]

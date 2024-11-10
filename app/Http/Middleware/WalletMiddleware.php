@@ -2,12 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Resources\BaseResponse;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class PersonalMiddleware
+class WalletMiddleware
 {
     /**
      * Handle an incoming request.
@@ -16,12 +15,6 @@ class PersonalMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $secretKey = $request->header('personal_secret_key');
-
-        if (!empty($secretKey)) {
-            return $next($request);
-        } else {
-            return response()->json(new BaseResponse(403, "You not authorized to do this action!, missing personal secret key!"), 403);
-        }
+        return $next($request);
     }
 }

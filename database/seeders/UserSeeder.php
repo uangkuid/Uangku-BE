@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
             $secretKeySanitize = str_replace("-", "", $secretKey);
             $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
             $password = "Password123";
-            $encryptKey = $salt.$password.$secretKeySanitize;
+            $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
 
             /**
              * Create Account

@@ -190,4 +190,38 @@ class EncryptionHelper
 
         return $result;
     }
+
+    /**
+     * Generate an encrypted key for a user based on the provided secret key and password.
+     *
+     * This method concatenates a salt, the user's password, and a sanitized version of
+     * the secret key to create a unique encrypted key for the user.
+     *
+     * @param string $secretKey The user's unique secret key.
+     * @param string $password The user's password to be included in the key generation.
+     *
+     * @return string A unique encrypted key for the user.
+     */
+    public static function getUsersEncryptKey(string $secretKey, string $password): string {
+        $salt = self::getUsersSalt($secretKey);
+        $secretKeySanitize = str_replace("-", "", $secretKey);
+        return $salt.$password.$secretKeySanitize;
+    }
+
+    /**
+     * Generate an encrypted key for a family based on the provided secret key.
+     *
+     * This method concatenates a salt, and a sanitized version of
+     * the secret key to create a unique encrypted key for the family.
+     *
+     * @param string $secretKey The user's unique secret key.
+     *
+     * @return string A unique encrypted key for the user.
+     */
+    public static function getFamilyEncryptionKey(string $secretKey): string {
+        $salt = self::getUsersSalt($secretKey);
+        $secretKeySanitize = str_replace("-", "", $secretKey);
+        $secretKeyAsArray = explode("-", $secretKey);
+        return $salt.$secretKeyAsArray[1].$secretKeySanitize;
+    }
 }

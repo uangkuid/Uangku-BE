@@ -122,6 +122,8 @@ Secret key only have 3 types:
 - **Families Secret Key** : Secret key family binding
 - **System Secret Key** : Secret key system binding
 
+Secret Key Algoritm:
+
 ## Secret Key Mapping
 **Table** :
 - **Users** : Secret key using System Secret Key

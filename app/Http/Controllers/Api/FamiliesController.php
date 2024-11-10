@@ -59,14 +59,10 @@ class FamiliesController extends Controller
             DB::beginTransaction();
 
             $secretKey = EncryptionHelper::generateUsersSecretKey();
-            $salt = EncryptionHelper::getUsersSalt($secretKey);
-            $secretKeySanitize = str_replace("-", "", $secretKey);
 
             $families = Family::create();
 
-            $secretKeyAsArray = explode("-", $secretKey);
-
-            $encryptKey = $salt.$secretKeyAsArray[1].$secretKeySanitize;
+            $encryptKey = EncryptionHelper::getFamilyEncryptionKey($secretKey);
 
             $families->update([
                 'name' => EncryptionHelper::encryptAsString(

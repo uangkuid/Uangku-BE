@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FamiliesController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
+use App\Http\Controllers\Api\WalletController;
 use App\Http\Resources\BaseResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -65,10 +66,15 @@ Route::controller(FamiliesController::class)->middleware('auth:api')->group(func
     });
 
     Route::middleware(['family', 'family-admin'])->group(function () {
-        Route::put('family/{id}', 'update');
-        Route::delete('family/{id}', 'destroy');
+//        TODO: Add remove and update family feature
+//        Route::put('family/{id}', 'update');
+//        Route::delete('family/{id}', 'destroy');
 
         Route::post('family/{id}/grant', 'authorized');
         Route::post('family/{id}/revoke', 'deauthorized');
+    });
+
+    Route::controller(WalletController::class)->middleware(['auth:api','personal'])->group(function () {
+        Route::post('wallet', 'store');
     });
 });

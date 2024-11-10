@@ -3,6 +3,8 @@
 use App\Http\Middleware\FamilyAdminMiddleware;
 use App\Http\Middleware\FamilyMiddleware;
 use App\Http\Middleware\PersonalMiddleware;
+use App\Http\Middleware\WalletAdminMiddleware;
+use App\Http\Middleware\WalletMiddleware;
 use App\Http\Resources\BaseResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
@@ -28,6 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->appendToGroup('personal', [
             PersonalMiddleware::class
+        ]);
+        $middleware->appendToGroup('wallet', [
+            WalletMiddleware::class
+        ]);
+        $middleware->appendToGroup('wallet-admin', [
+            WalletAdminMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
