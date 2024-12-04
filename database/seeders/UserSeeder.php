@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleWallet;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\Wallet;
@@ -70,7 +71,7 @@ class UserSeeder extends Seeder
                 'users' => $user->id,
                 'wallets' => $wallet->id,
                 'is_active' => true,
-                'role' => 'Admin'
+                'role' => RoleWallet::Admin
             ]);
         });
     }

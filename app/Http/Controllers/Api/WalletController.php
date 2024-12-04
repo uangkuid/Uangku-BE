@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RoleWallet;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Models\FamilyMember;
 use App\Models\Wallet;
+use App\Models\WalletAccess;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +85,19 @@ class WalletController extends Controller
                     "created_by" => $current_user->id,
                     "families" => $request->family_id
                 ]);
+
+                $familyMember = FamilyMember::where('family', $request->family_id)
+                    ->where('user', '!=', $current_user->id)
+                    ->get();
+
+                foreach ($familyMember as $member) {
+                    $walletAccess = WalletAccess::create([
+                        'users' => $member->user,
+                        'wallets' => $wallet->id,
+                        'is_active' => true,
+                        'role' => RoleWallet::Member
+                    ]);
+                }
             } else {
                 //Find if user has created with same wallet name
                 $wallet = Wallet::where(['name' => $name])
@@ -99,6 +115,13 @@ class WalletController extends Controller
                 ]);
             }
 
+            $walletAccess = WalletAccess::create([
+                'users' => $current_user->id,
+                'wallets' => $wallet->id,
+                'is_active' => true,
+                'role' => RoleWallet::Admin
+            ]);
+
             DB::commit();
 
             return response()->json(new BaseResponse(
@@ -108,6 +131,10 @@ class WalletController extends Controller
                     "id" => $wallet->id,
                     "name" => $request->name,
                     "amount" => "0",
+                    "role" => [
+                        "role" => $walletAccess->role,
+                        "is_active" => $walletAccess->is_active,
+                    ]
                 ]
             ));
         } catch (Exception $e) {
