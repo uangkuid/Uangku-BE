@@ -35,6 +35,8 @@ class WalletController extends Controller
     {
         $current_user = $request->user();
 
+        dd($request);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required',
         ]);
@@ -47,15 +49,17 @@ class WalletController extends Controller
         try {
             DB::beginTransaction();
 
-            $wallet = Wallet::create([]);
+            $wallet = Wallet::create([
+                "name" => $request->name,
+                "amount" => "0",
+            ]);
 
             DB::commit();
 
             return response()->json(new BaseResponse(
                 201,
                 'Family created successfully.',
-                [
-                ]
+                $wallet
             ));
         } catch (Exception $e) {
             DB::rollBack();

@@ -31,6 +31,7 @@ class FamilyMiddleware
         }
 
         if (!empty($secretKey)) {
+            $request->merge(['family_secret_key' => $secretKey]);
             return $next($request);
         } else {
             return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);

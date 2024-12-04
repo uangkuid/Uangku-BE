@@ -74,7 +74,7 @@ Route::controller(FamiliesController::class)->middleware('auth:api')->group(func
         Route::post('family/{id}/revoke', 'deauthorized');
     });
 
-    Route::controller(WalletController::class)->middleware(['auth:api','personal'])->group(function () {
+    Route::controller(WalletController::class)->middleware(['auth:api','auto-auth'])->group(function () {
         Route::post('wallet', 'store');
     });
 });

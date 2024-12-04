@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AutoSelectAuthMiddleware;
 use App\Http\Middleware\FamilyAdminMiddleware;
 use App\Http\Middleware\FamilyMiddleware;
 use App\Http\Middleware\PersonalMiddleware;
@@ -36,6 +37,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->appendToGroup('wallet-admin', [
             WalletAdminMiddleware::class
+        ]);
+        $middleware->appendToGroup('auto-auth', [
+            AutoSelectAuthMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

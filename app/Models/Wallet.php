@@ -14,4 +14,6 @@ class Wallet extends Model
         'name',
         'amount'
     ];
+
+
 }
