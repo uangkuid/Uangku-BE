@@ -35,8 +35,6 @@ class WalletController extends Controller
     {
         $current_user = $request->user();
 
-        dd($request);
-
         $validator = Validator::make($request->all(), [
             'name' => 'required',
         ]);
@@ -48,6 +46,8 @@ class WalletController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $secret_key = $request->personal_secret_key;
 
             $wallet = Wallet::create([
                 "name" => $request->name,

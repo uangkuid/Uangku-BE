@@ -52,12 +52,15 @@ class UserSeeder extends Seeder
             $wallet = Wallet::create([
                 'name' => EncryptionHelper::encryptAsString(
                     data: $wallet_name,
-                    key: $encryptKey
+                    key: $encryptKey,
+                    iv: $staticIv,
                 ),
                 'amount' => EncryptionHelper::encryptAsString(
                     data: "0",
-                    key: $encryptKey
-                )
+                    key: $encryptKey,
+                    iv: $staticIv,
+                ),
+                'created_by' => $user->id,
             ]);
 
             /**

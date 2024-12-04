@@ -70,6 +70,7 @@ erDiagram
         name varchar
         amount double
         families uuid FK
+        created_by uuid FK
         created_at timestamp
         updated_at timestamp
     }

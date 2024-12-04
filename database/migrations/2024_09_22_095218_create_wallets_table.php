@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('amount');
             $table->uuid('families')->nullable();
+            $table->uuid('created_by')->nullable();
             $table->timestamps();
 
             $table->foreign('families')->references('id')->on('families');

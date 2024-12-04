@@ -12,7 +12,8 @@ class Wallet extends Model
 
     protected $fillable = [
         'name',
-        'amount'
+        'amount',
+        'created_by'
     ];
 
 
