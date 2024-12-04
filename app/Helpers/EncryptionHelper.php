@@ -205,7 +205,7 @@ class EncryptionHelper
     public static function getUsersEncryptKey(string $secretKey, string $password): string {
         $salt = self::getUsersSalt($secretKey);
         $secretKeySanitize = str_replace("-", "", $secretKey);
-        return $salt.$password.$secretKeySanitize;
+        return self::xorString(($salt.$password.$secretKeySanitize), 8);
     }
 
     /**

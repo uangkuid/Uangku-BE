@@ -15,14 +15,12 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('users');
             $table->uuid('wallets');
-            $table->uuid('families')->nullable();
             $table->boolean("is_active");
             $table->enum("role", ['Admin', 'Member']);
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');
             $table->foreign('wallets')->references('id')->on('wallets');
-            $table->foreign('families')->references('id')->on('families');
         });
     }
 

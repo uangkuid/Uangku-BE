@@ -69,6 +69,7 @@ erDiagram
         id uuid PK
         name varchar
         amount double
+        families uuid FK
         created_at timestamp
         updated_at timestamp
     }
@@ -77,7 +78,6 @@ erDiagram
         id uuid PK
         users uuid FK
         wallet uuid FK
-        families uuid FK
         isActive boolean
         role enum
     }
@@ -107,7 +107,7 @@ erDiagram
     
     family ||--o| family_member : has
     family ||--o{ transactions : has
-    family ||--o{ wallet_access : has
+    family ||--o{ wallet : has
 
     wallet }|--o{ wallet_access : has
     wallet_access ||--o{ wallet_transactions : has

@@ -23,7 +23,8 @@ class FamilyMiddleware
 
         if ($id != null && $id != '') {
             $familyMember = FamilyMember::where('family', $id)
-                ->where('user', $request->user()->id);
+                ->where('user', $request->user()->id)
+                ->limit(1);
 
             if ($familyMember->count() < 1) {
                 return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
