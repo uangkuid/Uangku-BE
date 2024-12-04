@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Models\Wallet;
@@ -48,18 +49,66 @@ class WalletController extends Controller
             DB::beginTransaction();
 
             $secret_key = $request->personal_secret_key;
+            $familyKey = $request->family_secret_key;
 
-            $wallet = Wallet::create([
-                "name" => $request->name,
-                "amount" => "0",
-            ]);
+            if(!empty($familyKey) && $familyKey != null) {
+                $secret_key = $familyKey;
+            }
+
+            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+            $name = EncryptionHelper::encryptAsString(
+                data: $request->name,
+                key: $secret_key,
+                iv: $staticIv
+            );
+            $amount = EncryptionHelper::encryptAsString(
+                data: "0",
+                key: $secret_key,
+                iv: $staticIv
+            );
+
+            if ($familyKey == $secret_key) {
+                $wallet = Wallet::where(['name' => $name])
+                    ->where(['families' => $request->family_id])
+                    ->limit(1);
+
+                if ($wallet->count() > 0) {
+                    return response()->json(new BaseResponse(400, $request->name . " has already."), 400);
+                }
+
+                $wallet = Wallet::create([
+                    "name" => $name,
+                    "amount" => $amount,
+                    "created_by" => $current_user->id,
+                    "families" => $request->family_id
+                ]);
+            } else {
+                //Find if user has created with same wallet name
+                $wallet = Wallet::where(['name' => $name])
+                    ->where(['created_by' => $current_user->id])
+                    ->limit(1);
+
+                if ($wallet->count() > 0) {
+                    return response()->json(new BaseResponse(400, $request->name . " has already."), 400);
+                }
+
+                $wallet = Wallet::create([
+                    "name" => $name,
+                    "amount" => $amount,
+                    "created_by" => $current_user->id,
+                ]);
+            }
 
             DB::commit();
 
             return response()->json(new BaseResponse(
                 201,
                 'Family created successfully.',
-                $wallet
+                [
+                    "id" => $wallet->id,
+                    "name" => $request->name,
+                    "amount" => "0",
+                ]
             ));
         } catch (Exception $e) {
             DB::rollBack();
