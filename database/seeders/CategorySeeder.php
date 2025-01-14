@@ -31,6 +31,7 @@ class CategorySeeder extends Seeder
             Category::create([ 'name' => 'Education', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Entertainment', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Family', 'transaction_types' => $spending->id ]);
+            Category::create([ 'name' => 'Food', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Gasoline', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Health', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Insurance', 'transaction_types' => $spending->id ]);
@@ -42,6 +43,7 @@ class CategorySeeder extends Seeder
             Category::create([ 'name' => 'Sport', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Technology', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Transportation', 'transaction_types' => $spending->id ]);
+            Category::create([ 'name' => 'Telecommunication', 'transaction_types' => $spending->id ]);
             Category::create([ 'name' => 'Vacation', 'transaction_types' => $spending->id ]);
         });
     }
