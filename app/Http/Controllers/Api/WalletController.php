@@ -19,9 +19,15 @@ class WalletController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $current_user = $request->user();
+
+        $wallet = Wallet::whereHas('access', function ($query) use ($current_user) {
+            $query->where('users', $current_user->id);
+        })->get();
+
+        return response()->json(new BaseResponse(200, "Wallet data", $wallet));
     }
 
     /**

@@ -11,15 +11,15 @@ services:
       MARIADB_ROOT_PASSWORD: root
     volumes:
       - ~/mysql:/var/lib/mysql
-  phpmyadmin:
-    container_name: phpmyadmin
-    image: phpmyadmin
-    restart: always
-    ports:
-      - 80:80
-    environment:
-      - PMA_HOST=mariadb
-      - PMA_PORT=3306
-    depends_on:
-      - mariadb
+#  phpmyadmin:
+#    container_name: phpmyadmin
+#    image: phpmyadmin
+#    restart: always
+#    ports:
+#      - 80:80
+#    environment:
+#      - PMA_HOST=mariadb
+#      - PMA_PORT=3306
+#    depends_on:
+#      - mariadb
 
