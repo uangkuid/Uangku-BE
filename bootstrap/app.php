@@ -4,6 +4,7 @@ use App\Http\Middleware\AutoSelectAuthMiddleware;
 use App\Http\Middleware\FamilyAdminMiddleware;
 use App\Http\Middleware\FamilyMiddleware;
 use App\Http\Middleware\PersonalMiddleware;
+use App\Http\Middleware\SessionMiddleware;
 use App\Http\Middleware\WalletAdminMiddleware;
 use App\Http\Middleware\WalletMiddleware;
 use App\Http\Resources\BaseResponse;
@@ -40,6 +41,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->appendToGroup('auto-auth', [
             AutoSelectAuthMiddleware::class
+        ]);
+        $middleware->appendToGroup('session', [
+            SessionMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -10,10 +10,12 @@ use App\Models\Wallet;
 use App\Models\WalletAccess;
 use App\Services\Auth\AuthService;
 use App\Services\UserSession\UserSessionService;
+use App\Services\Wallet\WalletService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
@@ -23,11 +25,16 @@ class AuthController extends Controller
 {
     private AuthService $authService;
     private UserSessionService $userSessionService;
+    private WalletService $walletService;
 
-    public function __construct(AuthService $authService, UserSessionService $userSessionService)
-    {
+    public function __construct(
+        AuthService $authService,
+        UserSessionService $userSessionService,
+        WalletService $walletService
+    ) {
         $this->authService = $authService;
         $this->userSessionService = $userSessionService;
+        $this->walletService = $walletService;
     }
 
     /**
@@ -66,74 +73,56 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
-            $user = $this->authService->register(
-                name: $request->name,
-                email: $request->email,
-                password: bcrypt($request->password),
-            );
-
             /**
              * Prepare data before create account
              */
             $secretKey = EncryptionHelper::generateUsersSecretKey();
             $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
-            $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $request->password);
-            $encryptedEmail = EncryptionHelper::encryptAsString(
-                data: $request->email,
-                key: EncryptionHelper::getSystemSecretKey(),
-                iv: $staticIv,
-            );
-
-            /**
-             * Find Existing Users
-             */
-            $user = User::where('email', $encryptedEmail);
-
-            //Throw error when email already taken
-            if ($user->count() > 0) {
-                return response()->json(new BaseResponse(409, "Failed to create account ", [
-                    "email" => "Email already taken!"
-                ]), 409);
-            }
+            $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
+            $rawPublicKey = base64_decode($asymmetricKey["public"]);
 
             /**
              * Create Account
              */
-            $user = User::create([
-                'name' => EncryptionHelper::encryptAsString(
-                    data: $request->name,
+            $user = $this->authService->register(
+                name: EncryptionHelper::encryptAsymmetric($request->name, $rawPublicKey),
+                email: EncryptionHelper::encryptAsString(
+                    data: $request->email,
                     key: EncryptionHelper::getSystemSecretKey(),
                     iv: $staticIv,
                 ),
-                'email' => $encryptedEmail,
-                'password' => bcrypt($encryptKey)
-            ]);
+                password: $request->password,
+            );
+            /**
+             * Save User Key
+             */
+            $userKey = $this->authService->saveUserKey(
+                userId: $user->id,
+                publicKey: $asymmetricKey['public'],
+                privateKey: $asymmetricKey['private'],
+                secretKey: $secretKey,
+                password: $request->password
+            );
 
             $wallet_name = sprintf("%s's Cash", $request->name);
 
             /**
              * Create users wallet
              */
-            $wallet = Wallet::create([
-                'name' => EncryptionHelper::encryptAsString(
-                    data: $wallet_name,
-                    key: $encryptKey
-                ),
-                'amount' => EncryptionHelper::encryptAsString(
-                    data: "0",
-                    key: $encryptKey
-                ),
+            $wallet = $this->walletService->create([
+                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $rawPublicKey),
+                'amount' => EncryptionHelper::encryptAsymmetric("0", $rawPublicKey),
+                'created_by' => $user->id,
             ]);
 
             /**
              * Grant users access to wallet
              */
-            $walletAccess = WalletAccess::create([
-                'users' => $user->id,
-                'wallets' => $wallet->id,
-                'is_active' => true,
-                'role' => RoleWallet::Admin
-            ]);
+            $walletAccess = $this->walletService->grantAccess(
+                userId: $user->id,
+                walletId: $wallet->id,
+                accessType: RoleWallet::Admin
+            );
 
             $accessToken = auth()->login($user);
             $refreshToken = $this->generateRefreshToken($user);
@@ -141,7 +130,7 @@ class AuthController extends Controller
             /**
              * Save users to seasons
              */
-            UserSeasons::create([
+            $this->userSessionService->create([
                 'refresh_token' => $refreshToken,
                 'users' => $user->id
             ]);
@@ -160,10 +149,13 @@ class AuthController extends Controller
                     'role' => $walletAccess->role
                 ],
                 'token' => $accessToken,
-                'refresh_token' => $refreshToken
+                'refresh_token' => $refreshToken,
+                'public_key' => $userKey->public_key,
+                'private_key' => $userKey->private_key,
             ]), 201);
         } catch (Exception $e) {
             DB::rollBack();
+            Log::error("Failed create account " . $e->getMessage());
             return response()->json(new BaseResponse(409, "Failed to create account " . $e->getMessage(), null), 409);
         }
     }

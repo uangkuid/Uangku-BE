@@ -1,11 +1,10 @@
  ```mermaid
 erDiagram
-    
     cash_flows {
         id uuid PK
         name varchar
     }
-    
+
     users {
         id uuid PK
         password varchar
@@ -14,6 +13,13 @@ erDiagram
         avatar varchar
         created_at timestamp
         updated_at timestamp
+    }
+
+    user_keys {
+        id uuid PK
+        users uuid FK
+        public_key varchar
+        private_key varchar
     }
 
     family {
@@ -32,6 +38,13 @@ erDiagram
         role enum
         created_at timestamp
         updated_at timestamp
+    }
+
+    family_keys {
+        id uuid PK
+        family uuid FK
+        public_key varchar
+        private_key varchar
     }
 
     categories {
@@ -64,7 +77,7 @@ erDiagram
         created_at timestamp
         updated_at timestamp
     }
-    
+
     wallet {
         id uuid PK
         name varchar
@@ -74,7 +87,7 @@ erDiagram
         created_at timestamp
         updated_at timestamp
     }
-    
+
     wallet_access {
         id uuid PK
         users uuid FK
@@ -82,7 +95,7 @@ erDiagram
         isActive boolean
         role enum
     }
-    
+
     wallet_transactions {
         id uuid PK
         wallets uuid FK
@@ -92,45 +105,69 @@ erDiagram
         created_at timestamp
         updated_at timestamp
     }
-    
-    cash_flows ||--o{ categories : has
-    cash_flows ||--o{ transactions : has
 
-    categories ||--o{ sub_categories : has
-    categories ||--o{ transactions : has
-
-    sub_categories ||--o{ transactions : has
-
-    users ||--o| family_member : has
-    users ||--o{ transactions : has
-    users ||--o{ wallet_access : has
-    users ||--o{ sub_categories : has
-    
-    family ||--o| family_member : has
-    family ||--o{ transactions : has
-    family ||--o{ wallet : has
-
-    wallet }|--o{ wallet_access : has
-    wallet_access ||--o{ wallet_transactions : has
-    wallet_transactions ||--o| transactions : has
-    wallet ||--o{ wallet_transactions : has
+    cash_flows ||--o{ categories: has
+    cash_flows ||--o{ transactions: has
+    categories ||--o{ sub_categories: has
+    categories ||--o{ transactions: has
+    sub_categories ||--o{ transactions: has
+    users ||--o| family_member: has
+    users ||--o{ transactions: has
+    users ||--o{ wallet_access: has
+    users ||--o{ sub_categories: has
+    users ||--o| user_keys: has
+    family ||--o| family_member: has
+    family ||--o{ transactions: has
+    family ||--o{ wallet: has
+    family ||--o| family_keys: has
+    wallet }|--o{ wallet_access: has
+    wallet_access ||--o{ wallet_transactions: has
+    wallet_transactions ||--o| transactions: has
+    wallet ||--o{ wallet_transactions: has
 ```
+
+## Table Details
+
+### Users Table
+
+| Field      | Type      | Index | Description                                                                                 |
+|------------|-----------|-------|---------------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the user                                                              |
+| name       | varchar   |       | Name of the user, encrypted using AES-CBC-256 key using Raw public key from table user_keys |
+| email      | varchar   |       | Email address of the user, encrypted using AES-CBC-256 secret key system                    |
+| password   | varchar   |       | Password for the user hashed using bcrypt                                                   |
+| avatar     | varchar   |       | Avatar of the user                                                                          |
+| created_at | timestamp |       | Timestamp when the user was created                                                         |
+| updated_at | timestamp |       | Timestamp when the user was last updated                                                    |
+
+### User Keys Table
+
+| Field       | Type    | Index | Description                                                                                                        |
+|-------------|---------|-------|--------------------------------------------------------------------------------------------------------------------|
+| id          | uuid    | PK    | Unique identifier for the user key                                                                                 |
+| users       | uuid    | FK    | Foreign key referencing the users table                                                                            |
+| public_key  | varchar |       | Public key of the user, encoded using base64                                                                       |
+| private_key | varchar |       | Private key of the user, encrypted using AES-CBC-256 using key user secret_key + user passwords, encoded by base64 |
 
 ## Secret Keys
 
 ### Secret key only have 3 types:
+
 - **Users Secret Key** : Secret key account binding
 - **Families Secret Key** : Secret key family binding
 - **System Secret Key** : Secret key system binding
 
-### Secret Key Algoritm:
-
 ## Secret Key Mapping
+
 **Table** :
+
 - **Users** : Secret key using System Secret Key
-- **Wallets** : Secret key using creator secret key, when creator is user using users secret key when using families secret key will using family secret key
+- **Wallets** : Secret key using creator secret key, when creator is user using users secret key when using families
+  secret key will using family secret key
 - **Family** : Secret key using System secret key
 - **Wallet_Transactions** : Secret key using wallet creator secret key
 - **Transactions** : Secret key using wallet creator secret key
 
+## Encryption Algoritm:
 
+- **Users Data** : Asymmetric encryption using AES-CBC-256 with key raw public key

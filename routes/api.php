@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FamiliesController;
+use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Controllers\Api\WalletController;
@@ -20,6 +21,19 @@ use App\Http\Controllers\Api\AuthController;
 
 Route::fallback(function () {
     return response()->json(new BaseResponse(404, "Data not found", null), 404);
+});
+
+Route::middleware('session')->group(function () {
+
+});
+
+/**
+ * General Controller is Public API
+ */
+Route::controller(GeneralController::class)->group(function () {
+    Route::prefix("general")->group(function () {
+        Route::post("key-exchange", "keyExchange");
+    });
 });
 
 Route::controller(AuthController::class)->group(function () {

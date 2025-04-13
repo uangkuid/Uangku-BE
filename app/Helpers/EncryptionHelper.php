@@ -42,6 +42,26 @@ class EncryptionHelper
     }
 
     /**
+     * Encrypt the given data using asymmetric encryption with a public key.
+     * @param string $data
+     * @param string $publicKey
+     * @return string
+     * @throws Exception
+     */
+    public static function encryptAsymmetric(string $data, string $publicKey): string
+    {
+        // Encrypt the data using the public key
+        $isSuccess = openssl_public_encrypt($data, $encryptedData, $publicKey);
+
+        if ($isSuccess === false) {
+            throw new Exception('Encryption failed.');
+        }
+
+        // Return the encrypted data
+        return base64_encode($encryptedData);
+    }
+
+    /**
      * Encrypt the given data using AES-CBC.
      *
      * @param string $data
@@ -101,6 +121,26 @@ class EncryptionHelper
             throw new Exception('Decryption failed.');
         }
 
+        return $decryptedData;
+    }
+
+    /**
+     * Decrypt the given data using asymmetric encryption with a private key.
+     * @param string $encryptedData
+     * @param string $privateKey
+     * @return string
+     * @throws Exception
+     */
+    public static function decryptAsymmetric(string $encryptedData, string $privateKey): string
+    {
+        // Decrypt the data using the private key
+        $isSuccess = openssl_private_decrypt(base64_decode($encryptedData), $decryptedData, $privateKey);
+
+        if ($isSuccess === false) {
+            throw new Exception('Decryption failed.');
+        }
+
+        // Return the decrypted data
         return $decryptedData;
     }
 
@@ -225,5 +265,29 @@ class EncryptionHelper
         $secretKeySanitize = str_replace("-", "", $secretKey);
         $secretKeyAsArray = explode("-", $secretKey);
         return $salt.$secretKeyAsArray[1].$secretKeySanitize;
+    }
+
+    public static function generateAsymmetricKey(): array
+    {
+        // Konfigurasi untuk pembuatan kunci
+        $config = [
+            "digest_alg" => "sha256",
+            "private_key_bits" => 2048,
+            "private_key_type" => OPENSSL_KEYTYPE_RSA,
+        ];
+
+        // Membuat pasangan kunci
+        $res = openssl_pkey_new($config);
+
+        // Ekstrak kunci privat
+        openssl_pkey_export($res, $privateKey);
+
+        // Ekstrak kunci publik
+        $publicKeyDetails = openssl_pkey_get_details($res);
+        $publicKey = $publicKeyDetails["key"];
+        return [
+            "private" => base64_encode($privateKey),
+            "public" => base64_encode($publicKey),
+        ];
     }
 }

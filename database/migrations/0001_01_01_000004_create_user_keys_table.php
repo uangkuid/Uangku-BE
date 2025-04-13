@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('wallets', function (Blueprint $table) {
+        Schema::create('user_keys', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->text('name');
-            $table->text('amount');
-            $table->uuid('families')->nullable();
-            $table->uuid('created_by')->nullable();
+            $table->uuid('users')->index();
+            $table->text('private_key');
+            $table->text('public_key');
             $table->timestamps();
 
-            $table->foreign('families')->references('id')->on('families');
+            $table->foreign('users')->references('id')->on('users');
         });
     }
 
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('wallets');
+        Schema::dropIfExists('user_keys');
     }
 };

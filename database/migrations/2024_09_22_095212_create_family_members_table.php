@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('family_members', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user');
-            $table->uuid('family');
+            $table->uuid('user')->index();
+            $table->uuid('family')->index();
             $table->enum('role', ['Admin', 'Member']);
             $table->timestamps();
 

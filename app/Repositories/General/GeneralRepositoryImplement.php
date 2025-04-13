@@ -3,6 +3,7 @@
 namespace App\Repositories\General;
 
 use App\Models\Category;
+use Illuminate\Support\Facades\Redis;
 use LaravelEasyRepository\Implementations\Eloquent;
 
 class GeneralRepositoryImplement extends Eloquent implements GeneralRepository{
@@ -19,5 +20,18 @@ class GeneralRepositoryImplement extends Eloquent implements GeneralRepository{
         $this->model = $model;
     }
 
-    // Write something awesome :)
+    public function storeRedis($key, $value, $expire = 0)
+    {
+        Redis::command('set', [$key, $value, 'EX', 60]);
+    }
+
+    public function getRedis($key): string
+    {
+        return Redis::get($key);
+    }
+
+    public function deleteRedis($key)
+    {
+        Redis::del($key);
+    }
 }

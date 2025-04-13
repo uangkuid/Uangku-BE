@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Repositories\UserSession;
+namespace App\Repositories\WalletAccess;
 
 use LaravelEasyRepository\Implementations\Eloquent;
-use App\Models\UserSeasons;
+use App\Models\WalletAccess;
 
-class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepository{
+class WalletAccessRepositoryImplement extends Eloquent implements WalletAccessRepository{
 
     /**
     * Model class to be used in this repository for the common methods inside Eloquent
     * Don't remove or change $this->model variable name
     * @property Model|mixed $model;
     */
-    protected UserSeasons $model;
+    protected WalletAccess $model;
 
-    public function __construct(UserSeasons $model)
+    public function __construct(WalletAccess $model)
     {
         $this->model = $model;
     }

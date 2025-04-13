@@ -6,5 +6,8 @@ use LaravelEasyRepository\Repository;
 
 interface GeneralRepository extends Repository{
 
-    // Write something awesome :)
+    function storeRedis($key, $value, $expire = 0);
+
+    function getRedis($key): string;
+    function deleteRedis($key);
 }

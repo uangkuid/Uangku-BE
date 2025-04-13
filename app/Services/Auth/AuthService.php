@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 use App\Models\User;
+use App\Models\UserKey;
 use LaravelEasyRepository\BaseService;
 
 interface AuthService extends BaseService{
@@ -18,4 +19,19 @@ interface AuthService extends BaseService{
         string $email,
         string $password,
     ): User;
+
+    /**
+     * Save the user's public and private keys.
+     * @param string $userId
+     * @param string $publicKey
+     * @param string $privateKey
+     * @return void
+     */
+    function saveUserKey(
+        string $userId,
+        string $publicKey,
+        string $privateKey,
+        string $secretKey,
+        string $password
+    ): UserKey;
 }

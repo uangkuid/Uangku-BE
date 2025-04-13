@@ -2,6 +2,7 @@
 
 namespace App\Repositories\User;
 
+use App\Models\UserKey;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\User;
 
@@ -14,10 +15,23 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
     */
     protected User $model;
 
-    public function __construct(User $model)
-    {
+    private UserKey $user_key;
+
+    public function __construct(
+        User $model,
+        UserKey $user_key
+    ) {
         $this->model = $model;
+        $this->user_key = $user_key;
     }
 
-    // Write something awesome :)
+
+    function saveUserKey(string $userId, string $publicKey, string $privateKey,) : UserKey
+    {
+        return $this->user_key->create([
+            'users' => $userId,
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+        ]);
+    }
 }
