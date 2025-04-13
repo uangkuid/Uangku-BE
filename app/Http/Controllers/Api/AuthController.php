@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\UserSeasons;
 use App\Models\Wallet;
 use App\Models\WalletAccess;
+use App\Services\Auth\AuthService;
+use App\Services\UserSession\UserSessionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,15 @@ use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    private AuthService $authService;
+    private UserSessionService $userSessionService;
+
+    public function __construct(AuthService $authService, UserSessionService $userSessionService)
+    {
+        $this->authService = $authService;
+        $this->userSessionService = $userSessionService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -54,6 +65,12 @@ class AuthController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $user = $this->authService->register(
+                name: $request->name,
+                email: $request->email,
+                password: bcrypt($request->password),
+            );
 
             /**
              * Prepare data before create account

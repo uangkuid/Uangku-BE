@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use Exception;
 use Illuminate\Support\Str;
+use Random\RandomException;
 
 class EncryptionHelper
 {
@@ -137,6 +138,7 @@ class EncryptionHelper
      * Generate a secret key in the format "XXXX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX".
      *
      * @return string
+     * @throws RandomException
      */
     public static function generateUsersSecretKey()
     {

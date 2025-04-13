@@ -2,8 +2,8 @@
 
 namespace App\Repositories\General;
 
+use App\Models\Category;
 use LaravelEasyRepository\Implementations\Eloquent;
-use App\Models\General;
 
 class GeneralRepositoryImplement extends Eloquent implements GeneralRepository{
 
@@ -12,9 +12,9 @@ class GeneralRepositoryImplement extends Eloquent implements GeneralRepository{
     * Don't remove or change $this->model variable name
     * @property Model|mixed $model;
     */
-    protected General $model;
+    protected Category $model;
 
-    public function __construct(General $model)
+    public function __construct(Category $model)
     {
         $this->model = $model;
     }

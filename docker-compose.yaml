@@ -11,6 +11,15 @@ services:
       MARIADB_ROOT_PASSWORD: root
     volumes:
       - ~/mysql:/var/lib/mysql
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass root
+    volumes:
+        - ~/redis:/data
 #  phpmyadmin:
 #    container_name: phpmyadmin
 #    image: phpmyadmin
