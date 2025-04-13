@@ -118,12 +118,12 @@ erDiagram
 
 ## Secret Keys
 
-Secret key only have 3 types:
+### Secret key only have 3 types:
 - **Users Secret Key** : Secret key account binding
 - **Families Secret Key** : Secret key family binding
 - **System Secret Key** : Secret key system binding
 
-Secret Key Algoritm:
+### Secret Key Algoritm:
 
 ## Secret Key Mapping
 **Table** :
