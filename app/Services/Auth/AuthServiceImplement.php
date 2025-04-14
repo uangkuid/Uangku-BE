@@ -51,7 +51,7 @@ class AuthServiceImplement extends Service implements AuthService
         string $password,
         string $otp,
         string $uuid,
-        bool $isSeeder = false
+        bool   $isSeeder = false
     ): User
     {
 
@@ -126,6 +126,23 @@ class AuthServiceImplement extends Service implements AuthService
     }
 
     /**
+     * Get the user's public and private keys.
+     * @param string $userId
+     * @return UserKey
+     * @throws AuthException
+     */
+    function getUserKey(string $userId): UserKey
+    {
+        $userKey = $this->mainRepository->getUserKey($userId);
+
+        if ($userKey == null) {
+            throw new AuthException("User key not found!");
+        }
+
+        return $userKey;
+    }
+
+    /**
      * Pre-register a new user. active for 5 minutes when expired user will delete automatically
      * @param string $email
      * @return void
@@ -155,5 +172,44 @@ class AuthServiceImplement extends Service implements AuthService
             "email" => $email,
             "created_at" => now(),
         ]), (5 * 60)); // Store for 5 minutes
+    }
+
+    /**
+     * Login a user.
+     * @param string $email
+     * @param string $password
+     * @param string $secretKey
+     * @return array
+     * @throws AuthException
+     * @throws Exception
+     */
+    function login(string $email, string $password, string $secretKey): array
+    {
+        /**
+         * Prepare data before auth
+         */
+        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: $staticIv,
+        );
+
+        //get credentials from request
+        $credentials = [
+            'email' => $encryptedEmail,
+            'password' => $password,
+        ];
+
+        //if auth failed
+        if (!$token = auth()->guard('api')->attempt($credentials)) {
+            throw new AuthException("Wrong email or password!");
+        }
+
+        return [
+            "user" => auth()->guard('api')->user(),
+            "token" => $token,
+        ];
     }
 }

@@ -51,4 +51,14 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
     ): bool {
         return $this->model->where('email', $email)->count() > 0;
     }
+
+    /**
+     * Get the user's public and private keys.
+     * @param string $userId
+     * @return ?UserKey
+     */
+    function getUserKey(string $userId): ?UserKey
+    {
+        return $this->user_key->where('users', $userId)->first();
+    }
 }

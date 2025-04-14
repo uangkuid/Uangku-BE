@@ -164,22 +164,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
      * Method Login users
      */
     function login(Request $request): JsonResponse
@@ -196,57 +180,42 @@ class AuthController extends Controller
             return response()->json(new BaseResponse(400, "Failed to login", $validator->errors()), 400);
         }
 
-        /**
-         * Prepare data before auth
-         */
-        $secretKey = $request->secret_key;
-        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
-        $password = $request->password;
-        $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
+        try {
+            $loginResult = $this->authService->login(
+                email: $request->email,
+                password: $request->password,
+                secretKey: $request->secret_key
+            );
+            $user = $loginResult['user'];
+            $refresh_token = $this->generateRefreshToken($user);
+            $userKey = $this->authService->getUserKey($user->id);
 
-        $encryptedEmail = EncryptionHelper::encryptAsString(
-            data: $request->email,
-            key: EncryptionHelper::getSystemSecretKey(),
-            iv: $staticIv,
-        );
-
-        //get credentials from request
-//        $credentials = $request->only('email', 'password');
-        $credentials = [
-            'email' => $encryptedEmail,
-            'password' => $encryptKey,
-        ];
-
-        //if auth failed
-        if (!$token = auth()->guard('api')->attempt($credentials)) {
-            return response()->json(new BaseResponse(
-                401,
-                "Unauthorized",
-                null
-            ), 401);
-        }
-
-        $user = auth()->guard('api')->user();
-        $refresh_token = $this->generateRefreshToken($user);
-
-        //Save to user seasons
-        UserSeasons::create([
-            'refresh_token' => $refresh_token,
-            'users' => $user->id
-        ]);
-
-        return response()->json(new BaseResponse(
-            200,
-            "Login successful",
-            [
-                'id' => $user->id,
-                'name' => EncryptionHelper::decryptFromString($user->name, EncryptionHelper::getSystemSecretKey()),
-                'avatar' => $user->avatar,
-                'kid' => EncryptionHelper::encryptAsString($encryptKey, EncryptionHelper::getSystemSecretKey()),
-                'token' => $token,
+            //Save to user seasons
+            $this->userSessionService->create([
+                'users' => $user->id,
                 'refresh_token' => $refresh_token
-            ]
-        ), 200);
+            ]);
+
+            return response()->json(new BaseResponse(
+                200,
+                "Login successful",
+                [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                    'token' => $loginResult['token'],
+                    'refresh_token' => $refresh_token,
+                    'public_key' => $userKey->public_key,
+                    'private_key' => $userKey->private_key,
+                ]
+            ), 200);
+        } catch (AuthException $e) {
+            Log::error("Failed to login " . $e->getMessage());
+            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+        } catch (Exception $e) {
+            Log::error("Failed to login " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to login " . $e->getMessage(), null), 500);
+        }
     }
 
     function logout(Request $request): JsonResponse

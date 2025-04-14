@@ -21,6 +21,15 @@ interface UserRepository extends Repository{
     ): UserKey;
 
     /**
+     * Get the user's public and private keys.
+     * @param string $userId
+     * @return ?UserKey
+     */
+    function getUserKey(
+        string $userId
+    ): ?UserKey;
+
+    /**
      * Check if the email already exists in the database.
      * @param string $email
      * @return bool

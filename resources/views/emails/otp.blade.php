@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Your Uangku Verification Code</title>
+    <!-- Load Poppins from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #f7fafc;
             color: #2d3748;
             padding: 2rem;
@@ -21,18 +23,24 @@
         h2 {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
+            font-weight: 600;
         }
         p {
             font-size: 1rem;
             line-height: 1.6;
+            font-weight: 400;
         }
         .otp-code {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #007BFF;
-            margin: 1.5rem 0;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2D9CDC;
+            border: 2px solid #2D9CDC;
+            border-radius: 16px;
+            padding: 1rem 2rem;
+            display: inline-block;
+            margin: 1.5rem auto;
+            letter-spacing: 0.5rem;
             text-align: center;
-            letter-spacing: 4px;
         }
         .footer {
             margin-top: 2rem;
@@ -45,11 +53,11 @@
 <body>
 <div class="container">
     <h2>Hey there 👋</h2>
-    <p>Here’s your <strong>Uangku</strong> verification code. Just pop it into the app to continue:</p>
+    <p>Here’s your <strong>Uangku</strong> verification code. Enter this code in the app to continue. It’s valid for <strong>5 minutes</strong> only:</p>
 
     <div class="otp-code">{{ $otp }}</div>
 
-    <p>This code is valid for a short time only. Didn’t request it? No worries, just ignore this message.</p>
+    <p>If you didn’t request this, feel free to ignore this email. We’ve got your back.</p>
 
     <div class="footer">
         &copy; {{ now()->year }} Uangku. All rights reserved.

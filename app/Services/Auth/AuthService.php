@@ -49,6 +49,16 @@ interface AuthService extends BaseService{
     ): UserKey;
 
     /**
+     * Get the user's public and private keys.
+     * @param string $userId
+     * @return UserKey
+     * @throws AuthException
+     */
+    function getUserKey(
+        string $userId
+    ): UserKey;
+
+    /**
      * Pre-register a new user. active for 5 minutes when expired user will delete automatically
      * @param string $email
      * @return void
@@ -58,4 +68,19 @@ interface AuthService extends BaseService{
     function preRegister(
         string $email
     );
+
+    /**
+     * Login a user.
+     * @param string $email
+     * @param string $password
+     * @param string $secretKey
+     * @throws Exception
+     * @throws AuthException
+     * @return array
+     */
+    function login(
+        string $email,
+        string $password,
+        string $secretKey
+    ): array;
 }
