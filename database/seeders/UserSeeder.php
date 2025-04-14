@@ -43,11 +43,12 @@ class UserSeeder extends Seeder
                     key: EncryptionHelper::getSystemSecretKey(),
                     iv: $staticIv,
                 ),
+                rawEmail: "admin@uangku.com",
                 password: $password,
+                otp: "000000",
+                uuid: "00000000-0000-0000-0000-000000000000",
+                isSeeder: true,
             );
-            $user->update([
-                'email_verified_at' => now(),
-            ]);
 //            $user = User::create([
 //                'name' => EncryptionHelper::encryptAsString(
 //                    data: 'Administrator',

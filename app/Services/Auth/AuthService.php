@@ -13,14 +13,22 @@ interface AuthService extends BaseService{
      * Register a new user.
      * @param string $name
      * @param string $email
+     * @param string $rawEmail
      * @param string $password
+     * @param string $otp
+     * @param string $uuid
+     * @param bool $isSeeder
      * @return User
      * @throws AuthException
      */
     function register(
         string $name,
         string $email,
+        string $rawEmail,
         string $password,
+        string $otp,
+        string $uuid,
+        bool $isSeeder = false
     ): User;
 
     /**

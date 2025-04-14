@@ -56,7 +56,9 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed'
+            'password' => 'required|min:8|confirmed',
+            'otp' => 'required|min:6|max:6',
+            'uuid' => 'required',
         ]);
 
         //if validation fails
@@ -85,7 +87,10 @@ class AuthController extends Controller
                     key: EncryptionHelper::getSystemSecretKey(),
                     iv: $staticIv,
                 ),
+                rawEmail: $request->email,
                 password: $request->password,
+                otp: $request->otp,
+                uuid: $request->uuid,
             );
             /**
              * Save User Key

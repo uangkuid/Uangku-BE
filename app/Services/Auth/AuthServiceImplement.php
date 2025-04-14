@@ -9,17 +9,19 @@ use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 
-class AuthServiceImplement extends Service implements AuthService{
+class AuthServiceImplement extends Service implements AuthService
+{
 
-     /**
+    /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
-     protected UserRepository $mainRepository;
+    protected UserRepository $mainRepository;
 
-     private RedisRepository $redisRepository;
+    private RedisRepository $redisRepository;
 
     /**
      * @param UserRepository $mainRepository
@@ -34,14 +36,56 @@ class AuthServiceImplement extends Service implements AuthService{
 
     /**
      * Register a new user.
-     * @param string $name Encrypted name
-     * @param string $email Encrypted email
-     * @param string $password Raw password
+     * @param string $name
+     * @param string $email
+     * @param string $password
+     * @param string $otp
+     * @param string $uuid
      * @return User
      * @throws AuthException
      */
-    public function register(string $name, string $email, string $password): User
+    public function register(
+        string $name,
+        string $email,
+        string $rawEmail,
+        string $password,
+        string $otp,
+        string $uuid,
+        bool $isSeeder = false
+    ): User
     {
+
+        /**
+         * Skip checking OTP if seeder
+         */
+        if (!$isSeeder) {
+            $otpData = $this->redisRepository->getRedis("pre-register:{$rawEmail}");
+
+            Log::info("OTP Data: ", [
+                "otpData" => $otpData,
+                "email" => $email,
+            ]);
+
+            /**
+             * Check if email address not exist in redis throw error
+             */
+            if ($otpData == null) {
+                throw new AuthException("Pre-register expired please try again!");
+            }
+
+            $otpData = json_decode($otpData, true);
+
+            if ($otpData['otp'] != $otp) {
+                throw new AuthException("Invalid OTP!");
+            }
+
+            if ($otpData['uuid'] != $uuid) {
+                throw new AuthException("Illegal OTP access!");
+            }
+
+            $this->redisRepository->deleteRedis("pre-register:{$rawEmail}");
+        }
+
         $isExist = $this->mainRepository->isEmailExist($email);
 
         //Throw error when email already taken
@@ -53,6 +97,7 @@ class AuthServiceImplement extends Service implements AuthService{
             'name' => $name,
             'email' => $email,
             'password' => bcrypt($password),
+            'email_verified_at' => now(),
         ]);
 
         return $user;
