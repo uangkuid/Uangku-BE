@@ -155,6 +155,10 @@ class AuthController extends Controller
                 'public_key' => $userKey->public_key,
                 'private_key' => $userKey->private_key,
             ]), 201);
+        } catch (AuthException $e) {
+            DB::rollBack();
+            Log::error("Failed create account " . $e->getMessage());
+            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
         } catch (Exception $e) {
             DB::rollBack();
             Log::error("Failed create account " . $e->getMessage());

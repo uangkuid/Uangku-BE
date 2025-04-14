@@ -38,15 +38,15 @@ class AuthServiceImplement extends Service implements AuthService{
      * @param string $email Encrypted email
      * @param string $password Raw password
      * @return User
-     * @throws Exception
+     * @throws AuthException
      */
     public function register(string $name, string $email, string $password): User
     {
-        $user = User::where('email', $email);
+        $isExist = $this->mainRepository->isEmailExist($email);
 
         //Throw error when email already taken
-        if ($user->count() > 0) {
-            throw new Exception("Email already taken!");
+        if ($isExist) {
+            throw new AuthException("Email already taken!");
         }
 
         $user = $this->mainRepository->create([

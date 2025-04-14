@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Auth;
+use App\Exceptions\AuthException;
 use App\Models\User;
 use App\Models\UserKey;
 use LaravelEasyRepository\BaseService;
@@ -13,6 +14,7 @@ interface AuthService extends BaseService{
      * @param string $email
      * @param string $password
      * @return User
+     * @throws AuthException
      */
     function register(
         string $name,
