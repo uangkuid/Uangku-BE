@@ -11,6 +11,7 @@
         "laravel/tinker": "^2.9",
         "php-open-source-saver/jwt-auth": "^2.3",
         "predis/predis": "^2.0",
+        "resend/resend-laravel": "^0.17.0",
         "yaza/laravel-repository-service": "^6.0"
     },
     "require-dev": {

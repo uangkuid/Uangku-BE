@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 use App\Exceptions\AuthException;
 use App\Models\User;
 use App\Models\UserKey;
+use Exception;
 use LaravelEasyRepository\BaseService;
 
 interface AuthService extends BaseService{
@@ -43,6 +44,8 @@ interface AuthService extends BaseService{
      * Pre-register a new user. active for 5 minutes when expired user will delete automatically
      * @param string $email
      * @return void
+     * @throws AuthException
+     * @throws Exception
      */
     function preRegister(
         string $email

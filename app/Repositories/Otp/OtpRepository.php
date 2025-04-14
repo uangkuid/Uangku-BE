@@ -6,5 +6,16 @@ use LaravelEasyRepository\Repository;
 
 interface OtpRepository extends Repository{
 
-    // Write something awesome :)
+    /**
+     * Send OTP to the user using email
+     * @param string $email
+     * @param string $subject
+     * @param string $content
+     * @return void
+     */
+    function sendEmail(
+        string $email,
+        string $subject,
+        string $content,
+    );
 }

@@ -19,7 +19,7 @@ class OtpServiceImplement extends Service implements OtpService
     protected OtpRepository $mainRepository;
     private RedisRepository $redisRepository;
 
-    protected int $ttl = 300; // 5 minutes
+    private int $ttl = 300; // 5 minutes
 
     /**
      * @param OtpRepository $mainRepository
@@ -74,6 +74,14 @@ class OtpServiceImplement extends Service implements OtpService
             'otp' => $otp,
             'uuid' => $uuid,
         ]), $this->ttl);
+
+        $html = view('emails.otp', ['otp' => $otp])->render();
+
+        $this->mainRepository->sendEmail(
+            email: $email,
+            subject: "Uangku OTP Verification",
+            content: $html,
+        );
 
         return [
             'email' => $email,
