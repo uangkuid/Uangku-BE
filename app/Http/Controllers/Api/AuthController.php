@@ -425,7 +425,7 @@ class AuthController extends Controller
 
         //if validation fails
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to Register", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, "Failed to pre-register", $validator->errors()), 400);
         }
 
         try {
