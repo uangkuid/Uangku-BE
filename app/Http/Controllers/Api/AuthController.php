@@ -48,14 +48,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -175,25 +167,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
     {
         //
     }
@@ -328,7 +304,7 @@ class AuthController extends Controller
         }
     }
 
-    public function refreshToken(Request $request)
+    public function refreshToken(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'refresh_token' => 'required'
@@ -439,7 +415,9 @@ class AuthController extends Controller
                 ]
             ));
         } catch (AuthException $e) {
-            Log::error("Failed to pre-register " . $e->getMessage());
+            Log::error("Failed to pre-register " . $e->getMessage(), [
+                'email' => $request->email
+            ]);
             return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
         } catch (Exception $e) {
             Log::error("Failed to pre-register " . $e->getMessage());

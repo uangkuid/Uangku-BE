@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FamiliesController;
 use App\Http\Controllers\Api\GeneralController;
+use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Controllers\Api\WalletController;
@@ -47,6 +48,12 @@ Route::controller(AuthController::class)->group(function () {
 
     Route::middleware('auth:api')->group(function () {
         Route::get('user', 'index');
+    });
+});
+
+Route::controller(OtpController::class)->group(function (){
+    Route::prefix('otp')->group(function () {
+        Route::post('send/register', 'sendRegister');
     });
 });
 
