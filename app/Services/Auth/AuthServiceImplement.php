@@ -2,9 +2,11 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\AuthException;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\UserKey;
+use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
 use Exception;
 use LaravelEasyRepository\Service;
@@ -17,10 +19,18 @@ class AuthServiceImplement extends Service implements AuthService{
      */
      protected UserRepository $mainRepository;
 
-    public function __construct(UserRepository $mainRepository)
+     private RedisRepository $redisRepository;
+
+    /**
+     * @param UserRepository $mainRepository
+     * @param RedisRepository $redisRepository
+     */
+    public function __construct(UserRepository $mainRepository, RedisRepository $redisRepository)
     {
-      $this->mainRepository = $mainRepository;
+        $this->mainRepository = $mainRepository;
+        $this->redisRepository = $redisRepository;
     }
+
 
     /**
      * Register a new user.
@@ -68,5 +78,37 @@ class AuthServiceImplement extends Service implements AuthService{
             publicKey: $publicKey,
             privateKey: $encryptedPrivateKey,
         );
+    }
+
+    /**
+     * Pre-register a new user. active for 5 minutes when expired user will delete automatically
+     * @param string $email
+     * @return void
+     * @throws AuthException
+     * @throws Exception
+     */
+    public function preRegister(string $email)
+    {
+        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $isExist = $this->mainRepository->isEmailExist(EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: $staticIv,
+        ));
+
+        if ($isExist) {
+            throw new AuthException("Email already taken!");
+        }
+
+        $isExist = $this->redisRepository->getRedis("pre-register:{$email}");
+
+        if ($isExist != null) {
+            throw new AuthException("Email already taken!");
+        }
+
+        $this->redisRepository->storeRedis("pre-register:{$email}", json_encode([
+            "email" => $email,
+            "created_at" => now(),
+        ]), (5 * 60)); // Store for 5 minutes
     }
 }

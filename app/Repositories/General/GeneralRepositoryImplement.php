@@ -19,19 +19,4 @@ class GeneralRepositoryImplement extends Eloquent implements GeneralRepository{
     {
         $this->model = $model;
     }
-
-    public function storeRedis($key, $value, $expire = 0)
-    {
-        Redis::command('set', [$key, $value, 'EX', 60]);
-    }
-
-    public function getRedis($key): string
-    {
-        return Redis::get($key);
-    }
-
-    public function deleteRedis($key)
-    {
-        Redis::del($key);
-    }
 }

@@ -15,8 +15,4 @@ class GeneralController extends Controller
     {
         $this->generalRepository = $generalRepository;
     }
-
-    public function keyExchange(Request $request) {
-
-    }
 }

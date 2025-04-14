@@ -32,12 +32,13 @@ Route::middleware('session')->group(function () {
  */
 Route::controller(GeneralController::class)->group(function () {
     Route::prefix("general")->group(function () {
-        Route::post("key-exchange", "keyExchange");
+
     });
 });
 
 Route::controller(AuthController::class)->group(function () {
     Route::prefix('auth')->group(function () {
+        Route::post('pre-register', 'preRegister');
         Route::post('register', 'store');
         Route::post('login', 'login');
         Route::post('logout', 'logout');

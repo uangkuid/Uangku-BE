@@ -42,9 +42,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('auto-auth', [
             AutoSelectAuthMiddleware::class
         ]);
-        $middleware->appendToGroup('session', [
-            SessionMiddleware::class
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (AuthenticationException $e, Request $request) {

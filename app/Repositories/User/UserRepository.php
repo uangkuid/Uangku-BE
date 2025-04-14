@@ -19,4 +19,13 @@ interface UserRepository extends Repository{
         string $publicKey,
         string $privateKey,
     ): UserKey;
+
+    /**
+     * Check if the email already exists in the database.
+     * @param string $email
+     * @return bool
+     */
+    function isEmailExist(
+        string $email,
+    ): bool;
 }

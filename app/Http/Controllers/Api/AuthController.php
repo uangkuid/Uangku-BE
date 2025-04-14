@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\RoleWallet;
+use App\Exceptions\AuthException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Models\UserSeasons;
@@ -28,10 +29,11 @@ class AuthController extends Controller
     private WalletService $walletService;
 
     public function __construct(
-        AuthService $authService,
+        AuthService        $authService,
         UserSessionService $userSessionService,
-        WalletService $walletService
-    ) {
+        WalletService      $walletService
+    )
+    {
         $this->authService = $authService;
         $this->userSessionService = $userSessionService;
         $this->walletService = $walletService;
@@ -293,7 +295,7 @@ class AuthController extends Controller
             ->where('users', $user->id)
             ->first();
 
-        if(!$userSeasons) {
+        if (!$userSeasons) {
             return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
         }
 
@@ -353,7 +355,7 @@ class AuthController extends Controller
                 ->where('users', $user->id)
                 ->first();
 
-            if(!$userSeasons) {
+            if (!$userSeasons) {
                 return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
             }
 
@@ -408,5 +410,36 @@ class AuthController extends Controller
         $refreshToken = JWTAuth::claims($customClaims)->fromUser($user);
 
         return $refreshToken;
+    }
+
+    public function preRegister(Request $request): JsonResponse
+    {
+        //set validation
+        $validator = Validator::make($request->all(), [
+            'email' => 'required'
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to Register", $validator->errors()), 400);
+        }
+
+        try {
+            $this->authService->preRegister($request->email);
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Pre-register success",
+                resource: [
+                    'email' => $request->email,
+                ]
+            ));
+        } catch (AuthException $e) {
+            Log::error("Failed to pre-register " . $e->getMessage());
+            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+        } catch (Exception $e) {
+            Log::error("Failed to pre-register " . $e->getMessage());
+            return response()->json(new BaseResponse(409, "Failed to pre-register " . $e->getMessage(), null), 409);
+        }
     }
 }
