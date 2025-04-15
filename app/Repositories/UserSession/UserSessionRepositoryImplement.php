@@ -19,5 +19,26 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
         $this->model = $model;
     }
 
-    // Write something awesome :)
+    /**
+     * Check if the refresh token exists in the database.
+     * @param string $refreshToken
+     * @return bool
+     */
+    function isRefreshTokenExist($refreshToken): bool
+    {
+        return $this->model->where('refresh_token', $refreshToken)->exists();
+    }
+
+    /**
+     * Get the user session by refresh token and user ID.
+     * @param string $userId
+     * @param string $refreshToken
+     * @return UserSeasons|null
+     */
+    function getByUserIdAndRefreshToken(string $userId, string $refreshToken): ?UserSeasons
+    {
+        return $this->model->where('users', $userId)
+            ->where('refresh_token', $refreshToken)
+            ->first();
+    }
 }

@@ -5,13 +5,13 @@ namespace App\Services\Auth;
 use App\Exceptions\AuthException;
 use App\Helpers\EncryptionHelper;
 use App\Helpers\TokenHelper;
-use App\Models\User;
 use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthServiceImplement extends Service implements AuthService
 {
@@ -240,5 +240,17 @@ class AuthServiceImplement extends Service implements AuthService
             "token" => $token,
             "refresh_token" => $refresh_token,
         ];
+    }
+
+    /**
+     * Logout a user. and revoke the token
+     * @param string $token
+     * @param string $refreshToken
+     * @return bool
+     * @throws AuthException
+     */
+    function logout(string $token, string $refreshToken): bool
+    {
+        return JWTAuth::setToken($token)->invalidate() && JWTAuth::setToken($refreshToken)->invalidate();
     }
 }

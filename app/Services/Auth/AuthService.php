@@ -13,7 +13,6 @@ interface AuthService extends BaseService{
      * Register a new user.
      * @param string $name
      * @param string $email
-     * @param string $rawEmail
      * @param string $password
      * @param string $otp
      * @param string $uuid
@@ -82,4 +81,16 @@ interface AuthService extends BaseService{
         string $password,
         string $secretKey
     ): array;
+
+    /**
+     * Logout a user. and revoke the token
+     * @param string $token
+     * @param string $refreshToken
+     * @return bool
+     * @throws AuthException
+     */
+    function logout(
+        string $token,
+        string $refreshToken
+    ): bool;
 }

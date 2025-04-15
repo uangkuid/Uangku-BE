@@ -2,8 +2,11 @@
 
 namespace App\Services\UserSession;
 
+use App\Exceptions\AuthException;
+use App\Exceptions\SessionException;
 use LaravelEasyRepository\Service;
 use App\Repositories\UserSession\UserSessionRepository;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class UserSessionServiceImplement extends Service implements UserSessionService{
 
@@ -18,5 +21,34 @@ class UserSessionServiceImplement extends Service implements UserSessionService{
       $this->mainRepository = $mainRepository;
     }
 
-    // Define your custom methods :)
+    /**
+     * Revoke a user session by refresh token.
+     * @param string $refreshToken
+     * @throws SessionException
+     */
+    function revokeSession(string $refreshToken)
+    {
+        $isExist = $this->mainRepository->isRefreshTokenExist($refreshToken);
+
+        if (!$isExist) {
+            throw new SessionException("Invalid refresh token");
+        }
+
+        $user = JWTAuth::setToken($refreshToken)->toUser();
+
+        if (!$user) {
+            throw new SessionException("Invalid refresh token");
+        }
+
+        $userSession = $this->mainRepository->getByUserIdAndRefreshToken(
+            $user->id,
+            $refreshToken
+        );
+
+        if(!$userSession) {
+            throw new SessionException("Invalid refresh token");
+        }
+
+        $userSession->delete();
+    }
 }

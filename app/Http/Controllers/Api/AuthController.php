@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
+use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
 use App\Helpers\TokenHelper;
 use App\Http\Controllers\Controller;
@@ -217,51 +218,39 @@ class AuthController extends Controller
             return response()->json(new BaseResponse(400, "Failed to logout", $validator->errors()), 400);
         }
 
-        $refreshToken = $request->input('refresh_token');
+        try {
 
-        // Verifikasi refresh token
-        $isExist = UserSeasons::where('refresh_token', $refreshToken)->exists();
+            $this->userSessionService->revokeSession($request->refresh_token);
 
-        if (!$isExist) {
-            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-        }
-
-        $user = JWTAuth::setToken($refreshToken)->toUser();
-
-        if (!$user) {
-            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-        }
-
-        $userSeasons = UserSeasons::where('refresh_token', $refreshToken)
-            ->where('users', $user->id)
-            ->first();
-
-        if (!$userSeasons) {
-            return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-        }
-
-        $userSeasons->delete();
-
-        $revokeToken = JWTAuth::invalidate(JWTAuth::getToken());
-        $revokeRefreshToken = JWTAuth::invalidate($refreshToken);
-
-        if ($revokeToken && $revokeRefreshToken) {
-            return response()->json(
-                new BaseResponse(
-                    200,
-                    "Logout has been successfully",
-                    null
-                )
+            $logout = $this->authService->logout(
+                token: $request->bearerToken(),
+                refreshToken: $request->refresh_token
             );
-        } else {
-            return response()->json(
-                new BaseResponse(
-                    500,
-                    "Logout failed",
-                    null
-                ),
-                500
-            );
+
+            if ($logout) {
+                return response()->json(
+                    new BaseResponse(
+                        200,
+                        "Logout has been successfully",
+                        null
+                    )
+                );
+            } else {
+                return response()->json(
+                    new BaseResponse(
+                        500,
+                        "Logout failed",
+                        null
+                    ),
+                    500
+                );
+            }
+        } catch (SessionException $e) {
+            Log::error("Failed to logout " . $e->getMessage());
+            return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (Exception $e) {
+            Log::error("Failed to logout " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to logout " . $e->getMessage(), null), 500);
         }
     }
 
