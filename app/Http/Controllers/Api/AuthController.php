@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
 use App\Helpers\EncryptionHelper;
+use App\Helpers\TokenHelper;
 use App\Http\Controllers\Controller;
 use App\Models\UserSeasons;
-use App\Models\Wallet;
-use App\Models\WalletAccess;
 use App\Services\Auth\AuthService;
 use App\Services\UserSession\UserSessionService;
 use App\Services\Wallet\WalletService;
@@ -20,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -70,36 +71,26 @@ class AuthController extends Controller
             DB::beginTransaction();
 
             /**
-             * Prepare data before create account
-             */
-            $secretKey = EncryptionHelper::generateUsersSecretKey();
-            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
-            $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
-            $rawPublicKey = base64_decode($asymmetricKey["public"]);
-
-            /**
              * Create Account
              */
-            $user = $this->authService->register(
-                name: EncryptionHelper::encryptAsymmetric($request->name, $rawPublicKey),
-                email: EncryptionHelper::encryptAsString(
-                    data: $request->email,
-                    key: EncryptionHelper::getSystemSecretKey(),
-                    iv: $staticIv,
-                ),
-                rawEmail: $request->email,
+            $registerResult = $this->authService->register(
+                name: $request->name,
+                email: $request->email,
                 password: $request->password,
                 otp: $request->otp,
                 uuid: $request->uuid,
             );
+
+            $user = $registerResult["user"];
+
             /**
              * Save User Key
              */
             $userKey = $this->authService->saveUserKey(
                 userId: $user->id,
-                publicKey: $asymmetricKey['public'],
-                privateKey: $asymmetricKey['private'],
-                secretKey: $secretKey,
+                publicKey: $registerResult['public_key'],
+                privateKey: $registerResult['private_key'],
+                secretKey: $registerResult['secret_key'],
                 password: $request->password
             );
 
@@ -109,8 +100,8 @@ class AuthController extends Controller
              * Create users wallet
              */
             $wallet = $this->walletService->create([
-                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $rawPublicKey),
-                'amount' => EncryptionHelper::encryptAsymmetric("0", $rawPublicKey),
+                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $registerResult['raw_public_key']),
+                'amount' => EncryptionHelper::encryptAsymmetric("0", $registerResult['raw_public_key']),
                 'created_by' => $user->id,
             ]);
 
@@ -123,14 +114,11 @@ class AuthController extends Controller
                 accessType: RoleWallet::Admin
             );
 
-            $accessToken = auth()->login($user);
-            $refreshToken = $this->generateRefreshToken($user);
-
             /**
              * Save users to seasons
              */
             $this->userSessionService->create([
-                'refresh_token' => $refreshToken,
+                'refresh_token' => $registerResult['refresh_token'],
                 'users' => $user->id
             ]);
 
@@ -140,15 +128,15 @@ class AuthController extends Controller
                 "id" => $user->id,
                 "name" => $request->name,
                 "email" => $request->email,
-                "secret_key" => $secretKey,
+                "secret_key" => $registerResult['secret_key'],
                 'wallet' => [
                     "id" => $wallet->id,
                     "name" => $wallet_name,
                     "amount" => "0",
                     'role' => $walletAccess->role
                 ],
-                'token' => $accessToken,
-                'refresh_token' => $refreshToken,
+                'token' => $registerResult['token'],
+                'refresh_token' => $registerResult['refresh_token'],
                 'public_key' => $userKey->public_key,
                 'private_key' => $userKey->private_key,
             ]), 201);
@@ -187,13 +175,12 @@ class AuthController extends Controller
                 secretKey: $request->secret_key
             );
             $user = $loginResult['user'];
-            $refresh_token = $this->generateRefreshToken($user);
             $userKey = $this->authService->getUserKey($user->id);
 
             //Save to user seasons
             $this->userSessionService->create([
                 'users' => $user->id,
-                'refresh_token' => $refresh_token
+                'refresh_token' => $loginResult["refresh_token"]
             ]);
 
             return response()->json(new BaseResponse(
@@ -204,7 +191,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'avatar' => $user->avatar,
                     'token' => $loginResult['token'],
-                    'refresh_token' => $refresh_token,
+                    'refresh_token' => $loginResult["refresh_token"],
                     'public_key' => $userKey->public_key,
                     'private_key' => $userKey->private_key,
                 ]

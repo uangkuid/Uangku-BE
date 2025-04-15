@@ -6,5 +6,5 @@ use LaravelEasyRepository\BaseService;
 
 interface UserSessionService extends BaseService{
 
-    // Write something awesome :)
+
 }

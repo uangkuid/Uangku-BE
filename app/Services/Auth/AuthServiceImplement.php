@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Exceptions\AuthException;
 use App\Helpers\EncryptionHelper;
+use App\Helpers\TokenHelper;
 use App\Models\User;
 use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
@@ -41,25 +42,38 @@ class AuthServiceImplement extends Service implements AuthService
      * @param string $password
      * @param string $otp
      * @param string $uuid
-     * @return User
+     * @param bool $isSeeder
+     * @return array
      * @throws AuthException
+     * @throws Exception
      */
     public function register(
         string $name,
         string $email,
-        string $rawEmail,
         string $password,
         string $otp,
         string $uuid,
         bool   $isSeeder = false
-    ): User
+    ): array
     {
+        /**
+         * Prepare data before create account
+         */
+        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: $staticIv,
+        );
+        $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
+        $rawPublicKey = base64_decode($asymmetricKey["public"]);
+        $secretKey = EncryptionHelper::generateUsersSecretKey();
 
         /**
          * Skip checking OTP if seeder
          */
         if (!$isSeeder) {
-            $otpData = $this->redisRepository->getRedis("pre-register:{$rawEmail}");
+            $otpData = $this->redisRepository->getRedis("pre-register:{$email}");
 
             Log::info("OTP Data: ", [
                 "otpData" => $otpData,
@@ -83,10 +97,10 @@ class AuthServiceImplement extends Service implements AuthService
                 throw new AuthException("Illegal OTP access!");
             }
 
-            $this->redisRepository->deleteRedis("pre-register:{$rawEmail}");
+            $this->redisRepository->deleteRedis("pre-register:{$email}");
         }
 
-        $isExist = $this->mainRepository->isEmailExist($email);
+        $isExist = $this->mainRepository->isEmailExist($encryptedEmail);
 
         //Throw error when email already taken
         if ($isExist) {
@@ -94,13 +108,24 @@ class AuthServiceImplement extends Service implements AuthService
         }
 
         $user = $this->mainRepository->create([
-            'name' => $name,
-            'email' => $email,
+            'name' => EncryptionHelper::encryptAsymmetric($name, $rawPublicKey),
+            'email' => $encryptedEmail,
             'password' => bcrypt($password),
             'email_verified_at' => now(),
         ]);
 
-        return $user;
+        $accessToken = auth()->login($user);
+        $refreshToken = TokenHelper::generateRefreshToken($user);
+
+        return [
+            "user" => $user,
+            "public_key" => $asymmetricKey['public'],
+            "private_key" => $asymmetricKey['private'],
+            "raw_public_key" => $rawPublicKey,
+            "secret_key" => $secretKey,
+            "token" => $accessToken,
+            "refresh_token" => $refreshToken,
+        ];
     }
 
     /**
@@ -207,9 +232,13 @@ class AuthServiceImplement extends Service implements AuthService
             throw new AuthException("Wrong email or password!");
         }
 
+        $user = auth()->guard('api')->user();
+        $refresh_token = TokenHelper::generateRefreshToken($user);
+
         return [
-            "user" => auth()->guard('api')->user(),
+            "user" => $user,
             "token" => $token,
+            "refresh_token" => $refresh_token,
         ];
     }
 }

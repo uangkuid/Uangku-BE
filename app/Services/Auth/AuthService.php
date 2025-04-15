@@ -18,18 +18,17 @@ interface AuthService extends BaseService{
      * @param string $otp
      * @param string $uuid
      * @param bool $isSeeder
-     * @return User
+     * @return array
      * @throws AuthException
      */
     function register(
         string $name,
         string $email,
-        string $rawEmail,
         string $password,
         string $otp,
         string $uuid,
         bool $isSeeder = false
-    ): User;
+    ): array;
 
     /**
      * Save the user's public and private keys.

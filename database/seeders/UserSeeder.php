@@ -26,29 +26,19 @@ class UserSeeder extends Seeder
         $walletService = app(WalletService::class);
         $userSessionService = app(UserSessionService::class);
         DB::transaction(function () use ($authService, $walletService, $userSessionService) {
-            $secretKey = env('ADMIN_SECRET_KEY');
-            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
             $password = "Password123";
-            $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
-            $rawPublicKey = base64_decode($asymmetricKey["public"]);
-            $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
-
             /**
              * Create Account
              */
-            $user = $authService->register(
-                name: EncryptionHelper::encryptAsymmetric('Administrator', $rawPublicKey),
-                email: EncryptionHelper::encryptAsString(
-                    data: "admin@uangku.com",
-                    key: EncryptionHelper::getSystemSecretKey(),
-                    iv: $staticIv,
-                ),
-                rawEmail: "admin@uangku.com",
+            $registerResult = $authService->register(
+                name: "Administrator",
+                email: "admin@uangku.com",
                 password: $password,
                 otp: "000000",
                 uuid: "00000000-0000-0000-0000-000000000000",
                 isSeeder: true,
             );
+            $user = $registerResult['user'];
 //            $user = User::create([
 //                'name' => EncryptionHelper::encryptAsString(
 //                    data: 'Administrator',
@@ -68,9 +58,9 @@ class UserSeeder extends Seeder
              */
             $userKey = $authService->saveUserKey(
                 userId: $user->id,
-                publicKey: $asymmetricKey['public'],
-                privateKey: $asymmetricKey['private'],
-                secretKey: $secretKey,
+                publicKey: $registerResult['public_key'],
+                privateKey: $registerResult['private_key'],
+                secretKey: $registerResult['secret_key'],
                 password: $password
             );
 
@@ -80,8 +70,8 @@ class UserSeeder extends Seeder
              * Create users wallet
              */
             $wallet = $walletService->create([
-                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $rawPublicKey),
-                'amount' => EncryptionHelper::encryptAsymmetric("0", $rawPublicKey),
+                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $registerResult['raw_public_key']),
+                'amount' => EncryptionHelper::encryptAsymmetric("0", $registerResult['raw_public_key']),
                 'created_by' => $user->id,
             ]);
 //            $wallet = Wallet::create([
