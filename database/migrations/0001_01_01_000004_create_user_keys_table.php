@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('users')->index();
             $table->text('private_key');
             $table->text('public_key');
+            $table->text('hashed_key', 255);
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');

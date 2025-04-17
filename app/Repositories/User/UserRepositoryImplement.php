@@ -6,21 +6,23 @@ use App\Models\UserKey;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\User;
 
-class UserRepositoryImplement extends Eloquent implements UserRepository{
+class UserRepositoryImplement extends Eloquent implements UserRepository
+{
 
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     * @property Model|mixed $model;
+     */
     protected User $model;
 
     private UserKey $user_key;
 
     public function __construct(
-        User $model,
+        User    $model,
         UserKey $user_key
-    ) {
+    )
+    {
         $this->model = $model;
         $this->user_key = $user_key;
     }
@@ -30,14 +32,16 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
      * @param string $userId
      * @param string $publicKey
      * @param string $privateKey
-     * @return void
+     * @param string $hashedKey
+     * * @return UserKey
      */
-    function saveUserKey(string $userId, string $publicKey, string $privateKey,) : UserKey
+    function saveUserKey(string $userId, string $publicKey, string $privateKey, string $hashedKey): UserKey
     {
         return $this->user_key->create([
             'users' => $userId,
             'public_key' => $publicKey,
             'private_key' => $privateKey,
+            'hashed_key' => $hashedKey
         ]);
     }
 
@@ -48,7 +52,8 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
      */
     function isEmailExist(
         string $email,
-    ): bool {
+    ): bool
+    {
         return $this->model
                 ->select('email')
                 ->where('email', $email)->count() > 0;
@@ -62,7 +67,11 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
     function getUserKey(string $userId): ?UserKey
     {
         return $this->user_key
-            ->select('public_key', 'private_key')
+            ->select(
+                'public_key',
+                'private_key',
+                'hashed_key'
+            )
             ->where('users', $userId)->first();
     }
 }

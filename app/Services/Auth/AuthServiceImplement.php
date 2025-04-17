@@ -102,6 +102,11 @@ class AuthServiceImplement extends Service implements AuthService
             }
 
             $this->redisRepository->deleteRedis("pre-register:{$email}");
+        } else {
+            /**
+             * Replace the secret key with the default secret key if seeder
+             */
+            $secretKey = env('ADMIN_SECRET_KEY', $secretKey);
         }
 
         $isExist = $this->mainRepository->isEmailExist($encryptedEmail);
@@ -146,11 +151,13 @@ class AuthServiceImplement extends Service implements AuthService
     {
         $encryptMasterKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
         $encryptedPrivateKey = EncryptionHelper::encryptAsString($privateKey, $encryptMasterKey);
+        $hashedKey = EncryptionHelper::hashSecretKey($secretKey);
 
         return $this->mainRepository->saveUserKey(
             userId: $userId,
             publicKey: $publicKey,
             privateKey: $encryptedPrivateKey,
+            hashedKey: $hashedKey,
         );
     }
 
@@ -239,6 +246,15 @@ class AuthServiceImplement extends Service implements AuthService
         }
 
         $user = auth()->guard('api')->user();
+        /**
+         * Validate secret key
+         */
+        $userKey = $this->mainRepository->getUserKey($user->id);
+
+        if ($userKey->hashed_key == null || !EncryptionHelper::validateSecretKey($secretKey, $userKey->hashed_key)) {
+            throw new AuthException("Invalid secret key!");
+        }
+
         $refresh_token = TokenHelper::generateRefreshToken($user);
 
         return [

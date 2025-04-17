@@ -4,6 +4,8 @@ namespace App\Helpers;
 
 use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Random\RandomException;
 
 class EncryptionHelper
@@ -20,7 +22,7 @@ class EncryptionHelper
     public static function encrypt(string $data, string $key = null): array
     {
         // Use dynamic secret key from .env or default value
-        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
 
         // Ensure the key is the right length for AES-256
         $key = substr(hash('sha256', $key, true), 0, 32);
@@ -75,7 +77,7 @@ class EncryptionHelper
     public static function encryptAsString(string $data, string $key = null, string $iv = null): string
     {
         // Use dynamic secret key from .env or default value
-        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
 
         // Ensure the key is the right length for AES-256
         $key = substr(hash('sha256', $key, true), 0, 32);
@@ -96,6 +98,29 @@ class EncryptionHelper
     }
 
     /**
+     * Hash the given secret key using a salt.
+     * @param string $secretKey
+     * @return string
+     */
+    public static function hashSecretKey(string $secretKey): string
+    {
+        $salt = env('MAIN_SALT_KEY', 'Password');
+        return Hash::make($salt . $secretKey . $salt);
+    }
+
+    /**
+     * Validate the given secret key against the hashed data.
+     * @param string $inputKey
+     * @param string $hashedData
+     * @return bool
+     */
+    public static function validateSecretKey(string $inputKey, string $hashedData): bool
+    {
+        $salt = env('MAIN_SALT_KEY', 'Password');
+        return Hash::check($salt . $inputKey . $salt, $hashedData);
+    }
+
+    /**
      * Decrypt the given data using AES-CBC.
      *
      * @param string $encryptedData
@@ -107,7 +132,7 @@ class EncryptionHelper
     public static function decrypt(string $encryptedData, string $iv, string $key = null): string
     {
         // Use dynamic secret key from .env or default value
-        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
 
         // Ensure the key is the right length for AES-256
         $key = substr(hash('sha256', $key, true), 0, 32);
@@ -154,9 +179,10 @@ class EncryptionHelper
      * @return string
      * @throws SecurityException
      */
-    public static function decryptFromString(string $encryptedData, string $key = null): string {
+    public static function decryptFromString(string $encryptedData, string $key = null): string
+    {
         // Use dynamic secret key from .env or default value
-        $key = $key ?? env('ENCRYPTION_KEY', 'Password');
+        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
 
         // Ensure the key is the right length for AES-256
         $key = substr(hash('sha256', $key, true), 0, 32);
@@ -201,7 +227,8 @@ class EncryptionHelper
      * Get system secret key and salt.
      * @return string
      */
-    public static function getSystemSecretKey(): string {
+    public static function getSystemSecretKey(): string
+    {
         return env('MAIN_SECRET_KEY') . env('MAIN_SALT_KEY');
     }
 
@@ -210,7 +237,8 @@ class EncryptionHelper
      * @param $secretKey
      * @return string
      */
-    public static function getUsersSalt($secretKey): string {
+    public static function getUsersSalt($secretKey): string
+    {
         $secretKeyAsArray = explode("-", $secretKey);
         return self::xorString($secretKeyAsArray[1] . "-" . $secretKeyAsArray[0] . "-" . end($secretKeyAsArray), 16);
     }
@@ -246,10 +274,11 @@ class EncryptionHelper
      *
      * @return string A unique encrypted key for the user.
      */
-    public static function getUsersEncryptKey(string $secretKey, string $password): string {
+    public static function getUsersEncryptKey(string $secretKey, string $password): string
+    {
         $salt = self::getUsersSalt($secretKey);
         $secretKeySanitize = str_replace("-", "", $secretKey);
-        return self::xorString(($salt.$password.$secretKeySanitize), 8);
+        return self::xorString(($salt . $password . $secretKeySanitize), 8);
     }
 
     /**
@@ -262,11 +291,12 @@ class EncryptionHelper
      *
      * @return string A unique encrypted key for the user.
      */
-    public static function getFamilyEncryptionKey(string $secretKey): string {
+    public static function getFamilyEncryptionKey(string $secretKey): string
+    {
         $salt = self::getUsersSalt($secretKey);
         $secretKeySanitize = str_replace("-", "", $secretKey);
         $secretKeyAsArray = explode("-", $secretKey);
-        return $salt.$secretKeyAsArray[1].$secretKeySanitize;
+        return $salt . $secretKeyAsArray[1] . $secretKeySanitize;
     }
 
     /**

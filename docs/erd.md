@@ -20,6 +20,7 @@ erDiagram
         users uuid FK
         public_key varchar
         private_key varchar
+        hashed_key varchar
     }
 
     user_sessions {
@@ -155,6 +156,7 @@ erDiagram
 | users       | uuid    | FK    | Foreign key referencing the users table                                                                            |
 | public_key  | varchar |       | Public key of the user, encoded using base64                                                                       |
 | private_key | varchar |       | Private key of the user, encrypted using AES-CBC-256 using key user secret_key + user passwords, encoded by base64 |
+| hashed_key  | varchar |       | User Secret Key hash with bcrypt and salt                                                                          |
 
 ### User Session Table
 

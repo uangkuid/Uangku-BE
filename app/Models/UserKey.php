@@ -13,6 +13,7 @@ class UserKey extends Model
     protected $fillable = [
         'public_key',
         'private_key',
-        'users'
+        'users',
+        'hashed_key',
     ];
 }

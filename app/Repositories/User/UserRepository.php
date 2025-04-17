@@ -12,12 +12,14 @@ interface UserRepository extends Repository{
      * @param string $userId
      * @param string $publicKey
      * @param string $privateKey
-     * @return void
+     * @param string $hashedKey
+     * @return UserKey
      */
     function saveUserKey(
         string $userId,
         string $publicKey,
         string $privateKey,
+        string $hashedKey
     ): UserKey;
 
     /**
