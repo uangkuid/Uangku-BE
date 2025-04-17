@@ -34,7 +34,28 @@ class OtpController extends Controller
         }
 
         try {
-            $otp = $this->otpService->sendOtpRegister($request->email);
+            $otp = $this->otpService->sendRegister($request->email);
+
+            return response()->json(new BaseResponse(200, "OTP sent successfully", $otp), 200);
+        } catch (AuthException $e) {
+            Log::error("Failed to send otp", [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+            return response()->json(new BaseResponse(404, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to send otp", [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+            return response()->json(new BaseResponse(500, "Failed to send otp", $e->getMessage()), 500);
+        }
+    }
+
+    function sendChangePassword(Request $request): JsonResponse
+    {
+        try {
+            $otp = $this->otpService->sendChangePassword($request->bearerToken());
 
             return response()->json(new BaseResponse(200, "OTP sent successfully", $otp), 200);
         } catch (AuthException $e) {

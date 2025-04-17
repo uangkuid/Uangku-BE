@@ -2,11 +2,15 @@
 
 namespace App\Services\Otp;
 
+use App\Enums\OtpType;
 use App\Exceptions\AuthException;
+use App\Helpers\EncryptionHelper;
 use App\Repositories\Redis\RedisRepository;
+use Exception;
 use Illuminate\Support\Str;
 use LaravelEasyRepository\Service;
 use App\Repositories\Otp\OtpRepository;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Random\RandomException;
 
 class OtpServiceImplement extends Service implements OtpService
@@ -42,34 +46,29 @@ class OtpServiceImplement extends Service implements OtpService
         return (string)$otp;
     }
 
-
     /**
-     * Send OTP to the user for registration.
+     * Send OTP to email address with given subject email
      * @param string $email
+     * @param string $subject
+     * @param OtpType $otpKey
      * @return array
      * @throws RandomException
-     * @throws AuthException
      */
-    function sendOtpRegister(string $email): array
+    private function sendEmail(
+        string $email,
+        string $subject,
+        OtpType $otpKey
+    ): array
     {
-        $isExist = $this->redisRepository->getRedis("pre-register:{$email}");
-
-        /**
-         * Check if email address not exist in redis throw error
-         */
-        if ($isExist == null) {
-            throw new AuthException("Pre-register expired please try again!");
-        }
-
         $otp = $this->generate();
         $uuid = Str::uuid()->toString();
 
         /**
-         * Delete the pre-register email from redis and replace with otp value
+         * Delete the otp session email from redis and replace with otp value
          */
-        $this->redisRepository->deleteRedis("pre-register:{$email}");
+        $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
 
-        $this->redisRepository->storeRedis("pre-register:{$email}", json_encode([
+        $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
             'email' => $email,
             'otp' => $otp,
             'uuid' => $uuid,
@@ -79,7 +78,7 @@ class OtpServiceImplement extends Service implements OtpService
 
         $this->mainRepository->sendEmail(
             email: $email,
-            subject: "Uangku OTP Verification",
+            subject: $subject,
             content: $html,
         );
 
@@ -87,5 +86,70 @@ class OtpServiceImplement extends Service implements OtpService
             'email' => $email,
             'uuid' => $uuid,
         ];
+    }
+
+    /**
+     * Send OTP to the user for registration.
+     * @param string $email
+     * @return array
+     * @throws RandomException
+     * @throws AuthException
+     */
+    function sendRegister(string $email): array
+    {
+        $otpKey = OtpType::Register;
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+
+        /**
+         * Check if email address not exist in redis throw error
+         */
+        if ($isExist == null) {
+            throw new AuthException("Pre-register expired please try again!");
+        }
+
+        return $this->sendEmail(
+            email: $email,
+            subject: "Uangku Register Verification",
+            otpKey: $otpKey,
+        );
+    }
+
+    /**
+     * Send OTP to the user for changing password.
+     * @param string $token
+     * @return array
+     * @throws RandomException
+     * @throws AuthException
+     * @throws Exception
+     */
+    function sendChangePassword(string $token): array
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("Invalid token");
+        }
+
+        $otpKey = OtpType::ChangePassword;
+
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+
+        /**
+         * Check if email address not exist in redis throw error
+         */
+        if ($isExist == null) {
+            throw new AuthException("Change password session expired please try again!");
+        }
+
+        return $this->sendEmail(
+            email: $email,
+            subject: "Uangku Change Password Verification",
+            otpKey: $otpKey,
+        );
     }
 }

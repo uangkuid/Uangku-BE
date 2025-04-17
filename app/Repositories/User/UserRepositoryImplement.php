@@ -49,7 +49,9 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
     function isEmailExist(
         string $email,
     ): bool {
-        return $this->model->where('email', $email)->count() > 0;
+        return $this->model
+                ->select('email')
+                ->where('email', $email)->count() > 0;
     }
 
     /**
@@ -59,6 +61,8 @@ class UserRepositoryImplement extends Eloquent implements UserRepository{
      */
     function getUserKey(string $userId): ?UserKey
     {
-        return $this->user_key->where('users', $userId)->first();
+        return $this->user_key
+            ->select('public_key', 'private_key')
+            ->where('users', $userId)->first();
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Helpers;
 
-use Exception;
-use Illuminate\Support\Str;
+use App\Exceptions\EncryptionException;
+use App\Exceptions\SecurityException;
 use Random\RandomException;
 
 class EncryptionHelper
@@ -12,9 +12,10 @@ class EncryptionHelper
      * Encrypt the given data using AES-CBC.
      *
      * @param string $data
-     * @param string $key
+     * @param string|null $key
      * @return array
-     * @throws Exception
+     * @throws RandomException
+     * @throws EncryptionException
      */
     public static function encrypt(string $data, string $key = null): array
     {
@@ -31,7 +32,7 @@ class EncryptionHelper
         $encryptedData = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
 
         if ($encryptedData === false) {
-            throw new Exception('Encryption failed.');
+            throw new EncryptionException('Encryption failed.');
         }
 
         // Return encrypted data and the IV used
@@ -46,7 +47,7 @@ class EncryptionHelper
      * @param string $data
      * @param string $publicKey
      * @return string
-     * @throws Exception
+     * @throws EncryptionException
      */
     public static function encryptAsymmetric(string $data, string $publicKey): string
     {
@@ -54,7 +55,7 @@ class EncryptionHelper
         $isSuccess = openssl_public_encrypt($data, $encryptedData, $publicKey);
 
         if ($isSuccess === false) {
-            throw new Exception('Encryption failed.');
+            throw new EncryptionException('Encryption failed.');
         }
 
         // Return the encrypted data
@@ -65,10 +66,11 @@ class EncryptionHelper
      * Encrypt the given data using AES-CBC.
      *
      * @param string $data
-     * @param string $key
-     * @param string $iv
+     * @param string|null $key
+     * @param string|null $iv
      * @return string with pattern iv + '.' + encryptedData
-     * @throws Exception
+     * @throws RandomException
+     * @throws EncryptionException
      */
     public static function encryptAsString(string $data, string $key = null, string $iv = null): string
     {
@@ -86,7 +88,7 @@ class EncryptionHelper
         $encryptedData = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
 
         if ($encryptedData === false) {
-            throw new Exception('Encryption failed.');
+            throw new EncryptionException('Encryption failed.');
         }
 
         // Return encrypted data and the IV used
@@ -98,9 +100,9 @@ class EncryptionHelper
      *
      * @param string $encryptedData
      * @param string $iv
-     * @param string $key
+     * @param string|null $key
      * @return string
-     * @throws Exception
+     * @throws SecurityException
      */
     public static function decrypt(string $encryptedData, string $iv, string $key = null): string
     {
@@ -118,7 +120,7 @@ class EncryptionHelper
         $decryptedData = openssl_decrypt($encryptedData, 'aes-256-cbc', $key, 0, $iv);
 
         if ($decryptedData === false) {
-            throw new Exception('Decryption failed.');
+            throw new SecurityException('Decryption failed. Invalid key or data.');
         }
 
         return $decryptedData;
@@ -129,7 +131,7 @@ class EncryptionHelper
      * @param string $encryptedData
      * @param string $privateKey
      * @return string
-     * @throws Exception
+     * @throws SecurityException
      */
     public static function decryptAsymmetric(string $encryptedData, string $privateKey): string
     {
@@ -137,7 +139,7 @@ class EncryptionHelper
         $isSuccess = openssl_private_decrypt(base64_decode($encryptedData), $decryptedData, $privateKey);
 
         if ($isSuccess === false) {
-            throw new Exception('Decryption failed.');
+            throw new SecurityException('Decryption failed. Invalid key or data.');
         }
 
         // Return the decrypted data
@@ -150,7 +152,7 @@ class EncryptionHelper
      * @param string $encryptedData
      * @param string|null $key
      * @return string
-     * @throws Exception
+     * @throws SecurityException
      */
     public static function decryptFromString(string $encryptedData, string $key = null): string {
         // Use dynamic secret key from .env or default value
@@ -168,7 +170,7 @@ class EncryptionHelper
         $decryptedData = openssl_decrypt($encryptedData, 'aes-256-cbc', $key, 0, $iv);
 
         if ($decryptedData === false) {
-            throw new Exception('Decryption failed.');
+            throw new SecurityException('Decryption failed. Invalid key or data.');
         }
 
         return $decryptedData;
@@ -180,7 +182,7 @@ class EncryptionHelper
      * @return string
      * @throws RandomException
      */
-    public static function generateUsersSecretKey()
+    public static function generateUsersSecretKey(): string
     {
         // Generate 20 random bytes and encode in Base32 for readability
         $randomBytes = random_bytes(128);
@@ -267,6 +269,10 @@ class EncryptionHelper
         return $salt.$secretKeyAsArray[1].$secretKeySanitize;
     }
 
+    /**
+     * Generate a random asymmetric key pair.
+     * @return array a pair of keys public and private
+     */
     public static function generateAsymmetricKey(): array
     {
         // Konfigurasi untuk pembuatan kunci

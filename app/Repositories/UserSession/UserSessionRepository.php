@@ -24,4 +24,11 @@ interface UserSessionRepository extends Repository{
         string $userId,
         string $refreshToken
     ): ?UserSeasons;
+
+    /**
+     * Delete all sessions for a user.
+     * @param string $userId
+     * @return bool
+     */
+    function deleteAllSession(string $userId): bool;
 }

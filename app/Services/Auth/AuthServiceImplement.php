@@ -2,9 +2,12 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\OtpType;
 use App\Exceptions\AuthException;
+use App\Exceptions\SecurityException;
 use App\Helpers\EncryptionHelper;
 use App\Helpers\TokenHelper;
+use App\Models\User;
 use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
@@ -68,12 +71,13 @@ class AuthServiceImplement extends Service implements AuthService
         $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
         $rawPublicKey = base64_decode($asymmetricKey["public"]);
         $secretKey = EncryptionHelper::generateUsersSecretKey();
+        $otpKey = OtpType::Register;
 
         /**
          * Skip checking OTP if seeder
          */
         if (!$isSeeder) {
-            $otpData = $this->redisRepository->getRedis("pre-register:{$email}");
+            $otpData = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
 
             Log::info("OTP Data: ", [
                 "otpData" => $otpData,
@@ -183,17 +187,19 @@ class AuthServiceImplement extends Service implements AuthService
             iv: $staticIv,
         ));
 
+        $otpKey = OtpType::Register;
+
         if ($isExist) {
             throw new AuthException("Email already taken!");
         }
 
-        $isExist = $this->redisRepository->getRedis("pre-register:{$email}");
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
 
         if ($isExist != null) {
             throw new AuthException("Email already taken!");
         }
 
-        $this->redisRepository->storeRedis("pre-register:{$email}", json_encode([
+        $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
             "email" => $email,
             "created_at" => now(),
         ]), (5 * 60)); // Store for 5 minutes
@@ -252,5 +258,93 @@ class AuthServiceImplement extends Service implements AuthService
     function logout(string $token, string $refreshToken): bool
     {
         return JWTAuth::setToken($token)->invalidate() && JWTAuth::setToken($refreshToken)->invalidate();
+    }
+
+    /**
+     * Pre change password. active for 5 minutes when expired session will delete automatically
+     * @param $token
+     * @return void
+     * @throws AuthException
+     * @throws Exception
+     * @throws SecurityException
+     */
+    function preChangePassword($token): void
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("Invalid token");
+        }
+
+        $otpKey = OtpType::ChangePassword;
+
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
+            "email" => $email,
+            "created_at" => now(),
+        ]), (5 * 60)); // Store for 5 minutes
+    }
+
+    /**
+     * @param string $token
+     * @param string $oldPassword
+     * @param string $newPassword
+     * @param string $otp
+     * @param string $uuid
+     * @return User
+     * @throws AuthException
+     */
+    function changePassword(string $token, string $oldPassword, string $newPassword, string $otp, string $uuid): User
+    {
+        $otpKey = OtpType::ChangePassword;
+        $user = JWTAuth::setToken($token)->toUser();
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+
+        /**
+         * Check if email address not exist in redis throw error
+         */
+        if ($isExist == null) {
+            throw new AuthException("Change password session expired please try again!");
+        }
+
+        $credentials = [
+            'email' => $user->email,
+            'password' => $oldPassword,
+        ];
+
+        /**
+         * Check if old password is correct
+         */
+        if (!auth()->guard('api')->attempt($credentials)) {
+            throw new AuthException("Wrong email or password!");
+        }
+
+        $otpData = json_decode($this->redisRepository->getRedis("{$otpKey->value}:{$email}"), true);
+
+        if ($otpData['otp'] != $otp) {
+            throw new AuthException("Invalid OTP!");
+        }
+
+        if ($otpData['uuid'] != $uuid) {
+            throw new AuthException("Illegal OTP access!");
+        }
+
+        $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
+
+        $user->password = bcrypt($newPassword);
+        $user->save();
+
+        JWTAuth::setToken($token)->invalidate();
+
+        return $user;
     }
 }

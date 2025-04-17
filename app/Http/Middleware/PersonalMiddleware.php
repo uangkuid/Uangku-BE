@@ -23,7 +23,6 @@ class PersonalMiddleware
         if (!empty($secretKey)) {
 //            return $next($request);
             try {
-                $secretKey = EncryptionHelper::decryptFromString($secretKey, EncryptionHelper::getSystemSecretKey());
                 $request->merge(['personal_secret_key' => $secretKey]);
 
                 return $next($request);

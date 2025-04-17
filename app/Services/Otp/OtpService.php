@@ -3,6 +3,7 @@
 namespace App\Services\Otp;
 
 use App\Exceptions\AuthException;
+use Exception;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
 
@@ -15,7 +16,19 @@ interface OtpService extends BaseService{
      * @throws RandomException
      * @throws AuthException
      */
-    function sendOtpRegister(
+    function sendRegister(
         string $email
+    ): array;
+
+    /**
+     * Send OTP to the user for changing password.
+     * @param string $token
+     * @return array
+     * @throws RandomException
+     * @throws AuthException
+     * @throws Exception
+ */
+    function sendChangePassword(
+        string $token
     ): array;
 }

@@ -22,6 +22,12 @@ erDiagram
         private_key varchar
     }
 
+    user_sessions {
+        id uuid PK
+        users uuid FK
+        refresh_token varchar
+    }
+
     family {
         id uuid PK
         name string
@@ -116,6 +122,7 @@ erDiagram
     users ||--o{ wallet_access: has
     users ||--o{ sub_categories: has
     users ||--o| user_keys: has
+    users ||--o{ user_sessions: has
     family ||--o| family_member: has
     family ||--o{ transactions: has
     family ||--o{ wallet: has
@@ -148,6 +155,14 @@ erDiagram
 | users       | uuid    | FK    | Foreign key referencing the users table                                                                            |
 | public_key  | varchar |       | Public key of the user, encoded using base64                                                                       |
 | private_key | varchar |       | Private key of the user, encrypted using AES-CBC-256 using key user secret_key + user passwords, encoded by base64 |
+
+### User Session Table
+
+| Field         | Type    | Index | Description                             |
+|---------------|---------|-------|-----------------------------------------|
+| id            | uuid    | PK    | Unique identifier for the user session  |
+| users         | uuid    | FK    | Foreign key referencing the users table |
+| refresh_token | varchar |       | Refresh token for the user session      |
 
 ## Secret Keys
 

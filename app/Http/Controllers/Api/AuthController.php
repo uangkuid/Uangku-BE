@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
+use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
 use App\Helpers\TokenHelper;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
+use Illuminate\Validation\Rules\Password;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -199,7 +201,7 @@ class AuthController extends Controller
             ), 200);
         } catch (AuthException $e) {
             Log::error("Failed to login " . $e->getMessage());
-            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+            return response()->json(new BaseResponse(404, $e->getMessage(), null), 404);
         } catch (Exception $e) {
             Log::error("Failed to login " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to login " . $e->getMessage(), null), 500);
@@ -262,49 +264,28 @@ class AuthController extends Controller
 
         //if validation fails
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to login", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, "Failed to refresh token", $validator->errors()), 400);
         }
 
-        $refreshToken = $request->input('refresh_token');
-
         try {
-            // Verifikasi refresh token dan buat access token baru
-            $isExist = UserSeasons::where('refresh_token', $refreshToken)->exists();
-
-            if (!$isExist) {
-                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-            }
-
-            $user = JWTAuth::setToken($refreshToken)->toUser();
-
-            if (!$user) {
-                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-            }
-
-            $userSeasons = UserSeasons::where('refresh_token', $refreshToken)
-                ->where('users', $user->id)
-                ->first();
-
-            if (!$userSeasons) {
-                return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
-            }
-
-            $userSeasons->delete();
+            $revokedUser = $this->userSessionService->revokeSession($request->refresh_token);
 
             //Revoke all token access
-            $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
-            $removeRefreshToken = JWTAuth::invalidate($refreshToken);
+            $logout = $this->authService->logout(
+                token: $request->bearerToken(),
+                refreshToken: $request->refresh_token
+            );
 
-            $newAccessToken = auth()->login($user);
-            $newRefreshToken = $this->generateRefreshToken($user);
+            $newAccessToken = auth()->login($revokedUser);
+            $newRefreshToken = $this->generateRefreshToken($revokedUser);
 
             //Save to user seasons
-            UserSeasons::create([
+            $this->userSessionService->create([
                 'refresh_token' => $newRefreshToken,
-                'users' => $user->id
+                'users' => $revokedUser->id
             ]);
 
-            if ($removeToken && $removeRefreshToken) {
+            if ($logout) {
                 return response()->json(new BaseResponse(
                     200,
                     "Refresh token successful",
@@ -324,9 +305,17 @@ class AuthController extends Controller
                 );
             }
         } catch (TokenExpiredException $e) {
+            Log::error("Failed to refresh token " . $e->getMessage());
             return response()->json(new BaseResponse(401, "Refresh token expired"), 401);
         } catch (JWTException $e) {
+            Log::error("Failed to refresh token " . $e->getMessage());
             return response()->json(new BaseResponse(401, "Invalid refresh token"), 401);
+        } catch (SessionException $e) {
+            Log::error("Failed to refresh token " . $e->getMessage());
+            return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (Exception $e) {
+            Log::error("Failed to refresh token " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to refresh token " . $e->getMessage(), null), 500);
         }
     }
 
@@ -372,6 +361,62 @@ class AuthController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to pre-register " . $e->getMessage());
             return response()->json(new BaseResponse(409, "Failed to pre-register " . $e->getMessage(), null), 409);
+        }
+    }
+
+    public function preChangePassword(Request $request) {
+        try {
+            $this->authService->preChangePassword($request->bearerToken());
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Pre-change password success",
+            ));
+        } catch (AuthException $e) {
+            Log::error("Failed to change password " . $e->getMessage());
+            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+        } catch (SecurityException $e) {
+            Log::error("Failed to change password " . $e->getMessage());
+            return response()->json(new BaseResponse(423, $e->getMessage(), null), 423);
+        } catch (Exception $e) {
+            Log::error("Failed to change password " . $e->getMessage());
+            return response()->json(new BaseResponse(409, "Failed to change password " . $e->getMessage(), null), 409);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required',
+            'new_password' => ['required', 'confirmed', Password::default()],
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to login", $validator->errors()), 400);
+        }
+
+        try {
+            $user = $this->authService->changePassword(
+                token: $request->bearerToken(),
+                oldPassword: $request->old_password,
+                newPassword: $request->new_password,
+                otp: $request->otp,
+                uuid: $request->uuid
+            );
+
+            $this->userSessionService->revokeAllSession($user);
+
+            return response()->json(new BaseResponse(
+                200,
+                "Change password success",
+            ));
+        } catch (AuthException $e) {
+            Log::error("Failed to change password " . $e->getMessage());
+            return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (Exception $e) {
+            Log::error("Failed to change password " . $e->getMessage());
+            return response()->json(new BaseResponse(409, "Failed to change password " . $e->getMessage(), null), 409);
         }
     }
 }

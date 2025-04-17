@@ -37,23 +37,33 @@ Route::controller(GeneralController::class)->group(function () {
     });
 });
 
-Route::controller(AuthController::class)->group(function () {
-    Route::prefix('auth')->group(function () {
-        Route::post('pre-register', 'preRegister');
-        Route::post('register', 'store');
-        Route::post('login', 'login');
+Route::controller(AuthController::class)->prefix("auth")->group(function () {
+    Route::post('pre-register', 'preRegister');
+    Route::post('register', 'store');
+    Route::post('login', 'login');
+
+    /**
+     * Private API for authenticated users
+     */
+    Route::middleware("auth:api")->group(function () {
         Route::post('logout', 'logout');
         Route::post('refresh-token', 'refreshToken');
-    });
 
-    Route::middleware('auth:api')->group(function () {
-        Route::get('user', 'index');
+        Route::post('pre-change-password', 'preChangePassword');
+        Route::post('change-password', 'changePassword');
     });
 });
 
 Route::controller(OtpController::class)->group(function (){
     Route::prefix('otp')->group(function () {
+        /**
+         * Public API OTP, don't need authentication
+         */
         Route::post('send/register', 'sendRegister');
+
+        Route::middleware('auth:api')->group(function () {
+            Route::post("send/change-password", 'sendChangePassword');
+        });
     });
 });
 

@@ -1,13 +1,16 @@
 <?php
 
 namespace App\Services\Auth;
+
 use App\Exceptions\AuthException;
+use App\Exceptions\SecurityException;
 use App\Models\User;
 use App\Models\UserKey;
 use Exception;
 use LaravelEasyRepository\BaseService;
 
-interface AuthService extends BaseService{
+interface AuthService extends BaseService
+{
 
     /**
      * Register a new user.
@@ -26,7 +29,7 @@ interface AuthService extends BaseService{
         string $password,
         string $otp,
         string $uuid,
-        bool $isSeeder = false
+        bool   $isSeeder = false
     ): array;
 
     /**
@@ -72,9 +75,9 @@ interface AuthService extends BaseService{
      * @param string $email
      * @param string $password
      * @param string $secretKey
-     * @throws Exception
-     * @throws AuthException
      * @return array
+     * @throws AuthException
+     * @throws Exception
      */
     function login(
         string $email,
@@ -93,4 +96,31 @@ interface AuthService extends BaseService{
         string $token,
         string $refreshToken
     ): bool;
+
+    /**
+     * Pre change password. active for 5 minutes when expired session will delete automatically
+     * @param $token
+     * @return void
+     * @return void
+     * @throws AuthException
+     * @throws SecurityException
+     * @throws Exception
+     */
+    function preChangePassword($token): void;
+
+    /**
+     * @param string $token
+     * @param string $oldPassword
+     * @param string $newPassword
+     * @param string $otp
+     * @param string $uuid
+     * @return User return updated user
+     */
+    function changePassword(
+        string $token,
+        string $oldPassword,
+        string $newPassword,
+        string $otp,
+        string $uuid
+    ): User;
 }
