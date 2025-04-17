@@ -103,8 +103,7 @@ interface AuthService extends BaseService
      * @return void
      * @return void
      * @throws AuthException
-     * @throws SecurityException
-     * @throws Exception
+     * @throws Exception|SecurityException
      */
     function preChangePassword($token): void;
 
@@ -114,6 +113,7 @@ interface AuthService extends BaseService
      * @param string $newPassword
      * @param string $otp
      * @param string $uuid
+     * @throws AuthException|SecurityException
      * @return User return updated user
      */
     function changePassword(

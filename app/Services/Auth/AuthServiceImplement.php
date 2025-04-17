@@ -265,8 +265,7 @@ class AuthServiceImplement extends Service implements AuthService
      * @param $token
      * @return void
      * @throws AuthException
-     * @throws Exception
-     * @throws SecurityException
+     * @throws Exception|SecurityException
      */
     function preChangePassword($token): void
     {
@@ -296,7 +295,7 @@ class AuthServiceImplement extends Service implements AuthService
      * @param string $otp
      * @param string $uuid
      * @return User
-     * @throws AuthException
+     * @throws AuthException|SecurityException
      */
     function changePassword(string $token, string $oldPassword, string $newPassword, string $otp, string $uuid): User
     {

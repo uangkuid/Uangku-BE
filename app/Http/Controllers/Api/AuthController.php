@@ -7,9 +7,7 @@ use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
-use App\Helpers\TokenHelper;
 use App\Http\Controllers\Controller;
-use App\Models\UserSeasons;
 use App\Services\Auth\AuthService;
 use App\Services\UserSession\UserSessionService;
 use App\Services\Wallet\WalletService;
@@ -201,7 +199,7 @@ class AuthController extends Controller
             ), 200);
         } catch (AuthException $e) {
             Log::error("Failed to login " . $e->getMessage());
-            return response()->json(new BaseResponse(404, $e->getMessage(), null), 404);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
             Log::error("Failed to login " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to login " . $e->getMessage(), null), 500);
@@ -357,10 +355,10 @@ class AuthController extends Controller
             Log::error("Failed to pre-register " . $e->getMessage(), [
                 'email' => $request->email
             ]);
-            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
             Log::error("Failed to pre-register " . $e->getMessage());
-            return response()->json(new BaseResponse(409, "Failed to pre-register " . $e->getMessage(), null), 409);
+            return response()->json(new BaseResponse(500, "Failed to pre-register " . $e->getMessage(), null), 500);
         }
     }
 
@@ -374,7 +372,7 @@ class AuthController extends Controller
             ));
         } catch (AuthException $e) {
             Log::error("Failed to change password " . $e->getMessage());
-            return response()->json(new BaseResponse(409, $e->getMessage(), null), 409);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (SecurityException $e) {
             Log::error("Failed to change password " . $e->getMessage());
             return response()->json(new BaseResponse(423, $e->getMessage(), null), 423);
@@ -413,7 +411,7 @@ class AuthController extends Controller
             ));
         } catch (AuthException $e) {
             Log::error("Failed to change password " . $e->getMessage());
-            return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
             Log::error("Failed to change password " . $e->getMessage());
             return response()->json(new BaseResponse(409, "Failed to change password " . $e->getMessage(), null), 409);
