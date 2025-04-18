@@ -78,7 +78,7 @@ class OtpServiceImplement extends Service implements OtpService
 
         $this->mainRepository->sendEmail(
             email: $email,
-            subject: $subject,
+            subject: "Uangku: $subject",
             content: $html,
         );
 
@@ -109,7 +109,7 @@ class OtpServiceImplement extends Service implements OtpService
 
         return $this->sendEmail(
             email: $email,
-            subject: "Uangku Register Verification",
+            subject: "Register Verification",
             otpKey: $otpKey,
         );
     }
@@ -148,7 +148,32 @@ class OtpServiceImplement extends Service implements OtpService
 
         return $this->sendEmail(
             email: $email,
-            subject: "Uangku Change Password Verification",
+            subject: "Change Password Verification",
+            otpKey: $otpKey,
+        );
+    }
+
+    /**
+     * Send OTP to the user for forgot password.
+     * @param string $email
+     * @return array
+     * @throws RandomException
+     * @throws AuthException
+     */
+    function sendForgotPassword(string $email): array
+    {
+        $otpKey = OtpType::ForgotPassword;
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+        /**
+         * Check if email address not exist in redis throw error
+         */
+        if ($isExist == null) {
+            throw new AuthException("Forgot Password expired please try again!");
+        }
+
+        return $this->sendEmail(
+            email: $email,
+            subject: "Forgot Password Verification",
             otpKey: $otpKey,
         );
     }

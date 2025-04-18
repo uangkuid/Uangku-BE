@@ -31,4 +31,15 @@ interface OtpService extends BaseService{
     function sendChangePassword(
         string $token
     ): array;
+
+    /**
+     * Send OTP to the user for forgot password.
+     * @param string $email
+     * @return array
+     * @throws RandomException
+     * @throws AuthException
+     */
+    function sendForgotPassword(
+        string $email
+    ): array;
 }

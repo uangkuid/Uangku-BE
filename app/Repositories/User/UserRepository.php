@@ -2,6 +2,7 @@
 
 namespace App\Repositories\User;
 
+use App\Models\User;
 use App\Models\UserKey;
 use LaravelEasyRepository\Repository;
 
@@ -39,4 +40,13 @@ interface UserRepository extends Repository{
     function isEmailExist(
         string $email,
     ): bool;
+
+    /**
+     * Get the user by email.
+     * @param string $email
+     * @return User|null
+     */
+    function getUserByEmail(
+        string $email,
+    ): ?User;
 }

@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Enums\OtpType;
 use App\Exceptions\AuthException;
+use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use App\Helpers\EncryptionHelper;
 use App\Helpers\TokenHelper;
@@ -15,6 +16,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Random\RandomException;
 
 class AuthServiceImplement extends Service implements AuthService
 {
@@ -359,6 +361,81 @@ class AuthServiceImplement extends Service implements AuthService
         $user->save();
 
         JWTAuth::setToken($token)->invalidate();
+
+        return $user;
+    }
+
+    /**
+     * Forgot password. active for 5 minutes when expired session will delete automatically
+     * @param string $email
+     * @return void
+     * @throws AuthException
+     * @throws EncryptionException|RandomException
+     */
+    function forgotPassword(string $email): void
+    {
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: env("MAIN_STATIC_IV"),
+        );
+
+        $isExist = $this->mainRepository->isEmailExist($encryptedEmail);
+
+        if (!$isExist) {
+            throw new AuthException("Email not found!");
+        }
+
+        $otpKey = OtpType::ForgotPassword;
+
+        $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
+            "email" => $email,
+            "created_at" => now(),
+        ]), (5 * 60)); // Store for 5 minutes
+    }
+
+    /**
+     * @throws EncryptionException
+     * @throws RandomException
+     * @throws AuthException
+     */
+    function resetPassword(string $email, string $newPassword, string $otp, string $uuid): User
+    {
+        $otpKey = OtpType::ForgotPassword;
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: env("MAIN_STATIC_IV"),
+        );
+
+        /**
+         * Check if email address not exist in redis throw error
+         */
+        if ($isExist == null) {
+            throw new AuthException("Reset password session expired please try again!");
+        }
+
+        $otpData = json_decode($isExist, true);
+
+        if ($otpData['otp'] != $otp) {
+            throw new AuthException("Invalid OTP!");
+        }
+
+        if ($otpData['uuid'] != $uuid) {
+            throw new AuthException("Illegal OTP access!");
+        }
+
+        $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
+
+        $user = $this->mainRepository->getUserByEmail($encryptedEmail);
+
+        if ($user == null) {
+            throw new AuthException("User not found!");
+        }
+
+        $user->password = bcrypt($newPassword);
+        $user->save();
 
         return $user;
     }

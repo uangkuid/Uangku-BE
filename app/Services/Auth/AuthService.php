@@ -3,11 +3,13 @@
 namespace App\Services\Auth;
 
 use App\Exceptions\AuthException;
+use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use App\Models\User;
 use App\Models\UserKey;
 use Exception;
 use LaravelEasyRepository\BaseService;
+use Random\RandomException;
 
 interface AuthService extends BaseService
 {
@@ -119,6 +121,24 @@ interface AuthService extends BaseService
     function changePassword(
         string $token,
         string $oldPassword,
+        string $newPassword,
+        string $otp,
+        string $uuid
+    ): User;
+
+    /**
+     * Forgot password. active for 5 minutes when expired session will delete automatically
+     * @param string $email
+     * @return void
+     * @throws EncryptionException|RandomException
+     * @throws AuthException
+     */
+    function forgotPassword(
+        string $email,
+    ): void;
+
+    function resetPassword(
+        string $email,
         string $newPassword,
         string $otp,
         string $uuid

@@ -74,4 +74,21 @@ class UserRepositoryImplement extends Eloquent implements UserRepository
             )
             ->where('users', $userId)->first();
     }
+
+    /**
+     * Get the user by email.
+     * @param string $email
+     * @return User|null
+     */
+    function getUserByEmail(string $email,): ?User
+    {
+        return $this->model
+            ->select(
+                'id',
+                'name',
+                'email',
+                'password',
+            )
+            ->where('email', $email)->first();
+    }
 }

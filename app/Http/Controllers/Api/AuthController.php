@@ -42,17 +42,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return response()->json(new BaseResponse(200, "User data", auth()->guard('api')->user()), 200);
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         //Set validation
         $validator = Validator::make($request->all(), [
@@ -362,7 +354,8 @@ class AuthController extends Controller
         }
     }
 
-    public function preChangePassword(Request $request) {
+    public function preChangePassword(Request $request): JsonResponse
+    {
         try {
             $this->authService->preChangePassword($request->bearerToken());
 
@@ -382,7 +375,7 @@ class AuthController extends Controller
         }
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'old_password' => 'required',
@@ -415,6 +408,79 @@ class AuthController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to change password " . $e->getMessage());
             return response()->json(new BaseResponse(409, "Failed to change password " . $e->getMessage(), null), 409);
+        }
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        //set validation
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email'
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to forgot password", $validator->errors()), 400);
+        }
+
+        try {
+            $this->authService->forgotPassword($request->email);
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Forgot password success",
+                resource: [
+                    'email' => $request->email,
+                ]
+            ));
+        } catch (AuthException $e) {
+            Log::error("Failed to forgot password " . $e->getMessage(), [
+                'email' => $request->email
+            ]);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to forgot password " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to forgot password " . $e->getMessage(), null), 500);
+        }
+    }
+
+    public function resetPassword(Request $request): JsonResponse {
+        //set validation
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'otp' => 'required|min:6|max:6',
+            'uuid' => 'required',
+            'new_password' => ['required', 'confirmed', Password::default()],
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to reset password", $validator->errors()), 400);
+        }
+
+        try {
+            $user = $this->authService->resetPassword(
+                email: $request->email,
+                newPassword: $request->new_password,
+                otp: $request->otp,
+                uuid: $request->uuid
+            );
+
+            $this->userSessionService->revokeAllSession($user);
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Reset password success",
+                resource: null
+            ));
+        } catch (AuthException $e) {
+            Log::error("Failed to reset password " . $e->getMessage(), [
+                'email' => $request->email
+            ]);
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to reset password " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to reset password " . $e->getMessage(), null), 500);
         }
     }
 }

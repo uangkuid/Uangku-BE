@@ -42,6 +42,9 @@ Route::controller(AuthController::class)->prefix("auth")->group(function () {
     Route::post('register', 'store');
     Route::post('login', 'login');
 
+    Route::post("forgot-password", 'forgotPassword');
+    Route::post("reset-password", 'resetPassword');
+
     /**
      * Private API for authenticated users
      */
@@ -54,16 +57,15 @@ Route::controller(AuthController::class)->prefix("auth")->group(function () {
     });
 });
 
-Route::controller(OtpController::class)->group(function (){
-    Route::prefix('otp')->group(function () {
-        /**
-         * Public API OTP, don't need authentication
-         */
-        Route::post('send/register', 'sendRegister');
+Route::controller(OtpController::class)->prefix("otp")->group(function (){
+    /**
+     * Public API OTP, don't need authentication
+     */
+    Route::post('send/register', 'sendRegister');
+    Route::post('send/forgot-password', 'sendForgotPassword');
 
-        Route::middleware('auth:api')->group(function () {
-            Route::post("send/change-password", 'sendChangePassword');
-        });
+    Route::middleware('auth:api')->group(function () {
+        Route::post("send/change-password", 'sendChangePassword');
     });
 });
 
