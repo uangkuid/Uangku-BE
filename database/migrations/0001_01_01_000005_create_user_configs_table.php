@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_keys', function (Blueprint $table) {
+        Schema::create('user_configs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('users')->index();
-            $table->text('private_key');
-            $table->text('public_key');
-            $table->string('hashed_key', 255);
-            $table->string('hashed_pin', 255)->nullable();
+            $table->boolean('is_pin_enabled')->default(false);
+            $table->text('start_date_month');
             $table->timestamps();
-
-            $table->foreign('users')->references('id')->on('users');
         });
     }
 
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_keys');
+        Schema::dropIfExists('user_configs');
     }
 };
