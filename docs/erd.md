@@ -21,6 +21,7 @@ erDiagram
         public_key varchar
         private_key varchar
         hashed_key varchar
+        hashed_pin varchar
     }
 
     user_sessions {
@@ -137,6 +138,8 @@ erDiagram
 ## Table Details
 
 ### Users Table
+Table to store user information.
+This table contains the user's personal information, including their name, email, password, and avatar. The password is hashed for security purposes.
 
 | Field      | Type      | Index | Description                                                                                 |
 |------------|-----------|-------|---------------------------------------------------------------------------------------------|
@@ -149,6 +152,8 @@ erDiagram
 | updated_at | timestamp |       | Timestamp when the user was last updated                                                    |
 
 ### User Keys Table
+Table to store user keys.
+This table contains the user's public and private keys, which are used for encryption and decryption of sensitive data. The private key is encrypted using AES-CBC-256 with a key derived from the user's secret key and password.
 
 | Field       | Type    | Index | Description                                                                                                        |
 |-------------|---------|-------|--------------------------------------------------------------------------------------------------------------------|
@@ -157,8 +162,11 @@ erDiagram
 | public_key  | varchar |       | Public key of the user, encoded using base64                                                                       |
 | private_key | varchar |       | Private key of the user, encrypted using AES-CBC-256 using key user secret_key + user passwords, encoded by base64 |
 | hashed_key  | varchar |       | User Secret Key hash with bcrypt and salt                                                                          |
+| hashed_pin  | varchar |       | User pin hash with bcrypt and salt                                                                                 |
 
 ### User Session Table
+Table to store user sessions.
+This table contains the refresh token for the user session, which is used for authentication and authorization purposes.
 
 | Field         | Type    | Index | Description                             |
 |---------------|---------|-------|-----------------------------------------|

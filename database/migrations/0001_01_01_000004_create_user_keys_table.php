@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('private_key');
             $table->text('public_key');
             $table->text('hashed_key', 255);
+            $table->text('hashed_pin', 255)->nullable();
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');
