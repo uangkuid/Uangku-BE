@@ -79,4 +79,8 @@ class User extends Authenticatable implements JWTSubject
     public function familyAccess(): HasMany {
         return $this->hasMany(FamilyMember::class, 'users');
     }
+
+    public function userKey(): HasMany {
+        return $this->hasMany(UserKey::class, 'users');
+    }
 }
