@@ -9,6 +9,7 @@ use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Services\Auth\AuthService;
+use App\Services\UserConfig\UserConfigService;
 use App\Services\UserSession\UserSessionService;
 use App\Services\Wallet\WalletService;
 use Exception;
@@ -29,16 +30,18 @@ class AuthController extends Controller
     private AuthService $authService;
     private UserSessionService $userSessionService;
     private WalletService $walletService;
+    private UserConfigService $userConfigService;
 
     public function __construct(
-        AuthService        $authService,
+        AuthService $authService,
         UserSessionService $userSessionService,
-        WalletService      $walletService
-    )
-    {
+        WalletService $walletService,
+        UserConfigService $userConfigService
+    ) {
         $this->authService = $authService;
         $this->userSessionService = $userSessionService;
         $this->walletService = $walletService;
+        $this->userConfigService = $userConfigService;
     }
 
     /**
@@ -87,6 +90,15 @@ class AuthController extends Controller
                 password: $request->password
             );
 
+            /**
+             * Save User Config
+             */
+            $config = $this->userConfigService->create([
+                'users' => $user->id,
+                'is_pin_enabled' => false,
+                'start_date_month' => EncryptionHelper::encryptAsymmetric("1", $registerResult['raw_public_key'])
+            ]);
+
             $wallet_name = sprintf("%s's Cash", $request->name);
 
             /**
@@ -119,15 +131,7 @@ class AuthController extends Controller
 
             return response()->json(new BaseResponse(201, "Account created successfully", [
                 "id" => $user->id,
-                "name" => $request->name,
-                "email" => $request->email,
                 "secret_key" => $registerResult['secret_key'],
-                'wallet' => [
-                    "id" => $wallet->id,
-                    "name" => $wallet_name,
-                    "amount" => "0",
-                    'role' => $walletAccess->role
-                ],
                 'token' => $registerResult['token'],
                 'refresh_token' => $registerResult['refresh_token'],
                 'public_key' => $userKey->public_key,

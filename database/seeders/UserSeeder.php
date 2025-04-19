@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletAccess;
 use App\Services\Auth\AuthService;
+use App\Services\UserConfig\UserConfigService;
 use App\Services\UserSession\UserSessionService;
 use App\Services\Wallet\WalletService;
 use Exception;
@@ -25,7 +26,8 @@ class UserSeeder extends Seeder
         $authService = app(AuthService::class);
         $walletService = app(WalletService::class);
         $userSessionService = app(UserSessionService::class);
-        DB::transaction(function () use ($authService, $walletService, $userSessionService) {
+        $userConfigService = app(UserConfigService::class);
+        DB::transaction(function () use ($userConfigService, $authService, $walletService, $userSessionService) {
             $password = "Password123";
             /**
              * Create Account
@@ -63,6 +65,12 @@ class UserSeeder extends Seeder
                 secretKey: $registerResult['secret_key'],
                 password: $password
             );
+
+            $config = $userConfigService->create([
+                'users' => $user->id,
+                'is_pin_enabled' => false,
+                'start_date_month' => EncryptionHelper::encryptAsymmetric("1", $registerResult['raw_public_key'])
+            ]);
 
             $wallet_name = sprintf("%s's Cash", 'Administrator');
 

@@ -103,7 +103,7 @@ class AuthServiceImplement extends Service implements AuthService
                 throw new AuthException("Illegal OTP access!");
             }
 
-            $this->redisRepository->deleteRedis("pre-register:{$email}");
+            $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
         } else {
             /**
              * Replace the secret key with the default secret key if seeder

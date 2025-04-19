@@ -13,7 +13,7 @@ class UserConfig extends Model
 
     protected $fillable = [
        'users',
-       'is_pin_enable',
+       'is_pin_enabled',
        'start_date_month'
     ];
 
