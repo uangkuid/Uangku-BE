@@ -12,5 +12,7 @@ RUN install-php-extensions pcntl pdo_mysql
 
 COPY --from=vendor /app /app
 
+EXPOSE 8000
+
 WORKDIR /app
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
