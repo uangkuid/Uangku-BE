@@ -236,10 +236,30 @@ class PinServiceImplement extends Service implements PinService
      */
     public function resetPin(string $token, string $pin, string $uuid, string $otp): void
     {
+        $otpKey = OtpType::ForgotPin;
         $user = JWTAuth::setToken($token)->toUser();
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:$email");
 
         if ($user == null) {
             throw new AuthException("User not found");
+        }
+
+        if (!$isExist) {
+            throw new AuthException("Forgot PIN session expired please try again!");
+        }
+
+        $otpData = json_decode($isExist, true);
+
+        if ($otpData['otp'] != $otp) {
+            throw new AuthException("Invalid OTP!");
+        }
+
+        if ($otpData['uuid'] != $uuid) {
+            throw new AuthException("Illegal OTP access!");
         }
 
     }
