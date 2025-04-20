@@ -8,7 +8,7 @@ RUN composer install --no-dev --optimize-autoloader
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp
 
-RUN install-php-extensions pcntl
+RUN install-php-extensions pcntl pdo_mysql
 
 COPY --from=vendor /app /app
 
