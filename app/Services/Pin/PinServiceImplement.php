@@ -262,5 +262,7 @@ class PinServiceImplement extends Service implements PinService
             throw new AuthException("Illegal OTP access!");
         }
 
+        $this->redisRepository->deleteRedis("{$otpKey->value}:$email");
+
     }
 }
