@@ -9,16 +9,6 @@ services:
      - "80:8000"
    volumes:
      - .:/app
-  # api:
-  #   container_name: api
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   entrypoint: php artisan octane:frankenphp
-  #   ports:
-  #     - "80:8000"
-  #   volumes:
-  #     - .:/app
   mariadb:
     container_name: mariadb
     image: mariadb:latest
