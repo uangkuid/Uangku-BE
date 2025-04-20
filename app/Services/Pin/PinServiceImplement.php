@@ -12,6 +12,7 @@ use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\UserConfig\UserConfigRepository;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use App\Repositories\Pin\PinRepository;
@@ -149,7 +150,7 @@ class PinServiceImplement extends Service implements PinService
      * Delete Pin and disable PIN for the user
      * @param string $token
      * @return void
-     * @throws AuthException
+     * @throws AuthException|SecurityException
      */
     public function deletePin(string $token): void
     {
@@ -184,5 +185,61 @@ class PinServiceImplement extends Service implements PinService
 
         $userKey->hashed_pin = null;
         $userKey->save();
+    }
+
+    /**
+     * Forgot Pin for the user, active for 5 minutes and automatically deleted when expired
+     * @param string $token
+     * @param string $password
+     * @return void
+     * @throws PinException|SecurityException|AuthException
+     */
+    public function forgotPin(string $token, string $password,): void
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+        $otpKey = OtpType::ForgotPin;
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:$email");
+
+        if ($isExist) {
+            throw new PinException("Forgot PIN session already exist");
+        }
+
+        $isPasswordValid = Hash::check($password, $user->password);
+
+        if (!$isPasswordValid) {
+            throw new AuthException("Invalid password");
+        }
+
+        $this->redisRepository->storeRedis(
+            key: "{$otpKey->value}:$email",
+            value: json_encode([
+                "email" => $email,
+                "created_at" => now(),
+            ]),
+            expire: 300
+        );
+    }
+
+    /**
+     * Reset Pin for the user
+     * @param string $token
+     * @param string $pin
+     * @param string $uuid
+     * @param string $otp
+     * @return void
+     * @throws AuthException
+     */
+    public function resetPin(string $token, string $pin, string $uuid, string $otp): void
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("User not found");
+        }
     }
 }

@@ -8,4 +8,5 @@ enum OtpType: string
     case ChangePassword = 'change-password';
     case ForgotPassword = 'forgot-password';
     case Pin = 'pin';
+    case ForgotPin = 'forgot-pin';
 }

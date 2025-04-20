@@ -46,6 +46,34 @@ interface PinService extends BaseService
      * Delete Pin and disable PIN for the user
      * @param string $token
      * @return void
+     * @throws AuthException|SecurityException
      */
     public function deletePin(string $token): void;
+
+    /**
+     * Forgot Pin for the user, active for 5 minutes and automatically deleted when expired
+     * @param string $token
+     * @param string $password
+     * @return void
+     * @throws PinException|SecurityException|AuthException
+     */
+    public function forgotPin(
+        string $token,
+        string $password,
+    ): void;
+
+    /**
+     * Reset Pin for the user
+     * @param string $token
+     * @param string $pin
+     * @param string $uuid
+     * @param string $otp
+     * @return void
+     */
+    public function resetPin(
+        string $token,
+        string $pin,
+        string $uuid,
+        string $otp
+    ): void;
 }
