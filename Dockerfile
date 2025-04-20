@@ -1,18 +1,18 @@
-# Stage 1: Install dependencies
-FROM composer:2 AS vendor
-
-WORKDIR /app
-COPY . /app
-RUN composer install --no-dev --optimize-autoloader
-
-# Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp
 
+# Install ekstensi PHP yang dibutuhkan Laravel
 RUN install-php-extensions pcntl pdo_mysql
 
-COPY --from=vendor /app /app
-
-EXPOSE 8000
-
 WORKDIR /app
+
+# Salin semua source code Laravel kamu
+COPY . /app
+
+# 🧙‍♂️ Salin folder vendor dari image yang kamu simpan di registry
+COPY --from=oratakashi/laravel-12-vendor /app/vendor /app/vendor
+
+# Jalankan package discover jika dibutuhkan
+RUN php artisan package:discover --ansi || true
+
+# Jalankan Laravel via FrankenPHP
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
