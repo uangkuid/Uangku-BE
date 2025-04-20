@@ -8,6 +8,7 @@
         "php": "^8.2",
         "ext-openssl": "*",
         "laravel/framework": "^12.0",
+        "laravel/octane": "^2.9",
         "laravel/tinker": "^2.9",
         "php-open-source-saver/jwt-auth": "^2.3",
         "predis/predis": "^2.0",
