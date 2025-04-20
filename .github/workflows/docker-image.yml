@@ -1,0 +1,36 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main  # atau branch lain yang kamu inginkan
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Write .env file from secret
+        run: echo "${{ secrets.ENV_DEV }}" > .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: oratakashi
+          password: ${{ secrets.DOCKER }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            oratakashi/uangku-be:latest
+            oratakashi/uangku-be:${{ github.sha }}
+          file: Dockerfile
