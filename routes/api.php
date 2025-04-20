@@ -64,8 +64,8 @@ Route::controller(AuthController::class)->prefix("auth")->group(function () {
             Route::post('pin/init', 'init');
             Route::delete('pin', 'destroy');
             Route::post('pin/verify', 'verify');
+            Route::post('pin/forgot', 'forgot');
             Route::post('pin/reset', 'reset');
-            Route::post('pin/change', 'change');
         });
     });
 });

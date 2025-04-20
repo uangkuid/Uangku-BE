@@ -144,4 +144,45 @@ class PinServiceImplement extends Service implements PinService
         $userConfig->is_pin_enabled = true;
         $userConfig->save();
     }
+
+    /**
+     * Delete Pin and disable PIN for the user
+     * @param string $token
+     * @return void
+     * @throws AuthException
+     */
+    public function deletePin(string $token): void
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+        $otpKey = OtpType::Pin;
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:$email");
+
+        if (!$isExist) {
+            throw new AuthException("PIN session expired please try again!");
+        }
+
+        $userConfig = $this->userConfigRepository->getUserConfig($user->id);
+
+        if ($userConfig == null) {
+            throw new AuthException("User Config not found");
+        }
+
+
+        $userKey = $this->userRepository->getUserKey($user->id);
+
+        if ($userKey == null) {
+            throw new AuthException("User Key not found");
+        }
+
+        $userConfig->is_pin_enabled = false;
+        $userConfig->save();
+
+        $userKey->hashed_pin = null;
+        $userKey->save();
+    }
 }

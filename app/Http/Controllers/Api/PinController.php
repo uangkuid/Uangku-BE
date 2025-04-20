@@ -72,4 +72,25 @@ class PinController extends Controller
             return response()->json(new BaseResponse(500, "Failed init PIN", $e->getMessage()), 500);
         }
     }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        try {
+            $isPinEnable = $this->pinService->isPinEnable($request->bearerToken());
+
+            if (!$isPinEnable) {
+                return response()->json(new BaseResponse(400, "PIN is already disabled"), 400);
+            }
+
+            $this->pinService->deletePin($request->bearerToken());
+
+            return response()->json(new BaseResponse(200, "Delete PIN success"), 200);
+        } catch (PinException $e) {
+            Log::error("Failed delete PIN " .$e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed delete PIN " .$e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed delete PIN", $e->getMessage()), 500);
+        }
+    }
 }

@@ -5,7 +5,6 @@ namespace App\Services\Pin;
 use App\Exceptions\AuthException;
 use App\Exceptions\PinException;
 use App\Exceptions\SecurityException;
-use App\Models\User;
 use LaravelEasyRepository\BaseService;
 
 interface PinService extends BaseService
@@ -28,6 +27,7 @@ interface PinService extends BaseService
     public function initPin(string $token): void;
 
     /**
+     * Create Pin for the user and enable PIN for the user
      * @param string $token
      * @param string $pin
      * @param string $uuid
@@ -41,4 +41,11 @@ interface PinService extends BaseService
         string $uuid,
         string $otp
     ): void;
+
+    /**
+     * Delete Pin and disable PIN for the user
+     * @param string $token
+     * @return void
+     */
+    public function deletePin(string $token): void;
 }
