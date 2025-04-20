@@ -12,6 +12,8 @@ RUN install-php-extensions pcntl pdo_mysql
 
 COPY --from=vendor /app /app
 
+COPY .env /app/.env
+
 EXPOSE 8000
 
 WORKDIR /app
