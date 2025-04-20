@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Services\Pin\PinService;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +22,7 @@ class PinController extends Controller
         $this->pinService = $pinService;
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [
             'pin' => 'required|confirmed|numeric|digits:6',
@@ -40,7 +41,14 @@ class PinController extends Controller
                 return response()->json(new BaseResponse(400, "PIN is already enabled"), 400);
             }
 
+            $this->pinService->createPin(
+                token: $request->bearerToken(),
+                pin: $request->pin,
+                uuid: $request->uuid,
+                otp: $request->otp
+            );
 
+            return response()->json(new BaseResponse(200, "Create PIN success"), 200);
         } catch (AuthException|PinException $e) {
             Log::error($e->getMessage());
             return response()->json(new BaseResponse(400, $e->getMessage()), 400);
@@ -50,7 +58,7 @@ class PinController extends Controller
         }
     }
 
-    public function init(Request $request)
+    public function init(Request $request): JsonResponse
     {
         try {
             $this->pinService->initPin($request->bearerToken());

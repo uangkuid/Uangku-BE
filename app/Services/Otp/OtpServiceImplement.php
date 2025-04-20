@@ -4,6 +4,7 @@ namespace App\Services\Otp;
 
 use App\Enums\OtpType;
 use App\Exceptions\AuthException;
+use App\Exceptions\SecurityException;
 use App\Helpers\EncryptionHelper;
 use App\Repositories\Redis\RedisRepository;
 use Exception;
@@ -174,6 +175,37 @@ class OtpServiceImplement extends Service implements OtpService
         return $this->sendEmail(
             email: $email,
             subject: "Forgot Password Verification",
+            otpKey: $otpKey,
+        );
+    }
+
+    /**
+     * Send OTP to the user for enable/disable PIN.
+     * @param string|null $bearerToken
+     * @return mixed
+     * @throws SecurityException
+     * @throws RandomException
+     */
+    function sendPin(?string $bearerToken)
+    {
+        $otpKey = OtpType::Pin;
+        $user = JWTAuth::setToken($bearerToken)->toUser();
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+
+        /**
+         * Check if email address not exists in redis throw error
+         */
+        if ($isExist == null) {
+            throw new SecurityException("PIN session expired please try again!");
+        }
+
+        return $this->sendEmail(
+            email: $email,
+            subject: "PIN Verification",
             otpKey: $otpKey,
         );
     }

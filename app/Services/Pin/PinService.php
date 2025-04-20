@@ -2,6 +2,7 @@
 
 namespace App\Services\Pin;
 
+use App\Exceptions\AuthException;
 use App\Exceptions\PinException;
 use App\Exceptions\SecurityException;
 use App\Models\User;
@@ -32,6 +33,7 @@ interface PinService extends BaseService
      * @param string $uuid
      * @param string $otp
      * @return void
+     * @throws SecurityException|AuthException
      */
     public function createPin(
         string $token,

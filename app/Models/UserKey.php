@@ -15,5 +15,6 @@ class UserKey extends Model
         'private_key',
         'users',
         'hashed_key',
+        'hashed_pin'
     ];
 }

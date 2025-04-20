@@ -67,11 +67,6 @@ class UserRepositoryImplement extends Eloquent implements UserRepository
     function getUserKey(string $userId): ?UserKey
     {
         return $this->user_key
-            ->select(
-                'public_key',
-                'private_key',
-                'hashed_key'
-            )
             ->where('users', $userId)->first();
     }
 

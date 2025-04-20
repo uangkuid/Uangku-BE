@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FamiliesController;
 use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\OtpController;
+use App\Http\Controllers\Api\PinController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Controllers\Api\WalletController;
@@ -54,6 +55,18 @@ Route::controller(AuthController::class)->prefix("auth")->group(function () {
 
         Route::post('pre-change-password', 'preChangePassword');
         Route::post('change-password', 'changePassword');
+
+        /**
+         * Pin Controller is Private API, PIN related for authentication
+         */
+        Route::controller(PinController::class)->group(function () {
+            Route::post('pin', 'store');
+            Route::post('pin/init', 'init');
+            Route::delete('pin', 'destroy');
+            Route::post('pin/verify', 'verify');
+            Route::post('pin/reset', 'reset');
+            Route::post('pin/change', 'change');
+        });
     });
 });
 
@@ -66,6 +79,7 @@ Route::controller(OtpController::class)->prefix("otp")->group(function (){
 
     Route::middleware('auth:api')->group(function () {
         Route::post("send/change-password", 'sendChangePassword');
+        Route::post("send/pin", 'sendPin');
     });
 });
 

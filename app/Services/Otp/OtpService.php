@@ -7,7 +7,8 @@ use Exception;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
 
-interface OtpService extends BaseService{
+interface OtpService extends BaseService
+{
 
     /**
      * Send OTP to the user for registration.
@@ -27,13 +28,13 @@ interface OtpService extends BaseService{
      * @throws RandomException
      * @throws AuthException
      * @throws Exception
- */
+     */
     function sendChangePassword(
         string $token
     ): array;
 
     /**
-     * Send OTP to the user for forgot password.
+     * Send OTP to the user for a forgotten password.
      * @param string $email
      * @return array
      * @throws RandomException
@@ -42,4 +43,11 @@ interface OtpService extends BaseService{
     function sendForgotPassword(
         string $email
     ): array;
+
+    /**
+     * Send OTP to the user for enable/disable PIN.
+     * @param string|null $bearerToken
+     * @return mixed
+     */
+    function sendPin(?string $bearerToken);
 }

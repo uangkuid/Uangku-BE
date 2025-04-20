@@ -8,8 +8,11 @@ use App\Exceptions\PinException;
 use App\Exceptions\SecurityException;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
+use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
+use App\Repositories\User\UserRepository;
 use App\Repositories\UserConfig\UserConfigRepository;
+use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use App\Repositories\Pin\PinRepository;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -24,15 +27,18 @@ class PinServiceImplement extends Service implements PinService
     protected PinRepository $mainRepository;
     private UserConfigRepository $userConfigRepository;
     private RedisRepository $redisRepository;
+    private UserRepository $userRepository;
 
     public function __construct(
         PinRepository $mainRepository,
         UserConfigRepository $userConfigRepository,
-        RedisRepository $redisRepository
+        RedisRepository $redisRepository,
+        UserRepository $userRepository
     ) {
         $this->mainRepository = $mainRepository;
         $this->userConfigRepository = $userConfigRepository;
         $this->redisRepository = $redisRepository;
+        $this->userRepository = $userRepository;
     }
 
     /**
@@ -92,16 +98,50 @@ class PinServiceImplement extends Service implements PinService
      * @param string $uuid
      * @param string $otp
      * @return void
-     * @throws SecurityException
+     * @throws SecurityException|AuthException
      */
     public function createPin(string $token, string $pin, string $uuid, string $otp): void
     {
         $user = JWTAuth::setToken($token)->toUser();
         $otpKey = OtpType::Pin;
-
         $email = EncryptionHelper::decryptFromString(
             encryptedData: $user->email,
             key: EncryptionHelper::getSystemSecretKey()
         );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:$email");
+
+        if (!$isExist) {
+            throw new AuthException("PIN session expired please try again!");
+        }
+
+        $otpData = json_decode($isExist, true);
+
+        if ($otpData["email"] != $email) {
+            throw new AuthException("Invalid OTP");
+        }
+
+        if ($otpData['uuid'] != $uuid) {
+            throw new AuthException("Illegal OTP access!");
+        }
+
+        $this->redisRepository->deleteRedis("{$otpKey->value}:$email");
+
+        $userConfig = $this->userConfigRepository->getUserConfig($user->id);
+        $userKey = $this->userRepository->getUserKey($user->id);
+
+        if ($userKey == null) {
+            throw new AuthException("User Key not found");
+        }
+
+        if ($userConfig == null) {
+            throw new AuthException("User Config not found");
+        }
+
+        $userKey->hashed_pin = EncryptionHelper::hashSecretKey($pin);
+        $userKey->save();
+
+        $userConfig->is_pin_enabled = true;
+        $userConfig->save();
     }
 }

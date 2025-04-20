@@ -53,7 +53,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::default()],
             'otp' => 'required|min:6|max:6',
             'uuid' => 'required',
         ]);
@@ -384,6 +384,8 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'old_password' => 'required',
             'new_password' => ['required', 'confirmed', Password::default()],
+            'otp' => 'required|min:6|max:6',
+            'uuid' => 'required',
         ]);
 
         //if validation fails

@@ -20,4 +20,35 @@ class UserConfigRepositoryImplement extends Eloquent implements UserConfigReposi
     }
 
     // Write something awesome :)
+
+    /**
+     * @param string $userId
+     * @return ?UserConfig
+     */
+    public function getUserConfig(string $userId): ?UserConfig
+    {
+        return $this->model
+            ->select('id', 'users', 'is_pin_enabled', 'start_date_month')
+            ->where('users', $userId)
+            ->first();
+    }
+
+    /**
+     * @param string $userId
+     * @param array $data
+     * @return bool
+     */
+    public function updateUserConfig(string $userId, array $data): bool
+    {
+        $userConfig = $this->model
+            ->select('id')
+            ->where('users', $userId)
+            ->first();
+
+        if ($userConfig) {
+            return $userConfig->update($data);
+        }
+
+        return false;
+    }
 }
