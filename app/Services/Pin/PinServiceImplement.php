@@ -241,5 +241,6 @@ class PinServiceImplement extends Service implements PinService
         if ($user == null) {
             throw new AuthException("User not found");
         }
+
     }
 }
