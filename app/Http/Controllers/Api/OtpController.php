@@ -123,4 +123,25 @@ class OtpController extends Controller
             return response()->json(new BaseResponse(500, "Failed to send otp", $e->getMessage()), 500);
         }
     }
+
+    function sendForgotPin(Request $request): JsonResponse
+    {
+        try {
+            $otp = $this->otpService->sendForgotPin($request->bearerToken());
+
+            return response()->json(new BaseResponse(200, "OTP sent successfully", $otp), 200);
+        } catch (AuthException $e) {
+            Log::error("Failed to send otp", [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+            return response()->json(new BaseResponse(404, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to send otp", [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+            return response()->json(new BaseResponse(500, "Failed to send otp", $e->getMessage()), 500);
+        }
+    }
 }

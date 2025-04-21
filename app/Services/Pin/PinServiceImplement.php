@@ -264,5 +264,9 @@ class PinServiceImplement extends Service implements PinService
 
         $this->redisRepository->deleteRedis("{$otpKey->value}:$email");
 
+        $userKey = $this->userRepository->getUserKey($user->id);
+
+        $userKey->hashed_pin = EncryptionHelper::hashSecretKey($pin);
+        $userKey->save();
     }
 }

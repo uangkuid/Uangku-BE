@@ -3,6 +3,7 @@
 namespace App\Services\Otp;
 
 use App\Exceptions\AuthException;
+use App\Exceptions\SecurityException;
 use Exception;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
@@ -47,7 +48,16 @@ interface OtpService extends BaseService
     /**
      * Send OTP to the user for enable/disable PIN.
      * @param string|null $bearerToken
-     * @return mixed
+     * @return array
+     * @throws SecurityException
+     * @throws RandomException
      */
-    function sendPin(?string $bearerToken);
+    function sendPin(?string $bearerToken): array;
+
+    /**
+     * Send OTP to the user for a forgotten PIN.
+     * @param string $bearerToken
+     * @return array
+     */
+    function sendForgotPin(string $bearerToken): array;
 }

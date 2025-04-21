@@ -182,11 +182,11 @@ class OtpServiceImplement extends Service implements OtpService
     /**
      * Send OTP to the user for enable/disable PIN.
      * @param string|null $bearerToken
-     * @return mixed
+     * @return array
      * @throws SecurityException
      * @throws RandomException
      */
-    function sendPin(?string $bearerToken)
+    function sendPin(?string $bearerToken): array
     {
         $otpKey = OtpType::Pin;
         $user = JWTAuth::setToken($bearerToken)->toUser();
@@ -206,6 +206,37 @@ class OtpServiceImplement extends Service implements OtpService
         return $this->sendEmail(
             email: $email,
             subject: "PIN Verification",
+            otpKey: $otpKey,
+        );
+    }
+
+    /**
+     * Send OTP to the user for forgot PIN.
+     * @param string $bearerToken
+     * @return array
+     * @throws RandomException
+     * @throws SecurityException
+     */
+    function sendForgotPin(string $bearerToken): array
+    {
+        $otpKey = OtpType::ForgotPin;
+        $user = JWTAuth::setToken($bearerToken)->toUser();
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+        /**
+         * Check if email address not exists in redis throw error
+         */
+        if ($isExist == null) {
+            throw new SecurityException("Forgot PIN session expired please try again!");
+        }
+
+        return $this->sendEmail(
+            email: $email,
+            subject: "Forgot PIN Verification",
             otpKey: $otpKey,
         );
     }
