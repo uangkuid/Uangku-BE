@@ -1,14 +1,14 @@
 version: "3.8"
 
 services:
-  #  api:
-  #    container_name: api
-  #    image: oratakashi/uangku-be:latest
-  #    entrypoint: php artisan octane:frankenphp
-  #    ports:
-  #      - "80:8000"
-  #    volumes:
-  #      - .:/app
+    api:
+      container_name: api
+      image: oratakashi/uangku-be:latest
+      entrypoint: php artisan octane:frankenphp
+      ports:
+        - "80:8000"
+      volumes:
+        - .:/app
   #  api:
   #    container_name: api
   #    build:
