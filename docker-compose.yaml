@@ -7,8 +7,14 @@ services:
     entrypoint: php artisan octane:frankenphp
     ports:
       - "80:8000"
+    volumes:
+      - .:/app
     depends_on:
       - mariadb
+      - redis
+    networks:
+      - uangku-network  # <-- Referensi network di bawah
+
   mariadb:
     container_name: mariadb
     image: mariadb:latest
@@ -19,6 +25,9 @@ services:
       MARIADB_ROOT_PASSWORD: root
     volumes:
       - ~/mysql:/var/lib/mysql
+    networks:
+      - uangku-network
+
   redis:
     container_name: redis
     image: redis:latest
@@ -28,15 +37,9 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass root
     volumes:
       - ~/redis:/data
-#  phpmyadmin:
-#    container_name: phpmyadmin
-#    image: phpmyadmin
-#    restart: always
-#    ports:
-#      - 80:80
-#    environment:
-#      - PMA_HOST=mariadb
-#      - PMA_PORT=3306
-#    depends_on:
-#      - mariadb
+    networks:
+      - uangku-network
 
+networks:
+  uangku-network:  # <-- Ini bagian penting, jangan sampai typo
+    driver: bridge
