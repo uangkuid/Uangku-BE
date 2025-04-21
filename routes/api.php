@@ -80,6 +80,7 @@ Route::controller(OtpController::class)->prefix("otp")->group(function (){
     Route::middleware('auth:api')->group(function () {
         Route::post("send/change-password", 'sendChangePassword');
         Route::post("send/pin", 'sendPin');
+        Route::post("send/forgot-pin", 'sendForgotPin');
     });
 });
 
