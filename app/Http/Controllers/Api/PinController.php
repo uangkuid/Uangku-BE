@@ -163,4 +163,35 @@ class PinController extends Controller
             return response()->json(new BaseResponse(500, "Failed reset PIN", $e->getMessage()), 500);
         }
     }
+
+    public function verify(Request $request): JsonResponse {
+        $validator = validator($request->all(), [
+            'pin' => 'required|numeric|digits:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed verify PIN", $validator->errors()), 400);
+        }
+
+        try {
+            $isEnable = $this->pinService->isPinEnable($request->bearerToken());
+
+            if (!$isEnable) {
+                return response()->json(new BaseResponse(400, "PIN is currently disabled"), 400);
+            }
+
+            $this->pinService->verifyPin(
+                token: $request->bearerToken(),
+                pin: $request->pin
+            );
+
+            return response()->json(new BaseResponse(200, "Verify PIN success"), 200);
+        } catch (AuthException|SecurityException $e) {
+            Log::error("Failed verify PIN " .$e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed verify PIN " .$e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed verify PIN", $e->getMessage()), 500);
+        }
+    }
 }

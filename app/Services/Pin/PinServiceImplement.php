@@ -233,6 +233,7 @@ class PinServiceImplement extends Service implements PinService
      * @param string $otp
      * @return void
      * @throws AuthException
+     * @throws SecurityException
      */
     public function resetPin(string $token, string $pin, string $uuid, string $otp): void
     {
@@ -268,5 +269,33 @@ class PinServiceImplement extends Service implements PinService
 
         $userKey->hashed_pin = EncryptionHelper::hashSecretKey($pin);
         $userKey->save();
+    }
+
+    /**
+     * Verify Pin for the user
+     * @param string $token
+     * @param string $pin
+     * @return void
+     * @throws AuthException
+     */
+    public function verifyPin(string $token, string $pin): void
+    {
+        $user = JWTAuth::setToken($token)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("User not found");
+        }
+
+        $userKey = $this->userRepository->getUserKey($user->id);
+
+        if ($userKey == null) {
+            throw new AuthException("User Key not found");
+        }
+
+        $isValid = EncryptionHelper::validateSecretKey($pin, $userKey->hashed_pin);
+
+        if (!$isValid) {
+            throw new AuthException("Invalid PIN");
+        }
     }
 }

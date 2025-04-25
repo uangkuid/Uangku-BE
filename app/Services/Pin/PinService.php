@@ -76,4 +76,15 @@ interface PinService extends BaseService
         string $uuid,
         string $otp
     ): void;
+
+    /**
+     * Verify Pin for the user
+     * @param string $token
+     * @param string $pin
+     * @return void
+     */
+    public function verifyPin(
+        string $token,
+        string $pin,
+    ): void;
 }
