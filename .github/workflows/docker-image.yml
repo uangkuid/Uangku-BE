@@ -22,6 +22,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
+          registry: ghcr.io
           username: oratakashi
           password: ${{ secrets.DOCKER }}
 
@@ -31,6 +32,6 @@ jobs:
           context: .
           push: true
           tags: |
-            oratakashi/uangku-be:latest
-            oratakashi/uangku-be:${{ github.sha }}
+            ghcr.io/oratakashi/uangku-be:latest
+            ghcr.io/oratakashi/uangku-be:${{ github.sha }}
           file: Dockerfile
