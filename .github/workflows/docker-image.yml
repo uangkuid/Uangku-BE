@@ -42,5 +42,4 @@ jobs:
             docker.io/oratakashi/uangku-be:latest
             docker.io/oratakashi/uangku-be:${{ github.sha }}
             ghcr.io/oratakashi/uangku-be:latest
-            ghcr.io/oratakashi/uangku-be:${{ github.sha }}
           file: Dockerfile
