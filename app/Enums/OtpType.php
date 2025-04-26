@@ -9,4 +9,5 @@ enum OtpType: string
     case ForgotPassword = 'forgot-password';
     case Pin = 'pin';
     case ForgotPin = 'forgot-pin';
+    case GenerateSecretKey = "generate-secret-key";
 }

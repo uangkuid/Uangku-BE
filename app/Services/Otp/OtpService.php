@@ -28,6 +28,7 @@ interface OtpService extends BaseService
      * @return array
      * @throws RandomException
      * @throws AuthException
+     * @throws SecurityException
      * @throws Exception
      */
     function sendChangePassword(
@@ -35,22 +36,23 @@ interface OtpService extends BaseService
     ): array;
 
     /**
-     * Send OTP to the user for a forgotten password.
+     * Send OTP to the user for forgot password.
      * @param string $email
      * @return array
      * @throws RandomException
-     * @throws AuthException
+     * @throws SecurityException
      */
     function sendForgotPassword(
         string $email
     ): array;
 
     /**
-     * Send OTP to the user for enable/disable PIN.
+     * Send OTP to the user to enable/disable PIN.
      * @param string|null $bearerToken
      * @return array
      * @throws SecurityException
      * @throws RandomException
+     * @throws AuthException
      */
     function sendPin(?string $bearerToken): array;
 
@@ -58,6 +60,18 @@ interface OtpService extends BaseService
      * Send OTP to the user for a forgotten PIN.
      * @param string $bearerToken
      * @return array
+     * @throws RandomException
+     * @throws SecurityException
+     * @throws AuthException
      */
     function sendForgotPin(string $bearerToken): array;
+
+    /**
+     * Send OTP to the user for changing the secret key.
+     * @param string $bearerToken
+     * @return array
+     * @throws SecurityException|RandomException
+     * @throws AuthException
+     */
+    function sendChangeSecretKey(string $bearerToken): array;
 }

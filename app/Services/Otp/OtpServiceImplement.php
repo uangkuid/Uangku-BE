@@ -56,8 +56,8 @@ class OtpServiceImplement extends Service implements OtpService
      * @throws RandomException
      */
     private function sendEmail(
-        string $email,
-        string $subject,
+        string  $email,
+        string  $subject,
         OtpType $otpKey
     ): array
     {
@@ -94,7 +94,7 @@ class OtpServiceImplement extends Service implements OtpService
      * @param string $email
      * @return array
      * @throws RandomException
-     * @throws AuthException
+     * @throws SecurityException
      */
     function sendRegister(string $email): array
     {
@@ -105,7 +105,7 @@ class OtpServiceImplement extends Service implements OtpService
          * Check if email address not exist in redis throw error
          */
         if ($isExist == null) {
-            throw new AuthException("Pre-register expired please try again!");
+            throw new SecurityException("Pre-register expired please try again!");
         }
 
         return $this->sendEmail(
@@ -121,6 +121,7 @@ class OtpServiceImplement extends Service implements OtpService
      * @return array
      * @throws RandomException
      * @throws AuthException
+     * @throws SecurityException
      * @throws Exception
      */
     function sendChangePassword(string $token): array
@@ -144,7 +145,7 @@ class OtpServiceImplement extends Service implements OtpService
          * Check if email address not exist in redis throw error
          */
         if ($isExist == null) {
-            throw new AuthException("Change password session expired please try again!");
+            throw new SecurityException("Change password session expired please try again!");
         }
 
         return $this->sendEmail(
@@ -159,7 +160,7 @@ class OtpServiceImplement extends Service implements OtpService
      * @param string $email
      * @return array
      * @throws RandomException
-     * @throws AuthException
+     * @throws SecurityException
      */
     function sendForgotPassword(string $email): array
     {
@@ -169,7 +170,7 @@ class OtpServiceImplement extends Service implements OtpService
          * Check if email address not exist in redis throw error
          */
         if ($isExist == null) {
-            throw new AuthException("Forgot Password expired please try again!");
+            throw new SecurityException("Forgot Password expired please try again!");
         }
 
         return $this->sendEmail(
@@ -180,16 +181,22 @@ class OtpServiceImplement extends Service implements OtpService
     }
 
     /**
-     * Send OTP to the user for enable/disable PIN.
+     * Send OTP to the user to enable/disable PIN.
      * @param string|null $bearerToken
      * @return array
      * @throws SecurityException
      * @throws RandomException
+     * @throws AuthException
      */
     function sendPin(?string $bearerToken): array
     {
         $otpKey = OtpType::Pin;
         $user = JWTAuth::setToken($bearerToken)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("Invalid token");
+        }
+
         $email = EncryptionHelper::decryptFromString(
             encryptedData: $user->email,
             key: EncryptionHelper::getSystemSecretKey()
@@ -211,16 +218,22 @@ class OtpServiceImplement extends Service implements OtpService
     }
 
     /**
-     * Send OTP to the user for forgot PIN.
+     * Send OTP to the user for a forgotten PIN.
      * @param string $bearerToken
      * @return array
      * @throws RandomException
      * @throws SecurityException
+     * @throws AuthException
      */
     function sendForgotPin(string $bearerToken): array
     {
         $otpKey = OtpType::ForgotPin;
         $user = JWTAuth::setToken($bearerToken)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("Invalid token");
+        }
+
         $email = EncryptionHelper::decryptFromString(
             encryptedData: $user->email,
             key: EncryptionHelper::getSystemSecretKey()
@@ -237,6 +250,40 @@ class OtpServiceImplement extends Service implements OtpService
         return $this->sendEmail(
             email: $email,
             subject: "Forgot PIN Verification",
+            otpKey: $otpKey,
+        );
+    }
+
+    /**
+     * Send OTP to the user for changing the secret key.
+     * @param string $bearerToken
+     * @return array
+     * @throws SecurityException|RandomException
+     * @throws AuthException
+     */
+    function sendChangeSecretKey(string $bearerToken): array
+    {
+        $otpKey = OtpType::GenerateSecretKey;
+        $user = JWTAuth::setToken($bearerToken)->toUser();
+
+        if ($user == null) {
+            throw new AuthException("Invalid token");
+        }
+
+        $email = EncryptionHelper::decryptFromString(
+            encryptedData: $user->email,
+            key: EncryptionHelper::getSystemSecretKey()
+        );
+        $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
+        /**
+         * Check if email address not exists in redis throw error
+         */
+        if ($isExist == null) {
+            throw new SecurityException("Change Secret Key session expired please try again!");
+        }
+        return $this->sendEmail(
+            email: $email,
+            subject: "Change Secret Key Verification",
             otpKey: $otpKey,
         );
     }
