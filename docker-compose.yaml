@@ -1,17 +1,17 @@
 version: "3.8"
 
 services:
-  api:
-    container_name: api
-    image: oratakashi/uangku-be:latest
-    entrypoint: php artisan octane:frankenphp
-    ports:
-      - "80:8000"
-    depends_on:
-      - mariadb
-      - redis
-    networks:
-      - uangku-network  # <-- Referensi network di bawah
+#  api:
+#    container_name: api
+#    image: oratakashi/uangku-be:latest
+#    entrypoint: php artisan octane:frankenphp
+#    ports:
+#      - "80:8000"
+#    depends_on:
+#      - mariadb
+#      - redis
+#    networks:
+#      - uangku-network  # <-- Referensi network di bawah
 
   mariadb:
     container_name: mariadb
