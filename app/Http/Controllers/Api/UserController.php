@@ -7,6 +7,7 @@ use App\Exceptions\UserException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Services\User\UserService;
+use App\Services\Wallet\WalletService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,10 +19,12 @@ class UserController extends Controller
 {
 
     private UserService $userService;
+    private WalletService $walletService;
 
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, WalletService $walletService)
     {
         $this->userService = $userService;
+        $this->walletService = $walletService;
     }
 
     function preGenerateSecretKey(Request $request): JsonResponse
@@ -86,5 +89,21 @@ class UserController extends Controller
             Log::error("Failed to generate secret key : " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to generate secret key : " . $e->getMessage()), 500);
         }
+    }
+
+    function getProfile(Request $request): JsonResponse
+    {
+        $user = $this->userService->getUserByToken($request->bearerToken());
+
+        return response()->json(new BaseResponse(
+            status: 200,
+            message: "Success to get user profile",
+            resource: [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+            ]
+        ), 200);
     }
 }

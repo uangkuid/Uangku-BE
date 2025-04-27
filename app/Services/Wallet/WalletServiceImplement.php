@@ -38,4 +38,14 @@ class WalletServiceImplement extends Service implements WalletService{
             'is_active' => true,
         ]);
     }
+
+    /**
+     * Get wallet access for a user.
+     * @param string $userId
+     * @return array
+     */
+    function getWalletAccess(string $userId): array
+    {
+        return $this->mainRepository->getIndividualWallet($userId);
+    }
 }

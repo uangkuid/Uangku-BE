@@ -88,6 +88,7 @@ Route::controller(OtpController::class)->prefix("otp")->group(function () {
 });
 
 Route::controller(UserController::class)->prefix("user")->middleware('auth:api')->group(function () {
+    Route::get('/', 'getProfile');
     Route::prefix("secret")->group(function () {
         Route::post('pre-generate', 'preGenerateSecretKey');
         Route::post('generate', 'generateSecretKey');
