@@ -17,6 +17,16 @@ class UserConfig extends Model
        'start_date_month'
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'id',
+        'users',
+    ];
+
     public function users(): BelongsTo {
         return $this->belongsTo(User::class, 'users', 'id');
     }

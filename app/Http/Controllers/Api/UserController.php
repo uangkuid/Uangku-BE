@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\UserException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Models\UserConfig;
 use App\Services\User\UserService;
+use App\Services\UserConfig\UserConfigService;
 use App\Services\Wallet\WalletService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -19,12 +22,12 @@ class UserController extends Controller
 {
 
     private UserService $userService;
-    private WalletService $walletService;
+    private UserConfigService $userConfig;
 
-    public function __construct(UserService $userService, WalletService $walletService)
+    public function __construct(UserService $userService, UserConfigService $userConfig)
     {
         $this->userService = $userService;
-        $this->walletService = $walletService;
+        $this->userConfig = $userConfig;
     }
 
     function preGenerateSecretKey(Request $request): JsonResponse
@@ -97,6 +100,7 @@ class UserController extends Controller
     function getProfile(Request $request): JsonResponse
     {
         $user = $this->userService->getUserByToken($request->bearerToken());
+        $userConfig = $this->userConfig->getConfigByUserId($user->id);
 
         return response()->json(new BaseResponse(
             status: 200,
@@ -106,6 +110,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'avatar' => $user->avatar,
+                'config' => $userConfig
             ]
         ), 200);
     }
@@ -130,6 +135,36 @@ class UserController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to update user profile : " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to update user profile : " . $e->getMessage()), 500);
+        }
+    }
+
+    function updateDate(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'date' => ['required', 'numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update user date", $validator->errors()), 400);
+        }
+
+        try {
+            $this->userConfig->setDate(
+                token: $request->bearerToken(),
+                date: $request->date
+            );
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Success to update user date",
+                resource: null
+            ), 200);
+        } catch (UserException|EncryptionException $e) {
+            Log::error("Failed to update user date : " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to update user date : " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to update user date : " . $e->getMessage()), 500);
         }
     }
 }
