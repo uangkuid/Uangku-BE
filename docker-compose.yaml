@@ -40,7 +40,7 @@ services:
       - uangku-network
 
   minio:
-    container_name: api
+    container_name: minio
     image: bitnami/minio:latest
     restart: always
     ports:
