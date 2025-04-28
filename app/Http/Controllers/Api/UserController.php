@@ -85,6 +85,9 @@ class UserController extends Controller
                     'secret_key' => $secretKey
                 ]
             ), 200);
+        } catch (UserException|SecurityException $e) {
+            Log::error("Failed to generate secret key : " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             Log::error("Failed to generate secret key : " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to generate secret key : " . $e->getMessage()), 500);
@@ -105,5 +108,28 @@ class UserController extends Controller
                 'avatar' => $user->avatar,
             ]
         ), 200);
+    }
+
+    function updateProfile(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update user profile", $validator->errors()), 400);
+        }
+
+        try {
+            $this->userService->updateProfile(
+                token: $request->bearerToken(),
+                name: $request->name
+            );
+
+            return response()->json(new BaseResponse(200, "Success to update user profile", $request->all()), 200);
+        } catch (Exception $e) {
+            Log::error("Failed to update user profile : " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to update user profile : " . $e->getMessage()), 500);
+        }
     }
 }

@@ -52,4 +52,17 @@ interface UserService extends BaseService
         string $otp,
         string $uuid
     ): string;
+
+    /**
+     * Update user profile
+     * @param string $token
+     * @param string $name
+     * @return void
+     * @throws UserException
+     * @throws EncryptionException
+     */
+    function updateProfile(
+        string $token,
+        string $name
+    ): void;
 }

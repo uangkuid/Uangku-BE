@@ -220,4 +220,5 @@ This table contains the user's configuration settings, including whether the PIN
 
 ## Encryption Algoritm:
 
-- **Users Data** : Asymmetric encryption using AES-CBC-256 with key raw public key
+- **Users Data** : Asymmetric encryption using RSA with key raw public key
+- **Email** : Asymmetric encryption using AES with raw public key

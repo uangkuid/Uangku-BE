@@ -109,7 +109,7 @@ class UserServiceImplement extends Service implements UserService
 
         $otpData = json_decode($this->redisRepository->getRedis("{$otpKey->value}:{$email}"), true);
 
-        if (!$otpData) {
+        if ($otpData === null) {
             throw new UserException("Session expired");
         }
 
@@ -131,5 +131,36 @@ class UserServiceImplement extends Service implements UserService
         $this->redisRepository->deleteRedis("{$otpKey->value}:$email");
 
         return $newSecretKey;
+    }
+
+    /**
+     * Update user profile
+     * @param string $token
+     * @param string $name
+     * @return void
+     * @throws UserException
+     * @throws EncryptionException
+     */
+    function updateProfile(string $token, string $name): void
+    {
+        $user = $this->getUserByToken($token);
+
+        if (!$user) {
+            throw new UserException("User not found");
+        }
+
+        $userKey = $this->mainRepository->getUserKey($user->id);
+
+        if ($userKey === null) {
+            throw new UserException("User Key not found");
+        }
+
+        $encryptedName = EncryptionHelper::encryptAsymmetric(
+            data: $name ,
+            publicKey: base64_decode($userKey->public_key)
+        );
+
+        $user->name = $encryptedName;
+        $user->save();
     }
 }
