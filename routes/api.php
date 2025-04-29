@@ -67,7 +67,6 @@ Route::controller(AuthController::class)->prefix("auth")->group(function () {
             Route::post('pin/verify', 'verify');
             Route::post('pin/forgot', 'forgot');
             Route::post('pin/reset', 'reset');
-
         });
     });
 });
@@ -91,6 +90,7 @@ Route::controller(UserController::class)->prefix("user")->middleware('auth:api')
     Route::get('/', 'getProfile');
     Route::put('/', 'updateProfile');
     Route::put('date', 'updateDate');
+    Route::post('avatar', 'uploadAvatar');
     Route::prefix("secret")->group(function () {
         Route::post('pre-generate', 'preGenerateSecretKey');
         Route::post('generate', 'generateSecretKey');
