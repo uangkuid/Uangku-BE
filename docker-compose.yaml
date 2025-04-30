@@ -10,6 +10,7 @@ services:
     depends_on:
       - mariadb
       - redis
+      - minio
     networks:
       - uangku-network  # <-- Referensi network di bawah
 
@@ -49,7 +50,7 @@ services:
     networks:
       - uangku-network
     volumes:
-      - '~/minio:/data'
+      - ~/minio:/bitnami/minio/data
     environment:
       - MINIO_ROOT_USER=${MINIO_USERNAME}
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
