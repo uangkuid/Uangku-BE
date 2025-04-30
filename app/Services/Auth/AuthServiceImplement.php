@@ -11,6 +11,7 @@ use App\Helpers\TokenHelper;
 use App\Models\User;
 use App\Models\UserKey;
 use App\Repositories\Redis\RedisRepository;
+use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -27,16 +28,18 @@ class AuthServiceImplement extends Service implements AuthService
      */
     protected UserRepository $mainRepository;
 
-    private RedisRepository $redisRepository;
+    protected RedisRepository $redisRepository;
+    protected S3Repository $s3Repository;
 
-    /**
-     * @param UserRepository $mainRepository
-     * @param RedisRepository $redisRepository
-     */
-    public function __construct(UserRepository $mainRepository, RedisRepository $redisRepository)
+    public function __construct(
+        UserRepository $mainRepository,
+        RedisRepository $redisRepository,
+        S3Repository $s3Repository
+    )
     {
         $this->mainRepository = $mainRepository;
         $this->redisRepository = $redisRepository;
+        $this->s3Repository = $s3Repository;
     }
 
 
@@ -259,10 +262,17 @@ class AuthServiceImplement extends Service implements AuthService
 
         $refresh_token = TokenHelper::generateRefreshToken($user);
 
+        if ($user->avatar != null && $user->avatar != "") {
+            $avatar = $this->s3Repository->getData("avatar/{$user->id}", $user->avatar);
+        } else {
+            $avatar = null;
+        }
+
         return [
             "user" => $user,
             "token" => $token,
             "refresh_token" => $refresh_token,
+            "avatar" => $avatar,
         ];
     }
 

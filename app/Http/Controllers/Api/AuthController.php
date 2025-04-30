@@ -186,7 +186,7 @@ class AuthController extends Controller
                 [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'avatar' => $user->avatar,
+                    'avatar' => $loginResult['avatar'],
                     'token' => $loginResult['token'],
                     'refresh_token' => $loginResult["refresh_token"],
                     'public_key' => $userKey->public_key,

@@ -213,7 +213,11 @@ class UserServiceImplement extends Service implements UserService
             throw new UserException("User not found");
         }
 
-        $avatar = $this->s3Repository->getData("avatar/{$user->id}", $user->avatar);
+        if ($user->avatar != null && $user->avatar != "") {
+            $avatar = $this->s3Repository->getData("avatar/{$user->id}", $user->avatar);
+        } else {
+            $avatar = null;
+        }
 
         return [
             'id' => $user->id,
