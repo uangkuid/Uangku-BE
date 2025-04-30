@@ -7,6 +7,7 @@ use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\UserException;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
 
@@ -20,6 +21,15 @@ interface UserService extends BaseService
      * @return User|null
      */
     function getUserByToken(string $token): ?User;
+
+    /**
+     * Get user profile
+     *
+     * @param string $token
+     * @return array
+     * @throws UserException
+     */
+    function getProfile(string $token): array;
 
     /**
      * Pre-regenerate secret key for the user, active for 5 minutes and automatically deleted when expired
@@ -65,4 +75,15 @@ interface UserService extends BaseService
         string $token,
         string $name
     ): void;
+
+    /**
+     * Update user avatar
+     * @param string $token
+     * @param UploadedFile $avatar
+     * @return string
+     */
+    function updateAvatar(
+        string $token,
+        UploadedFile $avatar
+    ): string;
 }

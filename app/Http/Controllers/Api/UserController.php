@@ -99,20 +99,24 @@ class UserController extends Controller
 
     function getProfile(Request $request): JsonResponse
     {
-        $user = $this->userService->getUserByToken($request->bearerToken());
-        $userConfig = $this->userConfig->getConfigByUserId($user->id);
+        try {
+            $user = $this->userService->getProfile($request->bearerToken());
+            $userConfig = $this->userConfig->getConfigByUserId($user['id']);
 
-        return response()->json(new BaseResponse(
-            status: 200,
-            message: "Success to get user profile",
-            resource: [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'avatar' => $user->avatar,
-                'config' => $userConfig
-            ]
-        ), 200);
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Success to get user profile",
+                resource: [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'avatar' => $user['avatar'],
+                    'config' => $userConfig
+                ]
+            ), 200);
+        } catch (Exception $e) {
+
+        }
     }
 
     function updateProfile(Request $request): JsonResponse
@@ -165,6 +169,36 @@ class UserController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to update user date : " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to update user date : " . $e->getMessage()), 500);
+        }
+    }
+
+    function updateAvatar(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update user avatar", $validator->errors()), 400);
+        }
+
+        try {
+
+            $url = $this->userService->updateAvatar(
+                token: $request->bearerToken(),
+                avatar: $request->file('avatar')
+            );
+
+            return response()->json(new BaseResponse(
+                status: 200,
+                message: "Success to update user avatar",
+                resource: [
+                    "avatar" => $url
+                ]
+            ), 200);
+        } catch (Exception $e) {
+            Log::error("Failed to update user avatar : " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to update user avatar : " . $e->getMessage()), 500);
         }
     }
 }

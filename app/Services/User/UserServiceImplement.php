@@ -10,6 +10,8 @@ use App\Exceptions\UserException;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Repositories\Redis\RedisRepository;
+use App\Repositories\S3\S3Repository;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use LaravelEasyRepository\Service;
 use App\Repositories\User\UserRepository;
@@ -25,15 +27,17 @@ class UserServiceImplement extends Service implements UserService
      */
     protected UserRepository $mainRepository;
     protected RedisRepository $redisRepository;
+    protected S3Repository $s3Repository;
 
-    /**
-     * @param UserRepository $mainRepository
-     * @param RedisRepository $redisRepository
-     */
-    public function __construct(UserRepository $mainRepository, RedisRepository $redisRepository)
+    public function __construct(
+        UserRepository  $mainRepository,
+        RedisRepository $redisRepository,
+        S3Repository    $s3Repository
+    )
     {
         $this->mainRepository = $mainRepository;
         $this->redisRepository = $redisRepository;
+        $this->s3Repository = $s3Repository;
     }
 
 
@@ -156,11 +160,66 @@ class UserServiceImplement extends Service implements UserService
         }
 
         $encryptedName = EncryptionHelper::encryptAsymmetric(
-            data: $name ,
+            data: $name,
             publicKey: base64_decode($userKey->public_key)
         );
 
         $user->name = $encryptedName;
         $user->save();
+    }
+
+    /**
+     * Update user avatar
+     * @param string $token
+     * @param UploadedFile $avatar
+     * @return string
+     * @throws UserException
+     */
+    function updateAvatar(string $token, UploadedFile $avatar): string
+    {
+        $user = $this->getUserByToken($token);
+
+        if (!$user) {
+            throw new UserException("User not found");
+        }
+
+        $filename = uniqid() . '.' . $avatar->getClientOriginalExtension();
+
+        $avatarUrl = $this->s3Repository->storeData(
+            data: $avatar,
+            fileName: $filename,
+            path: "avatar/{$user->id}"
+        );
+
+        $user->avatar = $filename;
+
+        $user->save();
+
+        return $avatarUrl;
+    }
+
+    /**
+     * Get user profile
+     *
+     * @param string $token
+     * @return array
+     * @throws UserException
+     */
+    function getProfile(string $token): array
+    {
+        $user = $this->getUserByToken($token);
+
+        if (!$user) {
+            throw new UserException("User not found");
+        }
+
+        $avatar = $this->s3Repository->getData("avatar/{$user->id}", $user->avatar);
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $avatar,
+        ];
     }
 }
