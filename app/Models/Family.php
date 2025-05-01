@@ -13,7 +13,8 @@ class Family extends Model
 
     protected $fillable = [
         'name',
-        'avatar'
+        'avatar',
+        'created_by'
     ];
 
     public function members(): HasMany

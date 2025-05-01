@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\FamiliesController;
+use App\Http\Controllers\Api\FamilyController;
 use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\PinController;
@@ -119,7 +119,7 @@ Route::controller(TransactionTypeController::class)->group(function () {
     });
 });
 
-Route::controller(FamiliesController::class)->middleware('auth:api')->group(function () {
+Route::controller(FamilyController::class)->middleware('auth:api')->group(function () {
     Route::post('family', 'store');
 
     Route::middleware(['family'])->group(function () {

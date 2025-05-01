@@ -13,6 +13,7 @@ class FamilyKey extends Model
     protected $fillable = [
         'public_key',
         'private_key',
-        'family'
+        'family',
+        'hashed_key'
     ];
 }

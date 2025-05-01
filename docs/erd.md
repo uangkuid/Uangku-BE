@@ -200,6 +200,34 @@ This table contains the user's configuration settings, including whether the PIN
 | is_pin_enabled   | boolean |       | Indicates whether the PIN is enabled for the user                                                                      |
 | start_date_month | varchar |       | Start date month for the user configuration, encrypted using AES-CBC-256 key using Raw public key from table user_keys |
 
+### Family Keys Table
+
+Table to store family keys.
+This table contains the family's public and private keys, which are used for encryption and decryption of sensitive
+data.
+
+| Field       | Type    | Index | Description                                                                                           |
+|-------------|---------|-------|-------------------------------------------------------------------------------------------------------|
+| id          | uuid    | PK    | Unique identifier for the user key                                                                    |
+| family      | uuid    | FK    | Foreign key referencing the family table                                                              |
+| public_key  | varchar |       | Public key of the family, encoded using base64                                                        |
+| private_key | varchar |       | Private key of the family, encrypted using AES-CBC-256 using key family secret_key, encoded by base64 |
+| hashed_key  | varchar |       | Family Secret Key hash with bcrypt and salt                                                           |
+
+### Family Member Table
+
+Table to store family members.
+This table contains the family members and their roles within the family. The role can be either "admin" or "member".
+
+| Field      | Type      | Index | Description                                                  |
+|------------|-----------|-------|--------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the family member                      |
+| user       | uuid      | FK    | Foreign key referencing the users table                      |
+| family     | uuid      | FK    | Foreign key referencing the family table                     |
+| role       | enum      |       | Role of the family member, can be either "admin" or "member" |
+| created_at | timestamp |       | Timestamp when the family member was created                 |
+| updated_at | timestamp |       | Timestamp when the family member was last updated            |
+
 ## Secret Keys
 
 ### Secret key only have 3 types:

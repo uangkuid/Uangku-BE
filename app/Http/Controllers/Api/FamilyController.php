@@ -3,20 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\RoleFamily;
+use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\User;
+use App\Services\Family\FamilyService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
-class FamiliesController extends Controller
+class FamilyController extends Controller
 {
+
+    protected FamilyService $familyService;
+
+    public function __construct(FamilyService $familyService)
+    {
+        $this->familyService = $familyService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -58,40 +69,26 @@ class FamiliesController extends Controller
         try {
             DB::beginTransaction();
 
-            $secretKey = EncryptionHelper::generateUsersSecretKey();
-
-            $families = Family::create();
-
-            $encryptKey = EncryptionHelper::getFamilyEncryptionKey($secretKey);
-
-            $families->update([
-                'name' => EncryptionHelper::encryptAsString(
-                    data: $request->name,
-                    key: $encryptKey
-                ),
-            ]);
-
-            $familyMember = FamilyMember::create([
-                'user' => $current_user->id,
-                'family' => $families->id,
-                'role' => RoleFamily::Admin
-            ]);
+            $families = $this->familyService->createFamily(
+                token: $request->bearerToken(),
+                name: $request->name
+            );
 
             DB::commit();
 
             return response()->json(new BaseResponse(
                 201,
                 'Family created successfully.',
-                [
-                    'id' => $families->id,
-                    'name' => $request->name,
-                    'role' => $familyMember->role,
-                    'secret_key' => $secretKey
-                ]
+                $families
             ));
+        } catch (FamilyException $e) {
+            DB::rollBack();
+            Log::error("Failed to create family: " . $e->getMessage());
+            return response()->json(new BaseResponse(400,  $e->getMessage()), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(409, "Failed to create families", $e->getMessage()), 409);
+            Log::error("Failed to create family: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to create families", $e->getMessage()), 500);
         }
     }
 
