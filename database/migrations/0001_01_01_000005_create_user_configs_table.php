@@ -17,6 +17,11 @@ return new class extends Migration
             $table->boolean('is_pin_enabled')->default(false);
             $table->text('start_date_month');
             $table->timestamps();
+
+            $table->foreign('users')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
         });
     }
 
