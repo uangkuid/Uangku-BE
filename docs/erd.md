@@ -41,7 +41,7 @@ erDiagram
         id uuid PK
         name string
         avatar varchar
-        shared_key varchar
+        created_by uuid
         created_at timestamp
         updated_at timestamp
     }
@@ -60,6 +60,7 @@ erDiagram
         family uuid FK
         public_key varchar
         private_key varchar
+        hashed_key varchar
     }
 
     categories {
@@ -133,7 +134,7 @@ erDiagram
     users ||--o| user_keys: has
     users ||--o{ user_sessions: has
     users ||--o| user_configs: has
-    family ||--o| family_member: has
+    family ||--o{ family_member: has
     family ||--o{ transactions: has
     family ||--o{ wallet: has
     family ||--o| family_keys: has

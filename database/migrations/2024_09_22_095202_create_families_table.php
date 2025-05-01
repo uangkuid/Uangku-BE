@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('families', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name')->nullable();
+            $table->text('name');
             $table->string('avatar')->nullable();
+            $table->uuid('created_by');
             $table->timestamps();
         });
     }

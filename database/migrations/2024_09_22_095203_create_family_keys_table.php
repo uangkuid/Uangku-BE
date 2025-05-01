@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('family')->index();
             $table->text('private_key');
             $table->text('public_key');
+            $table->string('hashed_key', 255);
             $table->timestamps();
 
             $table->foreign('family')->references('id')->on('families');

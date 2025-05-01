@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('user')->index();
             $table->uuid('family')->index();
-            $table->enum('role', ['Admin', 'Member']);
+            $table->enum('role', ['Admin', 'Member', 'Owner']);
             $table->timestamps();
 
             $table->foreign('user')->references('id')->on('users');
