@@ -19,4 +19,11 @@ interface FamilyService extends BaseService{
      * @throws FamilyException
      */
     function createFamily(string $token, string $name): array;
+
+    /**
+     * Get a family member list
+     * @param string $id
+     * @return array
+     */
+    function getMember(string $id): array;
 }

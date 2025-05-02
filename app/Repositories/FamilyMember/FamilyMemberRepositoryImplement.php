@@ -5,7 +5,8 @@ namespace App\Repositories\FamilyMember;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\FamilyMember;
 
-class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository{
+class
+FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository{
 
     /**
     * Model class to be used in this repository for the common methods inside Eloquent
@@ -31,5 +32,21 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
         return $this->model
             ->where('user', $userId)
             ->exists();
+    }
+
+    /**
+     * Get a family member using Family id
+     * @param string $familyId
+     * @return array
+     */
+    function getFamilyMember(string $familyId): array
+    {
+        return $this->model
+            ->where('family', $familyId)
+            ->with(['families' => function ($query) {
+                $query->select('id', 'name', 'avatar');
+            }])
+            ->get()
+            ->toArray();
     }
 }

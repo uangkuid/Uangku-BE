@@ -303,7 +303,10 @@ class FamilyController extends Controller
 
     public function getMember(Request $request, string $id)
     {
-
+        return response()->json(new BaseResponse(
+            status: 200,message: "Success get member details.",
+            resource: $this->familyService->getMember($id)
+        ),200);
     }
 
     public function getAdmin(Request $request, string $id)

@@ -12,4 +12,11 @@ interface FamilyMemberRepository extends Repository{
      * @return bool
      */
     function isAlreadyFamily(string $userId): bool;
+
+    /**
+     * Get a family member using Family id
+     * @param string $familyId
+     * @return array
+     */
+    function getFamilyMember(string $familyId): array;
 }

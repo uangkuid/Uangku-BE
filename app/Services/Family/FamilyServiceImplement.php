@@ -88,4 +88,14 @@ class FamilyServiceImplement extends Service implements FamilyService
             'private_key' => $familyKey->private_key,
         ];
     }
+
+    /**
+     * Get a family member list
+     * @param string $id
+     * @return array
+     */
+    function getMember(string $id): array
+    {
+        return $this->familyMemberRepository->getFamilyMember($id);
+    }
 }
