@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FamilyMember;
 
+use Illuminate\Database\Eloquent\Collection;
 use LaravelEasyRepository\Repository;
 
 interface FamilyMemberRepository extends Repository{
@@ -16,7 +17,7 @@ interface FamilyMemberRepository extends Repository{
     /**
      * Get a family member using Family id
      * @param string $familyId
-     * @return array
+     * @return Collection
      */
-    function getFamilyMember(string $familyId): array;
+    function getFamilyMember(string $familyId): Collection;
 }

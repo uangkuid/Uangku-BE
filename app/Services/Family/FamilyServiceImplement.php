@@ -96,6 +96,18 @@ class FamilyServiceImplement extends Service implements FamilyService
      */
     function getMember(string $id): array
     {
-        return $this->familyMemberRepository->getFamilyMember($id);
+        return $this->familyMemberRepository
+            ->getFamilyMember($id)
+            ->map(function ($member) {
+                return [
+                    'id' => $member->users->id,
+                    'name' => $member->users->name,
+                    'avatar' => $member->users->avatar,
+                    'role' => $member->role,
+                    'created_at' => $member->created_at,
+                    'updated_at' => $member->updated_at,
+                ];
+            })
+            ->toArray();
     }
 }

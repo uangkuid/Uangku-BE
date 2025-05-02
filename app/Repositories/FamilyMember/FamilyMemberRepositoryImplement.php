@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FamilyMember;
 
+use Illuminate\Database\Eloquent\Collection;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\FamilyMember;
 
@@ -37,16 +38,13 @@ FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberReposito
     /**
      * Get a family member using Family id
      * @param string $familyId
-     * @return array
+     * @return Collection
      */
-    function getFamilyMember(string $familyId): array
+    function getFamilyMember(string $familyId): Collection
     {
         return $this->model
             ->where('family', $familyId)
-            ->with(['families' => function ($query) {
-                $query->select('id', 'name', 'avatar');
-            }])
-            ->get()
-            ->toArray();
+            ->with('users:id,name,avatar')
+            ->get();
     }
 }

@@ -301,7 +301,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function getMember(Request $request, string $id)
+    public function getFamilyMember(Request $request, string $id)
     {
         return response()->json(new BaseResponse(
             status: 200,message: "Success get member details.",
@@ -309,7 +309,7 @@ class FamilyController extends Controller
         ),200);
     }
 
-    public function getAdmin(Request $request, string $id)
+    public function getFamilyAdmin(Request $request, string $id)
     {
 
     }
