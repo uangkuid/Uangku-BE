@@ -7,6 +7,7 @@ use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Http\Resources\PaginationResponse;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\User;
@@ -303,9 +304,15 @@ class FamilyController extends Controller
 
     public function getFamilyMember(Request $request, string $id)
     {
-        return response()->json(new BaseResponse(
-            status: 200,message: "Success get member details.",
-            resource: $this->familyService->getMember($id)
+        $data = $this->familyService->getMember($id);
+
+        return response()->json(new PaginationResponse(
+            status: 200,
+            message: "Success get family member.",
+            page: $data['current_page'],
+            totalPage: $data['last_page'],
+            totalData: $data['total'],
+            resource: $data['data'],
         ),200);
     }
 

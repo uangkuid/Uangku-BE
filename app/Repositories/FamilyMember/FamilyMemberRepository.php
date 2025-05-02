@@ -3,6 +3,7 @@
 namespace App\Repositories\FamilyMember;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
 interface FamilyMemberRepository extends Repository{
@@ -17,7 +18,8 @@ interface FamilyMemberRepository extends Repository{
     /**
      * Get a family member using Family id
      * @param string $familyId
-     * @return Collection
+     * @param int $perPage
+     * @return LengthAwarePaginator
      */
-    function getFamilyMember(string $familyId): Collection;
+    function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator;
 }

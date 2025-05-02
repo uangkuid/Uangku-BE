@@ -92,22 +92,29 @@ class FamilyServiceImplement extends Service implements FamilyService
     /**
      * Get a family member list
      * @param string $id
+     * @param int $perPage
      * @return array
      */
-    function getMember(string $id): array
+    function getMember(string $id, int $perPage = 10): array
     {
-        return $this->familyMemberRepository
-            ->getFamilyMember($id)
-            ->map(function ($member) {
-                return [
-                    'id' => $member->users->id,
-                    'name' => $member->users->name,
-                    'avatar' => $member->users->avatar,
-                    'role' => $member->role,
-                    'created_at' => $member->created_at,
-                    'updated_at' => $member->updated_at,
-                ];
-            })
-            ->toArray();
+        $paginator = $this->familyMemberRepository->getFamilyMember($id, $perPage);
+
+        $data = $paginator->through(function ($member) {
+            return [
+                'id' => $member->users->id,
+                'email' => $member->users->email,
+                'avatar' => $member->users->avatar,
+                'role' => $member->role,
+                'created_at' => $member->created_at,
+                'updated_at' => $member->updated_at,
+            ];
+        });
+
+        return [
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'total' => $data->total(),
+            'data' => $data->items() ?? [],
+        ];
     }
 }

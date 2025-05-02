@@ -23,7 +23,8 @@ interface FamilyService extends BaseService{
     /**
      * Get a family member list
      * @param string $id
+     * @param int $perPage
      * @return array
      */
-    function getMember(string $id): array;
+    function getMember(string $id, int $perPage = 10): array;
 }
