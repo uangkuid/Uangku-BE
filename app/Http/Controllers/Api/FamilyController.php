@@ -301,6 +301,16 @@ class FamilyController extends Controller
         }
     }
 
+    public function getMember(Request $request, string $id)
+    {
+
+    }
+
+    public function getAdmin(Request $request, string $id)
+    {
+
+    }
+
     /**
      * Show the form for editing the specified resource.
      */

@@ -119,21 +119,22 @@ Route::controller(TransactionTypeController::class)->group(function () {
     });
 });
 
-Route::controller(FamilyController::class)->middleware('auth:api')->group(function () {
-    Route::post('family', 'store');
+Route::controller(FamilyController::class)->prefix('family')->middleware('auth:api')->group(function () {
+    Route::post('/', 'store');
 
     Route::middleware(['family'])->group(function () {
-        Route::post('family/{id}/leave', 'leave');
-        Route::get('family/{id}', 'show');
+        Route::post('{id}/leave', 'leave');
+        Route::get('{id}', 'show');
+        Route::get('{id}/member', 'getFamilyMember');
     });
 
     Route::middleware(['family', 'family-admin'])->group(function () {
 //        TODO: Add remove and update family feature
 //        Route::put('family/{id}', 'update');
 //        Route::delete('family/{id}', 'destroy');
-
-        Route::post('family/{id}/grant', 'authorized');
-        Route::post('family/{id}/revoke', 'deauthorized');
+        Route::get('{id}/admin/admin', 'getFamilyAdmin');
+        Route::post('{id}/grant', 'authorized');
+        Route::post('{id}/revoke', 'deauthorized');
     });
 });
 
