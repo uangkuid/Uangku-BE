@@ -133,7 +133,6 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
 //        Route::put('family/{id}', 'update');
 //        Route::delete('family/{id}', 'destroy');
         Route::get('{id}/admin/admin', 'getFamilyAdmin');
-        Route::post('{id}/grant', 'authorized');
         Route::post('{id}/revoke', 'deauthorized');
     });
 });
