@@ -3,39 +3,40 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\BaseResponse;
-use App\Models\FamilyMember;
+use App\Services\Family\FamilyService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class FamilyMiddleware
 {
+
+    protected FamilyService $familyService;
+
+    public function __construct(FamilyService $familyService)
+    {
+        $this->familyService = $familyService;
+    }
+
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request): (Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $secretKey = $request->header('family_secret_key');
 
         $id = $request->route('id');
 
         if ($id != null && $id != '') {
-            $familyMember = FamilyMember::where('family', $id)
-                ->where('user', $request->user()->id)
-                ->limit(1);
 
-            if ($familyMember->count() < 1) {
+            $isExist = $this->familyService->isHasAccess($id, $request->bearerToken());
+
+            if (!$isExist) {
                 return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
             }
         }
 
-        if (!empty($secretKey)) {
-            $request->merge(['family_secret_key' => $secretKey]);
-            return $next($request);
-        } else {
-            return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
-        }
+        return $next($request);
     }
 }

@@ -2,13 +2,14 @@
 
 namespace App\Repositories\FamilyMember;
 
+use App\Enums\RoleFamily;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\FamilyMember;
+use function Laravel\Prompts\select;
 
-class
-FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository{
+class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository{
 
     /**
     * Model class to be used in this repository for the common methods inside Eloquent
@@ -32,6 +33,7 @@ FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberReposito
     function isAlreadyFamily(string $userId): bool
     {
         return $this->model
+            ->select('id')
             ->where('user', $userId)
             ->exists();
     }
@@ -45,8 +47,40 @@ FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberReposito
     function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
+            ->select('id', 'user', 'family', 'role')
             ->where('family', $familyId)
             ->with('users:id,email,avatar')
             ->paginate($perPage);
+    }
+
+    /**
+     * Check if the user has access to the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasAccess(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->select("id")
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->exists();
+    }
+
+    /**
+     * Check if the user has admin access to the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasAdmin(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->select('id')
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->whereIn('role', [RoleFamily::Admin->value, RoleFamily::Owner->value])
+            ->exists();
     }
 }

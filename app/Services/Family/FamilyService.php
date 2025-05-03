@@ -27,4 +27,14 @@ interface FamilyService extends BaseService{
      * @return array
      */
     function getMember(string $id, int $perPage = 10): array;
+
+    /**
+     * Check if a user has access to a family
+     * @param string $id
+     * @param string $token
+     * @return bool
+     */
+    function isHasAccess(string $id, string $token): bool;
+
+    function isHasAdminAccess(string $id, string $token): bool;
 }

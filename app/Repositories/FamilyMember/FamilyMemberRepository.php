@@ -22,4 +22,20 @@ interface FamilyMemberRepository extends Repository{
      * @return LengthAwarePaginator
      */
     function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator;
+
+    /**
+     * Check if the user has access to the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasAccess(string $userId, string $familyId): bool;
+
+    /**
+     * Check if the user has admin access to the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasAdmin(string $userId, string $familyId): bool;
 }

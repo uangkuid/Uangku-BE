@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
                     ->symbols()
                     ->uncompromised()
                 : $rule;
+        });
+
+        DB::listen(function ($query) {
+            Log::debug("SQL: {$query->sql}, Bindings: " . json_encode($query->bindings));
         });
     }
 }

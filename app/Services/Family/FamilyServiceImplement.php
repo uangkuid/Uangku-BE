@@ -6,11 +6,13 @@ use App\Enums\RoleFamily;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
+use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\S3\S3Repository;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
-use App\Repositories\Family\FamilyRepository;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Random\RandomException;
 
@@ -24,16 +26,19 @@ class FamilyServiceImplement extends Service implements FamilyService
     protected FamilyRepository $mainRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected FamilyKeyRepository $familyKeyRepository;
+    protected S3Repository $s3Repository;
 
     public function __construct(
         FamilyRepository       $mainRepository,
         FamilyMemberRepository $familyMemberRepository,
-        FamilyKeyRepository    $familyKeyRepository
+        FamilyKeyRepository    $familyKeyRepository,
+        S3Repository           $s3Repository,
     )
     {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->familyKeyRepository = $familyKeyRepository;
+        $this->s3Repository = $s3Repository;
     }
 
     /**
@@ -100,10 +105,17 @@ class FamilyServiceImplement extends Service implements FamilyService
         $paginator = $this->familyMemberRepository->getFamilyMember($id, $perPage);
 
         $data = $paginator->through(function ($member) {
+
+            $avatar = null;
+
+            if (!empty($member->users->avatar)) {
+                $avatar = $this->s3Repository->getData("avatar/{$member->users->id}", $member->users->avatar);
+            }
+
             return [
                 'id' => $member->users->id,
                 'email' => $member->users->email,
-                'avatar' => $member->users->avatar,
+                'avatar' => $avatar,
                 'role' => $member->role,
                 'created_at' => $member->created_at,
                 'updated_at' => $member->updated_at,
@@ -116,5 +128,33 @@ class FamilyServiceImplement extends Service implements FamilyService
             'total' => $data->total(),
             'data' => $data->items() ?? [],
         ];
+    }
+
+    /**
+     * Check if a user has access to a family
+     * @param string $id
+     * @param string $token
+     * @return bool
+     */
+    function isHasAccess(string $id, string $token): bool
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            return false;
+        }
+
+        return $this->familyMemberRepository->isHasAccess($user->id, $id);
+    }
+
+    function isHasAdminAccess(string $id, string $token): bool
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            return false;
+        }
+
+        return $this->familyMemberRepository->isHasAdmin($user->id, $id);
     }
 }
