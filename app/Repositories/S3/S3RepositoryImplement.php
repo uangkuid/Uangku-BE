@@ -2,7 +2,9 @@
 
 namespace App\Repositories\S3;
 
+use App\Enums\RedisCommonKey;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use LaravelEasyRepository\Implementations\Eloquent;
 
@@ -40,12 +42,23 @@ class S3RepositoryImplement extends Eloquent implements S3Repository
         $filePath = $path . '/' . $fileName;
 
         // Check if the file exists in S3 storage
-        if (Storage::disk('minio')->exists($filePath)) {
-            // Return the file URL
-            return Storage::disk('minio')->temporaryUrl($filePath, now()->addMinutes(30));
+        if (!Storage::disk('minio')->exists($filePath)) {
+            // If the file does not exist, return an empty string or handle the error as needed
+            return '';
         }
 
-        // If the file does not exist, return an empty string or handle the error as needed
-        return '';
+        $redisKey = RedisCommonKey::Avatar->value . ":" . $fileName;
+        $cacheRedis = Redis::get($redisKey);
+
+        if($cacheRedis != null){
+            return $cacheRedis;
+        }
+
+        $url = Storage::disk('minio')->temporaryUrl($filePath, now()->addSeconds(86400));
+
+        Redis::command('set', [$redisKey, $url, 'EX', (86400)]);
+
+        // Return the file URL
+        return $url;
     }
 }
