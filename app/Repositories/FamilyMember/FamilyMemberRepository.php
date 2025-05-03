@@ -24,6 +24,14 @@ interface FamilyMemberRepository extends Repository{
     function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator;
 
     /**
+     * Get a family admin using family id
+     * @param string $familyId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    function getFamilyAdmin(string $familyId, int $perPage = 10): LengthAwarePaginator;
+
+    /**
      * Check if the user has access to the family
      * @param string $userId
      * @param string $familyId

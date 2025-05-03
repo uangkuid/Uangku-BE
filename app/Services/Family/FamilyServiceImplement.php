@@ -10,6 +10,7 @@ use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\S3\S3Repository;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
@@ -104,8 +105,64 @@ class FamilyServiceImplement extends Service implements FamilyService
     {
         $paginator = $this->familyMemberRepository->getFamilyMember($id, $perPage);
 
-        $data = $paginator->through(function ($member) {
+        return $this->extractDataFamilyMember($paginator);
+    }
 
+    /**
+     * Check if a user has access to a family
+     * @param string $id
+     * @param string $token
+     * @return bool
+     */
+    function isHasAccess(string $id, string $token): bool
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            return false;
+        }
+
+        return $this->familyMemberRepository->isHasAccess($user->id, $id);
+    }
+
+    /**
+     * Check if a user has admin access to a family
+     * @param string $id
+     * @param string $token
+     * @return bool
+     */
+    function isHasAdminAccess(string $id, string $token): bool
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            return false;
+        }
+
+        return $this->familyMemberRepository->isHasAdmin($user->id, $id);
+    }
+
+    /**
+     * Get a family admin list
+     * @param string $id
+     * @param int $perPage
+     * @return array
+     */
+    function getAdmin(string $id, int $perPage = 10): array
+    {
+        $paginator = $this->familyMemberRepository->getFamilyAdmin($id, $perPage);
+
+        return $this->extractDataFamilyMember($paginator);
+    }
+
+    /**
+     * Extract data family member
+     * @param LengthAwarePaginator $paginator
+     * @return array
+     */
+    public function extractDataFamilyMember(LengthAwarePaginator $paginator): array
+    {
+        $data = $paginator->through(function ($member) {
             $avatar = null;
 
             if (!empty($member->users->avatar)) {
@@ -128,33 +185,5 @@ class FamilyServiceImplement extends Service implements FamilyService
             'total' => $data->total(),
             'data' => $data->items() ?? [],
         ];
-    }
-
-    /**
-     * Check if a user has access to a family
-     * @param string $id
-     * @param string $token
-     * @return bool
-     */
-    function isHasAccess(string $id, string $token): bool
-    {
-        $user = JWTAuth::setToken($token)->user();
-
-        if ($user == null) {
-            return false;
-        }
-
-        return $this->familyMemberRepository->isHasAccess($user->id, $id);
-    }
-
-    function isHasAdminAccess(string $id, string $token): bool
-    {
-        $user = JWTAuth::setToken($token)->user();
-
-        if ($user == null) {
-            return false;
-        }
-
-        return $this->familyMemberRepository->isHasAdmin($user->id, $id);
     }
 }

@@ -47,7 +47,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
     function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
-            ->select('id', 'user', 'family', 'role')
+            ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
             ->where('family', $familyId)
             ->with('users:id,email,avatar')
             ->paginate($perPage);
@@ -82,5 +82,21 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('family', $familyId)
             ->whereIn('role', [RoleFamily::Admin->value, RoleFamily::Owner->value])
             ->exists();
+    }
+
+    /**
+     * Get a family admin using family id
+     * @param string $familyId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    function getFamilyAdmin(string $familyId, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->model
+            ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
+            ->where('family', $familyId)
+            ->whereIn('role', [RoleFamily::Admin->value, RoleFamily::Owner->value])
+            ->with('users:id,email,avatar')
+            ->paginate($perPage);
     }
 }

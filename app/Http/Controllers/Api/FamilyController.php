@@ -318,7 +318,16 @@ class FamilyController extends Controller
 
     public function getFamilyAdmin(Request $request, string $id)
     {
+        $data = $this->familyService->getAdmin($id);
 
+        return response()->json(new PaginationResponse(
+            status: 200,
+            message: "Success get family admin.",
+            page: $data['current_page'],
+            totalPage: $data['last_page'],
+            totalData: $data['total'],
+            resource: $data['data'],
+        ),200);
     }
 
     /**
