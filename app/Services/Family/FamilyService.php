@@ -58,6 +58,7 @@ interface FamilyService extends BaseService{
      * @param string $secretKey
      * @param string $token
      * @return array
+     * @throws FamilyException
      */
     function validateSecretKey(string $familyId, string $secretKey, string $token): array;
 }

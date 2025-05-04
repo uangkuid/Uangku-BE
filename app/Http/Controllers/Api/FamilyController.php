@@ -216,7 +216,20 @@ class FamilyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update family", $validator->errors()), 400);
+        }
+
+        try {
+
+        } catch (Exception $e) {
+            Log::error("Failed to update family: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to update family", $e->getMessage()), 500);
+        }
     }
 
     /**
@@ -248,6 +261,9 @@ class FamilyController extends Controller
                 'Success validate family secret key.',
                 $familyKey
             ));
+        } catch (FamilyException $e) {
+            Log::error("Failed to validate family secret key: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             Log::error("Failed to validate family secret key: " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to validate family secret key", $e->getMessage()), 500);
