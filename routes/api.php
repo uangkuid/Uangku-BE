@@ -121,6 +121,7 @@ Route::controller(TransactionTypeController::class)->group(function () {
 
 Route::controller(FamilyController::class)->prefix('family')->middleware('auth:api')->group(function () {
     Route::post('/', 'store');
+    Route::post('validate', 'validateFamily');
 
     Route::middleware(['family'])->group(function () {
         Route::post('{id}/leave', 'leave');
