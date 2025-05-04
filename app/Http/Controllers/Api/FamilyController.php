@@ -226,4 +226,31 @@ class FamilyController extends Controller
     {
         //
     }
+
+    public function validateSecretKey(Request $request, string $id) {
+        $validator = Validator::make($request->all(), [
+            'secret_key' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to validate family secret key", $validator->errors()), 400);
+        }
+
+        try {
+            $familyKey = $this->familyService->validateSecretKey(
+                familyId: $id,
+                secretKey: $request->secret_key,
+                token: $request->bearerToken()
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Success validate family secret key.',
+                $familyKey
+            ));
+        } catch (Exception $e) {
+            Log::error("Failed to validate family secret key: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to validate family secret key", $e->getMessage()), 500);
+        }
+    }
 }

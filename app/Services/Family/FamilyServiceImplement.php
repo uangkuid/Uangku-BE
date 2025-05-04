@@ -11,8 +11,6 @@ use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\S3\S3Repository;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Random\RandomException;
@@ -184,6 +182,38 @@ class FamilyServiceImplement extends Service implements FamilyService
             'last_page' => $data->lastPage(),
             'total' => $data->total(),
             'data' => $data->items() ?? [],
+        ];
+    }
+
+    /**
+     * Validate a secret key
+     * @param string $familyId
+     * @param string $secretKey
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     */
+    function validateSecretKey(string $familyId, string $secretKey, string $token): array
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+        if ($familyKey == null) {
+            throw new FamilyException('Family Key not found');
+        }
+
+        if (!EncryptionHelper::validateSecretKey($secretKey, $familyKey->hashed_key)) {
+            throw new FamilyException('Invalid secret key');
+        }
+
+        return [
+            'public_key' => $familyKey->public_key,
+            'private_key' => $familyKey->private_key,
         ];
     }
 }

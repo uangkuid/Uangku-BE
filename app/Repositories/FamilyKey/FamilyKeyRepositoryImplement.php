@@ -20,4 +20,17 @@ class FamilyKeyRepositoryImplement extends Eloquent implements FamilyKeyReposito
     }
 
     // Write something awesome :)
+
+    /**
+     * Get a family key by family ID
+     * @param string $familyId
+     * @return FamilyKey|null
+     */
+    function getFamilyKey(string $familyId): ?FamilyKey
+    {
+        return $this->model
+            ->select("public_key", "private_key", "family", "hashed_key")
+            ->where('family', $familyId)
+            ->first();
+    }
 }

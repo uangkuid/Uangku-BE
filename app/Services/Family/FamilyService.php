@@ -51,4 +51,13 @@ interface FamilyService extends BaseService{
      * @return bool
      */
     function isHasAdminAccess(string $id, string $token): bool;
+
+    /**
+     * Validate a secret key
+     * @param string $familyId
+     * @param string $secretKey
+     * @param string $token
+     * @return array
+     */
+    function validateSecretKey(string $familyId, string $secretKey, string $token): array;
 }
