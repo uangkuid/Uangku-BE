@@ -63,6 +63,18 @@ erDiagram
         hashed_key varchar
     }
 
+    family_invitations {
+        id uuid PK
+        family uuid FK
+        inviter_id uuid FK
+        invitee_id uuid FK
+        role enum
+        status enum
+        expired_at timestamp
+        created_at timestamp
+        updated_at timestamp
+    }
+
     categories {
         id uuid PK
         cash_flows uuid FK
@@ -134,10 +146,12 @@ erDiagram
     users ||--o| user_keys: has
     users ||--o{ user_sessions: has
     users ||--o| user_configs: has
+    users ||--o{ family_invitations: has
     family ||--o{ family_member: has
     family ||--o{ transactions: has
     family ||--o{ wallet: has
     family ||--o| family_keys: has
+    family ||--o{ family_invitations: has
     wallet }|--o{ wallet_access: has
     wallet_access ||--o{ wallet_transactions: has
     wallet_transactions ||--o| transactions: has
