@@ -216,4 +216,28 @@ class FamilyServiceImplement extends Service implements FamilyService
             'private_key' => $familyKey->private_key,
         ];
     }
+
+    /**
+     * Update a family data
+     * @param string $familyId
+     * @param string $name
+     * @return void
+     * @throws FamilyException
+     * @throws EncryptionException
+     */
+    function updateFamily(string $familyId, string $name): void
+    {
+        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+        if ($familyKey == null) {
+            throw new FamilyException('Family Key not found');
+        }
+
+        $encryptedName = EncryptionHelper::encryptAsymmetric(
+            data: $name,
+            publicKey: base64_decode($familyKey->public_key)
+        );
+
+        $this->mainRepository->update($familyId, ['name' => $encryptedName]);
+    }
 }

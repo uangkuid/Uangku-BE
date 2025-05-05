@@ -225,7 +225,12 @@ class FamilyController extends Controller
         }
 
         try {
+            $this->familyService->updateFamily(familyId: $id, name: $request->name);
 
+            return response()->json(new BaseResponse(200, "Success update family"));
+        } catch (FamilyException $e) {
+            Log::error("Failed to update family: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             Log::error("Failed to update family: " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to update family", $e->getMessage()), 500);

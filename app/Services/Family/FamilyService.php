@@ -61,4 +61,14 @@ interface FamilyService extends BaseService{
      * @throws FamilyException
      */
     function validateSecretKey(string $familyId, string $secretKey, string $token): array;
+
+    /**
+     * Update a family data
+     * @param string $familyId
+     * @param string $name
+     * @return void
+     * @throws FamilyException
+     * @throws EncryptionException
+     */
+    function updateFamily(string $familyId, string $name): void;
 }
