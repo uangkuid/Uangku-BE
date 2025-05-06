@@ -242,6 +242,23 @@ This table contains the family members and their roles within the family. The ro
 | created_at | timestamp |       | Timestamp when the family member was created                 |
 | updated_at | timestamp |       | Timestamp when the family member was last updated            |
 
+### Family Invitation Table
+
+Table to store family invitation.
+This table contains the family invitations sent to users. The invitation can be in one of three states: "pending", "accepted", or "rejected".
+
+| Field      | Type      | Index | Description                                                                         |
+|------------|-----------|-------|-------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the family invitation                                         |
+| family     | uuid      | FK    | Foreign key referencing the family table                                            |
+| inviter_id | uuid      | FK    | Foreign key referencing the users table, to store admin who invite user into family |
+| invitee_id | uuid      | FK    | Foreign key referencing the users table, to store user who invited into family      |
+| role       | enum      |       | Role of the family member, can be either "admin" or "member"                        |
+| status     | enum      |       | Status of the invitation, can be either "pending", "accepted", or "rejected"        |
+| expired_at | timestamp |       | Timestamp when the invitation expires                                               |
+| created_at | timestamp |       | Timestamp when the family invitation was created                                    |
+| updated_at | timestamp |       | Timestamp when the family invitation was last updated                               |
+
 ## Secret Keys
 
 ### Secret key only have 3 types:
