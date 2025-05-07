@@ -122,6 +122,9 @@ Route::controller(TransactionTypeController::class)->group(function () {
 Route::controller(FamilyController::class)->prefix('family')->middleware('auth:api')->group(function () {
     Route::post('/', 'store');
 
+    Route::post('invitation/accept', 'acceptInvitation');
+    Route::post('invitation/reject', 'rejectInvitation');
+
     Route::middleware(['family'])->group(function () {
         Route::post('{id}/leave', 'leave');
         Route::get('{id}', 'show');
@@ -135,6 +138,9 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
 //        Route::delete('family/{id}', 'destroy');
         Route::get('{id}/admin/admin', 'getFamilyAdmin');
         Route::post('{id}/revoke', 'deauthorized');
+
+        Route::post('{id}/invite', 'inviteMember');
+        Route::post('{id}/invite/search', 'searchMember');
     });
 });
 

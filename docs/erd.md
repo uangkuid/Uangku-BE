@@ -68,7 +68,6 @@ erDiagram
         family uuid FK
         inviter_id uuid FK
         invitee_id uuid FK
-        role enum
         status enum
         expired_at timestamp
         created_at timestamp
@@ -253,7 +252,6 @@ This table contains the family invitations sent to users. The invitation can be 
 | family     | uuid      | FK    | Foreign key referencing the family table                                            |
 | inviter_id | uuid      | FK    | Foreign key referencing the users table, to store admin who invite user into family |
 | invitee_id | uuid      | FK    | Foreign key referencing the users table, to store user who invited into family      |
-| role       | enum      |       | Role of the family member, can be either "admin" or "member"                        |
 | status     | enum      |       | Status of the invitation, can be either "pending", "accepted", or "rejected"        |
 | expired_at | timestamp |       | Timestamp when the invitation expires                                               |
 | created_at | timestamp |       | Timestamp when the family invitation was created                                    |

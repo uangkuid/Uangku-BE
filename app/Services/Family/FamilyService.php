@@ -71,4 +71,14 @@ interface FamilyService extends BaseService{
      * @throws EncryptionException
      */
     function updateFamily(string $familyId, string $name): void;
+
+    /**
+     * Invite a member to a family
+     * @param string $familyId
+     * @param string $email
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     */
+    function inviteMember(string $familyId, string $email, string $token): array;
 }

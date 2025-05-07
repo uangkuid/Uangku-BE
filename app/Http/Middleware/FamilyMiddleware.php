@@ -35,8 +35,10 @@ class FamilyMiddleware
             if (!$isExist) {
                 return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
             }
-        }
 
-        return $next($request);
+            return $next($request);
+        } else {
+            return response()->json(new BaseResponse(400, "Family ID is required!"), 400);
+        }
     }
 }

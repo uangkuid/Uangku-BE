@@ -2,14 +2,17 @@
 
 namespace App\Services\Family;
 
+use App\Enums\InvitationStatus;
 use App\Enums\RoleFamily;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
 use App\Repositories\Family\FamilyRepository;
+use App\Repositories\FamilyInvitation\FamilyInvitationRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\S3\S3Repository;
+use App\Repositories\User\UserRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -25,19 +28,25 @@ class FamilyServiceImplement extends Service implements FamilyService
     protected FamilyRepository $mainRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected FamilyKeyRepository $familyKeyRepository;
+    protected FamilyInvitationRepository $familyInvitationRepository;
     protected S3Repository $s3Repository;
+    protected UserRepository $userRepository;
 
     public function __construct(
-        FamilyRepository       $mainRepository,
-        FamilyMemberRepository $familyMemberRepository,
-        FamilyKeyRepository    $familyKeyRepository,
-        S3Repository           $s3Repository,
+        FamilyRepository           $mainRepository,
+        FamilyMemberRepository     $familyMemberRepository,
+        FamilyKeyRepository        $familyKeyRepository,
+        FamilyInvitationRepository $familyInvitationRepository,
+        S3Repository               $s3Repository,
+        UserRepository             $userRepository
     )
     {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->familyKeyRepository = $familyKeyRepository;
+        $this->familyInvitationRepository = $familyInvitationRepository;
         $this->s3Repository = $s3Repository;
+        $this->userRepository = $userRepository;
     }
 
     /**
@@ -107,6 +116,38 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
+     * Extract data family member
+     * @param LengthAwarePaginator $paginator
+     * @return array
+     */
+    public function extractDataFamilyMember(LengthAwarePaginator $paginator): array
+    {
+        $data = $paginator->through(function ($member) {
+            $avatar = null;
+
+            if (!empty($member->users->avatar)) {
+                $avatar = $this->s3Repository->getData("avatar/{$member->users->id}", $member->users->avatar);
+            }
+
+            return [
+                'id' => $member->users->id,
+                'email' => $member->users->email,
+                'avatar' => $avatar,
+                'role' => $member->role,
+                'created_at' => $member->created_at,
+                'updated_at' => $member->updated_at,
+            ];
+        });
+
+        return [
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'total' => $data->total(),
+            'data' => $data->items() ?? [],
+        ];
+    }
+
+    /**
      * Check if a user has access to a family
      * @param string $id
      * @param string $token
@@ -151,38 +192,6 @@ class FamilyServiceImplement extends Service implements FamilyService
         $paginator = $this->familyMemberRepository->getFamilyAdmin($id, $perPage);
 
         return $this->extractDataFamilyMember($paginator);
-    }
-
-    /**
-     * Extract data family member
-     * @param LengthAwarePaginator $paginator
-     * @return array
-     */
-    public function extractDataFamilyMember(LengthAwarePaginator $paginator): array
-    {
-        $data = $paginator->through(function ($member) {
-            $avatar = null;
-
-            if (!empty($member->users->avatar)) {
-                $avatar = $this->s3Repository->getData("avatar/{$member->users->id}", $member->users->avatar);
-            }
-
-            return [
-                'id' => $member->users->id,
-                'email' => $member->users->email,
-                'avatar' => $avatar,
-                'role' => $member->role,
-                'created_at' => $member->created_at,
-                'updated_at' => $member->updated_at,
-            ];
-        });
-
-        return [
-            'current_page' => $data->currentPage(),
-            'last_page' => $data->lastPage(),
-            'total' => $data->total(),
-            'data' => $data->items() ?? [],
-        ];
     }
 
     /**
@@ -239,5 +248,64 @@ class FamilyServiceImplement extends Service implements FamilyService
         );
 
         $this->mainRepository->update($familyId, ['name' => $encryptedName]);
+    }
+
+    /**
+     * Invite a member to a family
+     * @param string $familyId
+     * @param string $email
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     * @throws EncryptionException
+     * @throws RandomException
+     */
+    function inviteMember(string $familyId, string $email, string $token): array
+    {
+        $admin = JWTAuth::setToken($token)->user();
+        $encryptedEmail = EncryptionHelper::encryptAsString(
+            data: $email,
+            key: EncryptionHelper::getSystemSecretKey(),
+            iv: env("MAIN_STATIC_IV"),
+        );
+
+        if ($admin == null) {
+            throw new FamilyException('Admin not recognized');
+        }
+
+        $user = $this->userRepository->getUserByEmail($encryptedEmail);
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $isExist = $this->familyMemberRepository->isAlreadyFamily($user->id);
+
+        if ($isExist) {
+            throw new FamilyException('User already in a family');
+        }
+
+        $isExist = $this->familyInvitationRepository->isExist($familyId, $user->id);
+
+        if ($isExist) {
+            throw new FamilyException('User already invited');
+        }
+
+        $familyInvitation = $this->familyInvitationRepository->create([
+            'family' => $familyId,
+            'invitee_id' => $user->id,
+            'inviter_id' => $admin->id,
+            'status' => InvitationStatus::Pending,
+            'expired_at' => now()->addDays(7),
+        ]);
+
+        return [
+            'id' => $familyInvitation->id,
+            'family' => $familyInvitation->family,
+            'invitee_id' => $familyInvitation->invitee_id,
+            'inviter_id' => $familyInvitation->inviter_id,
+            'status' => $familyInvitation->status,
+            'expired_at' => $familyInvitation->expired_at,
+            'expired_at_timestamp' => $familyInvitation->expired_at->timestamp,
+        ];
     }
 }

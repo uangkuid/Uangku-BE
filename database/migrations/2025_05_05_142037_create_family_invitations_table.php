@@ -16,7 +16,6 @@ return new class extends Migration
             $table->uuid('family');
             $table->uuid('inviter_id');
             $table->uuid('invitee_id');
-            $table->enum('role', ['Admin', 'Member']);
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->timestamp('expired_at');
             $table->timestamps();

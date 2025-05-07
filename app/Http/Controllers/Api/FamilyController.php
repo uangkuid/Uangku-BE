@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\RoleFamily;
 use App\Exceptions\FamilyException;
-use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Http\Resources\PaginationResponse;
 use App\Models\Family;
 use App\Models\FamilyMember;
-use App\Models\User;
 use App\Services\Family\FamilyService;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class FamilyController extends Controller
 {
@@ -38,17 +35,9 @@ class FamilyController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $current_user = $request->user();
 
@@ -63,7 +52,7 @@ class FamilyController extends Controller
 
         $familyMember = FamilyMember::where('user', $current_user->id);
 
-        if ($familyMember->count() > 0){
+        if ($familyMember->count() > 0) {
             return response()->json(new BaseResponse(400, "Users cannot create more than one family."), 400);
         }
 
@@ -85,7 +74,7 @@ class FamilyController extends Controller
         } catch (FamilyException $e) {
             DB::rollBack();
             Log::error("Failed to create family: " . $e->getMessage());
-            return response()->json(new BaseResponse(400,  $e->getMessage()), 400);
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             DB::rollBack();
             Log::error("Failed to create family: " . $e->getMessage());
@@ -98,57 +87,17 @@ class FamilyController extends Controller
      */
     public function show(Request $request, string $id)
     {
-        /**
-         * Prepare for decrypt family data
-         */
-        $secretKey = $request->header('family_secret_key');
-        $salt = EncryptionHelper::getUsersSalt($secretKey);
-        $secretKeySanitize = str_replace("-", "", $secretKey);
-        $secretKeyAsArray = explode("-", $secretKey);
-        $encryptKey = $salt.$secretKeyAsArray[1].$secretKeySanitize;
 
-        /**
-         * Prepare for decrypt system data
-         */
-        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
-
-        $family = Family::where('id', $id)
-            ->with([
-                'members:id,user,role,family', // Memilih field dari tabel `family_members`
-                'members.users:id,name,email' // Memilih field dari tabel `users` melalui relasi `members`
-            ])
-            ->first();
-
-        return response()->json(new BaseResponse(
-            200,
-            'Success get family details.',
-            [
-                'id' => $family->id,
-                'name' => EncryptionHelper::decryptFromString(
-                    encryptedData: $family->name,
-                    key: $encryptKey
-                ),
-                'members' => $family->members->map(function ($member) {
-                    return [
-                        'id' => $member->id,
-                        'user_id' => $member->users->id,
-                        'name' => $member->users->name,
-                        'email' => $member->users->email,
-                        'role' => $member->role,
-                    ];
-                }),
-            ]
-        ));
     }
 
-    public function leave(Request $request, string $id)
+    public function leave(Request $request, string $id): JsonResponse
     {
         /**
          * Check is family exist?
          */
         $family = Family::find($id);
 
-        if (!$family){
+        if (!$family) {
             return response()->json(new BaseResponse(404, "Family not found!"), 404);
         }
 
@@ -156,7 +105,7 @@ class FamilyController extends Controller
             $familyMember = FamilyMember::where('family', $id);
             $count = $familyMember->count();
 
-            if (($count - 1) == 0){
+            if (($count - 1) == 0) {
                 return response()->json(new BaseResponse(409, "Failed to leave from family because no family member left!"), 409);
             }
 
@@ -175,7 +124,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function getFamilyMember(Request $request, string $id)
+    public function getFamilyMember(Request $request, string $id): JsonResponse
     {
         $data = $this->familyService->getMember($id);
 
@@ -186,10 +135,10 @@ class FamilyController extends Controller
             totalPage: $data['last_page'],
             totalData: $data['total'],
             resource: $data['data'],
-        ),200);
+        ), 200);
     }
 
-    public function getFamilyAdmin(Request $request, string $id)
+    public function getFamilyAdmin(Request $request, string $id): JsonResponse
     {
         $data = $this->familyService->getAdmin($id);
 
@@ -200,21 +149,13 @@ class FamilyController extends Controller
             totalPage: $data['last_page'],
             totalData: $data['total'],
             resource: $data['data'],
-        ),200);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
+        ), 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
@@ -245,7 +186,8 @@ class FamilyController extends Controller
         //
     }
 
-    public function validateSecretKey(Request $request, string $id) {
+    public function validateSecretKey(Request $request, string $id): JsonResponse
+    {
         $validator = Validator::make($request->all(), [
             'secret_key' => 'required|string',
         ]);
@@ -272,6 +214,32 @@ class FamilyController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to validate family secret key: " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to validate family secret key", $e->getMessage()), 500);
+        }
+    }
+
+    public function inviteMember(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to invite family member", $validator->errors()), 400);
+        }
+
+        try {
+            $familyInvitation = $this->familyService->inviteMember(
+                familyId: $id,
+                email: $request->email,
+                token: $request->bearerToken()
+            );
+            return response()->json(new BaseResponse(200, "Success invite family member", $familyInvitation), 200);
+        } catch (FamilyException $e) {
+            Log::error("Failed to invite family member: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to invite family member: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to invite family member", $e->getMessage()), 500);
         }
     }
 }
