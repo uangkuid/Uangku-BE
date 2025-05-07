@@ -73,7 +73,7 @@ interface FamilyService extends BaseService{
     function updateFamily(string $familyId, string $name): void;
 
     /**
-     * Invite a member to a family
+     * Invite a member of a family
      * @param string $familyId
      * @param string $email
      * @param string $token

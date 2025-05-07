@@ -251,7 +251,7 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
-     * Invite a member to a family
+     * Invite a member of a family
      * @param string $familyId
      * @param string $email
      * @param string $token
