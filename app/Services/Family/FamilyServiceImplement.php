@@ -3,6 +3,7 @@
 namespace App\Services\Family;
 
 use App\Enums\InvitationStatus;
+use App\Enums\RedisKey;
 use App\Enums\RoleFamily;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
@@ -11,11 +12,13 @@ use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyInvitation\FamilyInvitationRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\Redis\RedisRepository;
 use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Ramsey\Uuid\Uuid;
 use Random\RandomException;
 
 class FamilyServiceImplement extends Service implements FamilyService
@@ -31,6 +34,7 @@ class FamilyServiceImplement extends Service implements FamilyService
     protected FamilyInvitationRepository $familyInvitationRepository;
     protected S3Repository $s3Repository;
     protected UserRepository $userRepository;
+    protected RedisRepository $redisRepository;
 
     public function __construct(
         FamilyRepository           $mainRepository,
@@ -38,7 +42,8 @@ class FamilyServiceImplement extends Service implements FamilyService
         FamilyKeyRepository        $familyKeyRepository,
         FamilyInvitationRepository $familyInvitationRepository,
         S3Repository               $s3Repository,
-        UserRepository             $userRepository
+        UserRepository             $userRepository,
+        RedisRepository            $redisRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -47,6 +52,7 @@ class FamilyServiceImplement extends Service implements FamilyService
         $this->familyInvitationRepository = $familyInvitationRepository;
         $this->s3Repository = $s3Repository;
         $this->userRepository = $userRepository;
+        $this->redisRepository = $redisRepository;
     }
 
     /**
@@ -253,59 +259,37 @@ class FamilyServiceImplement extends Service implements FamilyService
     /**
      * Invite a member of a family
      * @param string $familyId
-     * @param string $email
      * @param string $token
      * @return array
      * @throws FamilyException
-     * @throws EncryptionException
-     * @throws RandomException
      */
-    function inviteMember(string $familyId, string $email, string $token): array
+    function inviteMember(string $familyId, string $token): array
     {
         $admin = JWTAuth::setToken($token)->user();
-        $encryptedEmail = EncryptionHelper::encryptAsString(
-            data: $email,
-            key: EncryptionHelper::getSystemSecretKey(),
-            iv: env("MAIN_STATIC_IV"),
-        );
 
         if ($admin == null) {
             throw new FamilyException('Admin not recognized');
         }
 
-        $user = $this->userRepository->getUserByEmail($encryptedEmail);
-        if ($user == null) {
-            throw new FamilyException('User not found');
-        }
+        $familyInvitation = [
+            "id" => Uuid::uuid4()->toString(),
+            "family" => $familyId,
+            "inviter_id" => $admin->id,
+        ];
 
-        $isExist = $this->familyMemberRepository->isAlreadyFamily($user->id);
+        $redisKey = RedisKey::FamilyInvitation;
+        $expiryInSeconds = (5 * 60) + 10;
 
-        if ($isExist) {
-            throw new FamilyException('User already in a family');
-        }
-
-        $isExist = $this->familyInvitationRepository->isExist($familyId, $user->id);
-
-        if ($isExist) {
-            throw new FamilyException('User already invited');
-        }
-
-        $familyInvitation = $this->familyInvitationRepository->create([
-            'family' => $familyId,
-            'invitee_id' => $user->id,
-            'inviter_id' => $admin->id,
-            'status' => InvitationStatus::Pending,
-            'expired_at' => now()->addDays(7),
-        ]);
+        $this->redisRepository->storeRedis(
+            key: "{$redisKey->value}:{$familyId}",
+            value: json_encode($familyInvitation),
+            expire: $expiryInSeconds // 5 minutes
+        );
 
         return [
-            'id' => $familyInvitation->id,
-            'family' => $familyInvitation->family,
-            'invitee_id' => $familyInvitation->invitee_id,
-            'inviter_id' => $familyInvitation->inviter_id,
-            'status' => $familyInvitation->status,
-            'expired_at' => $familyInvitation->expired_at,
-            'expired_at_timestamp' => $familyInvitation->expired_at->timestamp,
+            'id' => $familyInvitation['id'],
+            'family' => $familyInvitation['family'],
+            'inviter_id' => $familyInvitation['inviter_id'],
         ];
     }
 }

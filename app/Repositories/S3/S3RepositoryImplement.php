@@ -2,7 +2,7 @@
 
 namespace App\Repositories\S3;
 
-use App\Enums\RedisCommonKey;
+use App\Enums\RedisKey;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
@@ -47,7 +47,7 @@ class S3RepositoryImplement extends Eloquent implements S3Repository
             return '';
         }
 
-        $redisKey = RedisCommonKey::Avatar->value . ":" . $fileName;
+        $redisKey = RedisKey::Avatar->value . ":" . $fileName;
         $cacheRedis = Redis::get($redisKey);
 
         if($cacheRedis != null){

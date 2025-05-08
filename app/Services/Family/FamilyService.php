@@ -75,10 +75,9 @@ interface FamilyService extends BaseService{
     /**
      * Invite a member of a family
      * @param string $familyId
-     * @param string $email
      * @param string $token
      * @return array
      * @throws FamilyException
      */
-    function inviteMember(string $familyId, string $email, string $token): array;
+    function inviteMember(string $familyId, string $token): array;
 }
