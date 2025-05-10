@@ -233,4 +233,9 @@ class FamilyController extends Controller
             return response()->json(new BaseResponse(500, "Failed to invite family member", $e->getMessage()), 500);
         }
     }
+
+    public function responseInvitation(Request $request)
+    {
+
+    }
 }
