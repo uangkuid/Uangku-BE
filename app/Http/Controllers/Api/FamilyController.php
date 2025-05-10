@@ -219,14 +219,6 @@ class FamilyController extends Controller
 
     public function inviteMember(Request $request, string $id)
     {
-//        $validator = Validator::make($request->all(), [
-//            'email' => 'required|email',
-//        ]);
-//
-//        if ($validator->fails()) {
-//            return response()->json(new BaseResponse(400, "Failed to invite family member", $validator->errors()), 400);
-//        }
-
         try {
             $familyInvitation = $this->familyService->inviteMember(
                 familyId: $id,

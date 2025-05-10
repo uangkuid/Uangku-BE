@@ -31,7 +31,6 @@ class FamilyServiceImplement extends Service implements FamilyService
     protected FamilyRepository $mainRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected FamilyKeyRepository $familyKeyRepository;
-    protected FamilyInvitationRepository $familyInvitationRepository;
     protected S3Repository $s3Repository;
     protected UserRepository $userRepository;
     protected RedisRepository $redisRepository;
@@ -40,7 +39,6 @@ class FamilyServiceImplement extends Service implements FamilyService
         FamilyRepository           $mainRepository,
         FamilyMemberRepository     $familyMemberRepository,
         FamilyKeyRepository        $familyKeyRepository,
-        FamilyInvitationRepository $familyInvitationRepository,
         S3Repository               $s3Repository,
         UserRepository             $userRepository,
         RedisRepository            $redisRepository
@@ -49,7 +47,6 @@ class FamilyServiceImplement extends Service implements FamilyService
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->familyKeyRepository = $familyKeyRepository;
-        $this->familyInvitationRepository = $familyInvitationRepository;
         $this->s3Repository = $s3Repository;
         $this->userRepository = $userRepository;
         $this->redisRepository = $redisRepository;
