@@ -26,8 +26,14 @@ class S3RepositoryImplement extends Eloquent implements S3Repository
         // Store the file in S3 storage
         Storage::disk('minio')->put($filePath, file_get_contents($data));
 
+        $tempUrl = Storage::disk('minio')->temporaryUrl($filePath, now()->addSeconds(86400));
+
+        // Store the temporary URL in Redis cache
+        $redisKey = RedisKey::S3->value . ":" . $fileName;
+        Redis::command('set', [$redisKey, $tempUrl, 'EX', (86400)]);
+
         // Return the file URL
-        return Storage::disk('minio')->temporaryUrl($filePath, now()->addMinutes(30));
+        return $tempUrl;
     }
 
 
@@ -47,7 +53,7 @@ class S3RepositoryImplement extends Eloquent implements S3Repository
             return '';
         }
 
-        $redisKey = RedisKey::Avatar->value . ":" . $fileName;
+        $redisKey = RedisKey::S3->value . ":" . $fileName;
         $cacheRedis = Redis::get($redisKey);
 
         if($cacheRedis != null){
