@@ -275,18 +275,21 @@ class FamilyServiceImplement extends Service implements FamilyService
         ];
 
         $redisKey = RedisKey::FamilyInvitation;
-        $expiryInSeconds = (5 * 60) + 10;
+        $expired = now()->addSeconds(5 * 60);
+        $redisExpired = (5 * 60) + 10;
 
         $this->redisRepository->storeRedis(
             key: "{$redisKey->value}:{$familyId}",
             value: json_encode($familyInvitation),
-            expire: $expiryInSeconds // 5 minutes
+            expire: $redisExpired // 5 minutes
         );
 
         return [
             'id' => $familyInvitation['id'],
             'family' => $familyInvitation['family'],
             'inviter_id' => $familyInvitation['inviter_id'],
+            'expired_at_datetime' => $expired->toDateTimeString(),
+            'expired_at_timestamp' => $expired->getTimestamp(),
         ];
     }
 }
