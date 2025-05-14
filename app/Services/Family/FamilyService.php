@@ -80,4 +80,18 @@ interface FamilyService extends BaseService{
      * @throws FamilyException
      */
     function inviteMember(string $familyId, string $token): array;
+
+    /**
+     * Response to an invitation
+     * @param string $invitationId
+     * @param string $familyId
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     */
+    function responseInvitation(
+        string $invitationId,
+        string $familyId,
+        string $token,
+    ): array;
 }

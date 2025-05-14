@@ -122,7 +122,7 @@ Route::controller(TransactionTypeController::class)->group(function () {
 Route::controller(FamilyController::class)->prefix('family')->middleware('auth:api')->group(function () {
     Route::post('/', 'store');
 
-    Route::post('invitation', 'responseInvitation');
+    Route::post('join', 'responseInvitation');
 
     Route::middleware(['family'])->group(function () {
         Route::post('{id}/leave', 'leave');

@@ -36,12 +36,12 @@ class FamilyServiceImplement extends Service implements FamilyService
     protected RedisRepository $redisRepository;
 
     public function __construct(
-        FamilyRepository           $mainRepository,
-        FamilyMemberRepository     $familyMemberRepository,
-        FamilyKeyRepository        $familyKeyRepository,
-        S3Repository               $s3Repository,
-        UserRepository             $userRepository,
-        RedisRepository            $redisRepository
+        FamilyRepository       $mainRepository,
+        FamilyMemberRepository $familyMemberRepository,
+        FamilyKeyRepository    $familyKeyRepository,
+        S3Repository           $s3Repository,
+        UserRepository         $userRepository,
+        RedisRepository        $redisRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -290,6 +290,67 @@ class FamilyServiceImplement extends Service implements FamilyService
             'inviter_id' => $familyInvitation['inviter_id'],
             'expired_at_datetime' => $expired->toDateTimeString(),
             'expired_at_timestamp' => $expired->getTimestamp(),
+        ];
+    }
+
+    /**
+     * Response to an invitation
+     * @param string $invitationId
+     * @param string $familyId
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     */
+    function responseInvitation(
+        string $invitationId,
+        string $familyId,
+        string $token
+    ): array
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $isAlreadyAccess = $this->familyMemberRepository->isHasAccess($user->id, $familyId);
+
+        if ($isAlreadyAccess) {
+            throw new FamilyException('You already join this family');
+        }
+
+        $isAlreadyFamily = $this->familyMemberRepository->isAlreadyFamily($user->id);
+
+        if ($isAlreadyFamily) {
+            throw new FamilyException('You only can join one family');
+        }
+
+        $familyInvitation = $this->redisRepository->getRedis(
+            key: RedisKey::FamilyInvitation->value . ":{$familyId}"
+        );
+
+        if ($familyInvitation == null) {
+            throw new FamilyException('Family invitation not found');
+        }
+
+        $familyInvitation = json_decode($familyInvitation, true);
+        if ($familyInvitation['id'] != $invitationId) {
+            throw new FamilyException('Family invitation not valid');
+        }
+
+        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+        $this->familyMemberRepository->create([
+            'user' => $user->id,
+            'family' => $familyId,
+            'role' => RoleFamily::Member,
+        ]);
+
+        return [
+            'id' => $familyInvitation['id'],
+            'family' => $familyInvitation['family'],
+            'public_key' => $familyKey['public_key'],
+            'private_key' => $familyKey['private_key'],
         ];
     }
 }

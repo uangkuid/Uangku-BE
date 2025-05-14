@@ -236,6 +236,33 @@ class FamilyController extends Controller
 
     public function responseInvitation(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'invitation_id' => 'required|string',
+            'family_id' => 'required|string',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to response family invitation", $validator->errors()), 400);
+        }
+
+        try {
+            $responseInvitation = $this->familyService->responseInvitation(
+                invitationId: $request->invitation_id,
+                familyId: $request->family_id,
+                token: $request->bearerToken(),
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Success response family invitation.',
+                $responseInvitation
+            ));
+        } catch (FamilyException $e) {
+            Log::error("Failed to response family invitation: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to response family invitation: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to response family invitation", $e->getMessage()), 500);
+        }
     }
 }
