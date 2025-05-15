@@ -99,4 +99,18 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->with('users:id,email,avatar')
             ->paginate($perPage);
     }
+
+    /**
+     * Grant admin access to a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function grantAdmin(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->update(['role' => RoleFamily::Admin->value]);
+    }
 }

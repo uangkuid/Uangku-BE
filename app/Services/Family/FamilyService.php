@@ -95,4 +95,17 @@ interface FamilyService extends BaseService{
         string $familyId,
         string $token,
     ): array;
+
+    /**
+     * Grant admin access to a user
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return array
+     */
+    function grantAdmin(
+        string $familyId,
+        string $userId,
+        string $token,
+    ): void;
 }
