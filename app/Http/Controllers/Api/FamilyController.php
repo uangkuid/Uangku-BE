@@ -217,7 +217,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function inviteMember(Request $request, string $id)
+    public function inviteMember(Request $request, string $id): JsonResponse
     {
         try {
             $familyInvitation = $this->familyService->inviteMember(
@@ -234,7 +234,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function responseInvitation(Request $request)
+    public function responseInvitation(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'invitation_id' => 'required|string',
@@ -263,6 +263,27 @@ class FamilyController extends Controller
         } catch (Exception $e) {
             Log::error("Failed to response family invitation: " . $e->getMessage());
             return response()->json(new BaseResponse(500, "Failed to response family invitation", $e->getMessage()), 500);
+        }
+    }
+
+    public function grantAdmin(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to grant admin family", $validator->errors()), 400);
+        }
+
+        try {
+
+        } catch (FamilyException $e) {
+            Log::error("Failed to grant admin family: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to grant admin family: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to grant admin family", $e->getMessage()), 500);
         }
     }
 }
