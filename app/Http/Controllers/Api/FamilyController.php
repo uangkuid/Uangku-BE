@@ -126,29 +126,29 @@ class FamilyController extends Controller
 
     public function getFamilyMember(Request $request, string $id): JsonResponse
     {
-        $data = $this->familyService->getMember($id);
+        $resource = $this->familyService->getMember($id); // AnonymousResourceCollection
 
         return response()->json(new PaginationResponse(
             status: 200,
             message: "Success get family member.",
-            page: $data['current_page'],
-            totalPage: $data['last_page'],
-            totalData: $data['total'],
-            resource: $data['data'],
+            page: $resource->currentPage(),
+            totalPage: $resource->lastPage(),
+            totalData: $resource->total(),
+            resource: $resource,
         ), 200);
     }
 
     public function getFamilyAdmin(Request $request, string $id): JsonResponse
     {
-        $data = $this->familyService->getAdmin($id);
+        $resource = $this->familyService->getAdmin($id); // AnonymousResourceCollection
 
         return response()->json(new PaginationResponse(
             status: 200,
             message: "Success get family admin.",
-            page: $data['current_page'],
-            totalPage: $data['last_page'],
-            totalData: $data['total'],
-            resource: $data['data'],
+            page: $resource->currentPage(),
+            totalPage: $resource->lastPage(),
+            totalData: $resource->total(),
+            resource: $resource,
         ), 200);
     }
 

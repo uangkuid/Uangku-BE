@@ -8,6 +8,7 @@ use App\Enums\RoleFamily;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
+use App\Http\Resources\FamilyMemberResource;
 use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyInvitation\FamilyInvitationRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
@@ -15,6 +16,7 @@ use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -109,45 +111,13 @@ class FamilyServiceImplement extends Service implements FamilyService
      * Get a family member list
      * @param string $id
      * @param int $perPage
-     * @return array
+     * @return AnonymousResourceCollection
      */
-    function getMember(string $id, int $perPage = 10): array
+    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->familyMemberRepository->getFamilyMember($id, $perPage);
 
-        return $this->extractDataFamilyMember($paginator);
-    }
-
-    /**
-     * Extract data family member
-     * @param LengthAwarePaginator $paginator
-     * @return array
-     */
-    public function extractDataFamilyMember(LengthAwarePaginator $paginator): array
-    {
-        $data = $paginator->through(function ($member) {
-            $avatar = null;
-
-            if (!empty($member->users->avatar)) {
-                $avatar = $this->s3Repository->getData("avatar/{$member->users->id}", $member->users->avatar);
-            }
-
-            return [
-                'id' => $member->users->id,
-                'email' => $member->users->email,
-                'avatar' => $avatar,
-                'role' => $member->role,
-                'created_at' => $member->created_at,
-                'updated_at' => $member->updated_at,
-            ];
-        });
-
-        return [
-            'current_page' => $data->currentPage(),
-            'last_page' => $data->lastPage(),
-            'total' => $data->total(),
-            'data' => $data->items() ?? [],
-        ];
+        return FamilyMemberResource::collection($paginator);
     }
 
     /**
@@ -188,13 +158,13 @@ class FamilyServiceImplement extends Service implements FamilyService
      * Get a family admin list
      * @param string $id
      * @param int $perPage
-     * @return array
+     * @return AnonymousResourceCollection
      */
-    function getAdmin(string $id, int $perPage = 10): array
+    function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->familyMemberRepository->getFamilyAdmin($id, $perPage);
 
-        return $this->extractDataFamilyMember($paginator);
+        return FamilyMemberResource::collection($paginator);
     }
 
     /**

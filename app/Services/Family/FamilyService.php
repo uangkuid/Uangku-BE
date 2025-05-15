@@ -4,6 +4,7 @@ namespace App\Services\Family;
 
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
 
@@ -26,7 +27,7 @@ interface FamilyService extends BaseService{
      * @param int $perPage
      * @return array
      */
-    function getMember(string $id, int $perPage = 10): array;
+    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection;
 
     /**
      * Get a family admin list
@@ -34,7 +35,7 @@ interface FamilyService extends BaseService{
      * @param int $perPage
      * @return array
      */
-    function getAdmin(string $id, int $perPage = 10): array;
+    function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection;
 
     /**
      * Check if a user has access to a family
