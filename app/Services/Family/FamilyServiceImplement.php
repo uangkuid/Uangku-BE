@@ -2,7 +2,6 @@
 
 namespace App\Services\Family;
 
-use App\Enums\InvitationStatus;
 use App\Enums\RedisKey;
 use App\Enums\RoleFamily;
 use App\Exceptions\EncryptionException;
@@ -10,7 +9,6 @@ use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Resources\FamilyMemberResource;
 use App\Repositories\Family\FamilyRepository;
-use App\Repositories\FamilyInvitation\FamilyInvitationRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\Redis\RedisRepository;
@@ -322,5 +320,30 @@ class FamilyServiceImplement extends Service implements FamilyService
             'public_key' => $familyKey['public_key'],
             'private_key' => $familyKey['private_key'],
         ];
+    }
+
+    /**
+     * Grant admin access to a user
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return array
+     * @throws FamilyException
+     */
+    function grantAdmin(string $familyId, string $userId, string $token,): void
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $isAlreadyAccess = $this->familyMemberRepository->isHasAdmin($userId, $familyId);
+
+        if ($isAlreadyAccess) {
+            throw new FamilyException('User already has admin access');
+        }
+
+        $this->familyMemberRepository->grantAdmin($userId, $familyId);
     }
 }

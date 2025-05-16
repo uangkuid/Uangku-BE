@@ -46,4 +46,12 @@ interface FamilyMemberRepository extends Repository{
      * @return bool
      */
     function isHasAdmin(string $userId, string $familyId): bool;
+
+    /**
+     * Grant admin access to a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function grantAdmin(string $userId, string $familyId): bool;
 }

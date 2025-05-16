@@ -277,7 +277,16 @@ class FamilyController extends Controller
         }
 
         try {
+            $this->familyService->grantAdmin(
+                familyId: $id,
+                userId: $request->user_id,
+                token: $request->bearerToken()
+            );
 
+            return response()->json(new BaseResponse(
+                200,
+                'Success grant admin family.'
+            ));
         } catch (FamilyException $e) {
             Log::error("Failed to grant admin family: " . $e->getMessage());
             return response()->json(new BaseResponse(400, $e->getMessage()), 400);
