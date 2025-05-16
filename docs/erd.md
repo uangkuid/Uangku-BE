@@ -51,6 +51,7 @@ erDiagram
         user uuid FK
         family uuid FK
         role enum
+        status enum
         created_at timestamp
         updated_at timestamp
     }

@@ -140,7 +140,6 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
         Route::post('{id}/revoke', 'deauthorized');
 
         Route::post('{id}/invite', 'inviteMember');
-        Route::post('{id}/invite/search', 'searchMember');
     });
 });
 

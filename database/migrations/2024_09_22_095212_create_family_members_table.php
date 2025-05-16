@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('user')->index();
             $table->uuid('family')->index();
             $table->enum('role', ['Admin', 'Member', 'Owner']);
+            $table->enum('status', ['Active', 'Revoked', 'Left'])->default('Active');
             $table->timestamps();
 
             $table->foreign('user')->references('id')->on('users');
