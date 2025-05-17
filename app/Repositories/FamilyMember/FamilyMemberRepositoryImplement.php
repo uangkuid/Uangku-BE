@@ -203,4 +203,17 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('family', $familyId)
             ->update(['status' => FamilyMemberStatus::Left]);
     }
+
+    /**
+     * Get a family member using user id
+     * @param string $userId
+     * @return FamilyMember|null
+     */
+    function getDetailFromUser(string $userId): ?FamilyMember
+    {
+        return $this->model
+            ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
+            ->where('user', $userId)
+            ->first();
+    }
 }

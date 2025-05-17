@@ -111,11 +111,16 @@ class UserController extends Controller
                     'name' => $user['name'],
                     'email' => $user['email'],
                     'avatar' => $user['avatar'],
-                    'config' => $userConfig
+                    'config' => $userConfig,
+                    'family' => [
+                        'id' => $user['family']['family'],
+                        'role' => $user['family']['role'],
+                    ],
                 ]
             ), 200);
         } catch (Exception $e) {
-
+            Log::error("Failed to get user profile : " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to get user profile", $e->getMessage()), 500);
         }
     }
 

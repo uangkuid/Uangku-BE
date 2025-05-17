@@ -11,6 +11,7 @@ use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\S3\S3Repository;
+use App\Services\Family\FamilyService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use LaravelEasyRepository\Service;
@@ -28,16 +29,19 @@ class UserServiceImplement extends Service implements UserService
     protected UserRepository $mainRepository;
     protected RedisRepository $redisRepository;
     protected S3Repository $s3Repository;
+    protected FamilyService $familyService;
 
     public function __construct(
         UserRepository  $mainRepository,
         RedisRepository $redisRepository,
-        S3Repository    $s3Repository
+        S3Repository    $s3Repository,
+        FamilyService    $familyService
     )
     {
         $this->mainRepository = $mainRepository;
         $this->redisRepository = $redisRepository;
         $this->s3Repository = $s3Repository;
+        $this->familyService = $familyService;
     }
 
 
@@ -208,6 +212,7 @@ class UserServiceImplement extends Service implements UserService
     function getProfile(string $token): array
     {
         $user = $this->getUserByToken($token);
+        $family = $this->familyService->getFamilyUserInfo($user->id);
 
         if (!$user) {
             throw new UserException("User not found");
@@ -224,6 +229,7 @@ class UserServiceImplement extends Service implements UserService
             'name' => $user->name,
             'email' => $user->email,
             'avatar' => $avatar,
+            'family' => $family,
         ];
     }
 }

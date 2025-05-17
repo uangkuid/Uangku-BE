@@ -8,6 +8,7 @@ use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Resources\FamilyMemberResource;
+use App\Models\FamilyMember;
 use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
@@ -429,5 +430,16 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $this->familyMemberRepository->leaveFamily($user->id, $familyId);
+    }
+
+
+    /**
+     * Get family user info
+     * @param string $userId
+     * @return FamilyMember|null
+     */
+    function getFamilyUserInfo(string $userId): ?FamilyMember
+    {
+        return $this->familyMemberRepository->getDetailFromUser($userId);
     }
 }

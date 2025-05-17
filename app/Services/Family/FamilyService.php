@@ -4,6 +4,7 @@ namespace App\Services\Family;
 
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
+use App\Models\FamilyMember;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
@@ -148,4 +149,13 @@ interface FamilyService extends BaseService{
         string $familyId,
         string $token
     );
+
+    /**
+     * Get family user info
+     * @param string $userId
+     * @return FamilyMember
+     */
+    function getFamilyUserInfo(
+        string $userId
+    ): ?FamilyMember;
 }

@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FamilyMember;
 
+use App\Models\FamilyMember;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
@@ -102,4 +103,11 @@ interface FamilyMemberRepository extends Repository{
      * @return bool
      */
     function leaveFamily(string $userId, string $familyId): bool;
+
+    /**
+     * Get a family member using user id
+     * @param string $userId
+     * @return FamilyMember|null
+     */
+    function getDetailFromUser(string $userId): ?FamilyMember;
 }
