@@ -64,17 +64,6 @@ erDiagram
         hashed_key varchar
     }
 
-    family_invitations {
-        id uuid PK
-        family uuid FK
-        inviter_id uuid FK
-        invitee_id uuid FK
-        status enum
-        expired_at timestamp
-        created_at timestamp
-        updated_at timestamp
-    }
-
     categories {
         id uuid PK
         cash_flows uuid FK
@@ -146,12 +135,10 @@ erDiagram
     users ||--o| user_keys: has
     users ||--o{ user_sessions: has
     users ||--o| user_configs: has
-    users ||--o{ family_invitations: has
     family ||--o{ family_member: has
     family ||--o{ transactions: has
     family ||--o{ wallet: has
     family ||--o| family_keys: has
-    family ||--o{ family_invitations: has
     wallet }|--o{ wallet_access: has
     wallet_access ||--o{ wallet_transactions: has
     wallet_transactions ||--o| transactions: has
@@ -233,19 +220,21 @@ data.
 Table to store family members.
 This table contains the family members and their roles within the family. The role can be either "admin" or "member".
 
-| Field      | Type      | Index | Description                                                  |
-|------------|-----------|-------|--------------------------------------------------------------|
-| id         | uuid      | PK    | Unique identifier for the family member                      |
-| user       | uuid      | FK    | Foreign key referencing the users table                      |
-| family     | uuid      | FK    | Foreign key referencing the family table                     |
-| role       | enum      |       | Role of the family member, can be either "admin" or "member" |
-| created_at | timestamp |       | Timestamp when the family member was created                 |
-| updated_at | timestamp |       | Timestamp when the family member was last updated            |
+| Field      | Type      | Index | Description                                                              |
+|------------|-----------|-------|--------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the family member                                  |
+| user       | uuid      | FK    | Foreign key referencing the users table                                  |
+| family     | uuid      | FK    | Foreign key referencing the family table                                 |
+| role       | enum      |       | Role of the family member, can be either "admin" or "member"             |
+| status     | enum      |       | Status of the family member, can be either "active", "revoked" or "left" |
+| created_at | timestamp |       | Timestamp when the family member was created                             |
+| updated_at | timestamp |       | Timestamp when the family member was last updated                        |
 
 ### Family Invitation Table
 
 Table to store family invitation.
-This table contains the family invitations sent to users. The invitation can be in one of three states: "pending", "accepted", or "rejected".
+This table contains the family invitations sent to users. The invitation can be in one of three states: "pending", "
+accepted", or "rejected".
 
 | Field      | Type      | Index | Description                                                                         |
 |------------|-----------|-------|-------------------------------------------------------------------------------------|
