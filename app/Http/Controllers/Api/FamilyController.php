@@ -317,4 +317,26 @@ class FamilyController extends Controller
             return response()->json(new BaseResponse(500, "Failed to revoke family member", $e->getMessage()), 500);
         }
     }
+
+    public function revokeAdmin(Request $request, string $id, string $userId)
+    {
+        try {
+            $this->familyService->revokeAdmin(
+                familyId: $id,
+                userId: $userId,
+                token: $request->bearerToken()
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Success revoke family admin.'
+            ));
+        } catch (FamilyException $e) {
+            Log::error("Failed to revoke family admin: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to revoke family admin: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to revoke family admin", $e->getMessage()), 500);
+        }
+    }
 }

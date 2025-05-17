@@ -159,4 +159,34 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('family', $familyId)
             ->update(['status' => FamilyMemberStatus::Revoked]);
     }
+
+    /**
+     * Check if the user is the owner of the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isFamilyOwner(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->select('id')
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->where('role', RoleFamily::Owner->value)
+            ->exists();
+    }
+
+    /**
+     * Revoke admin access from a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function revokeAdmin(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->update(['role' => RoleFamily::Member->value]);
+    }
 }

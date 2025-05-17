@@ -383,4 +383,33 @@ class FamilyServiceImplement extends Service implements FamilyService
 
         $this->familyMemberRepository->revokeMember($userId, $familyId);
     }
+
+    /**
+     * Revoke admin access to a user
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function revokeAdmin(string $familyId, string $userId, string $token): void
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        if ($userId == $user->id) {
+            throw new FamilyException('You cannot revoke your own access');
+        }
+
+        $isOwner = $this->familyMemberRepository->isFamilyOwner($userId, $familyId);
+
+        if ($isOwner) {
+            throw new FamilyException('User is owner of this family');
+        }
+
+        $this->familyMemberRepository->revokeAdmin($userId, $familyId);
+    }
 }

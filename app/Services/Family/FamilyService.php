@@ -122,4 +122,18 @@ interface FamilyService extends BaseService{
         string $userId,
         string $token
     ): void;
+
+    /**
+     * Revoke admin access to a user
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function revokeAdmin(
+        string $familyId,
+        string $userId,
+        string $token
+    ): void;
 }

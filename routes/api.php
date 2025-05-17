@@ -132,11 +132,11 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
     });
 
     Route::middleware(['family', 'family-admin'])->group(function () {
-//        TODO: Add remove and update family feature
         Route::put('{id}', 'update');
 //        Route::delete('family/{id}', 'destroy');
         Route::get('{id}/admin', 'getFamilyAdmin');
         Route::post("{id}/admin", 'grantAdmin');
+        Route::post("{id}/admin/{userId}/revoke", 'revokeAdmin');
         Route::post('{id}/member/{userId}/revoke', 'revokeMember');
 
         Route::post('{id}/invite', 'inviteMember');

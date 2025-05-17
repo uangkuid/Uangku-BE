@@ -78,4 +78,20 @@ interface FamilyMemberRepository extends Repository{
      * @return bool
      */
     function revokeMember(string $userId, string $familyId): bool;
+
+    /**
+     * Check if the user is the owner of the family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isFamilyOwner(string $userId, string $familyId): bool;
+
+    /**
+     * Revoke admin access from a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function revokeAdmin(string $userId, string $familyId): bool;
 }
