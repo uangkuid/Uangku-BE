@@ -45,7 +45,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator
+    function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
@@ -107,7 +107,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    function getFamilyAdmin(string $familyId, int $perPage = 10): LengthAwarePaginator
+    function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')

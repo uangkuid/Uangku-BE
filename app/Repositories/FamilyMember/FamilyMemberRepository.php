@@ -22,7 +22,7 @@ interface FamilyMemberRepository extends Repository{
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    function getFamilyMember(string $familyId, int $perPage = 10): LengthAwarePaginator;
+    function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Get a family admin using family id
@@ -30,7 +30,7 @@ interface FamilyMemberRepository extends Repository{
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    function getFamilyAdmin(string $familyId, int $perPage = 10): LengthAwarePaginator;
+    function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Check if the user has access to the family

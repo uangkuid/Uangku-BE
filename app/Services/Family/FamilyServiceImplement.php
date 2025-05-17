@@ -115,7 +115,7 @@ class FamilyServiceImplement extends Service implements FamilyService
      */
     function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
     {
-        $paginator = $this->familyMemberRepository->getFamilyMember($id, $perPage);
+        $paginator = $this->familyMemberRepository->getFamilyMemberPaging($id, $perPage);
 
         return FamilyMemberResource::collection($paginator);
     }
@@ -162,7 +162,7 @@ class FamilyServiceImplement extends Service implements FamilyService
      */
     function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection
     {
-        $paginator = $this->familyMemberRepository->getFamilyAdmin($id, $perPage);
+        $paginator = $this->familyMemberRepository->getFamilyAdminPaging($id, $perPage);
 
         return FamilyMemberResource::collection($paginator);
     }

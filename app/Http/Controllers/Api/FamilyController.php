@@ -87,7 +87,21 @@ class FamilyController extends Controller
      */
     public function show(Request $request, string $id)
     {
+        try {
+            $family = $this->familyService->getFamilySummary($id);
 
+            return response()->json(new BaseResponse(
+                200,
+                'Success get family.',
+                $family
+            ));
+        } catch (FamilyException $e) {
+            Log::error("Failed to get family: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            Log::error("Failed to get family: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to get family", $e->getMessage()), 500);
+        }
     }
 
     public function leave(Request $request, string $id): JsonResponse
