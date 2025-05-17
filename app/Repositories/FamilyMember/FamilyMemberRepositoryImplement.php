@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FamilyMember;
 
+use App\Enums\FamilyMemberStatus;
 use App\Enums\RoleFamily;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -65,6 +66,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->select("id")
             ->where('user', $userId)
             ->where('family', $familyId)
+            ->where('status', FamilyMemberStatus::Active)
             ->exists();
     }
 
@@ -81,6 +83,21 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('user', $userId)
             ->where('family', $familyId)
             ->whereIn('role', [RoleFamily::Admin->value, RoleFamily::Owner->value])
+            ->exists();
+    }
+
+    /**
+     * Check if the user has joined the family before
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasJoinedBefore(string $userId, string $familyId): bool {
+        return $this->model
+            ->select('id')
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->whereIn('status', [FamilyMemberStatus::Left, FamilyMemberStatus::Revoked])
             ->exists();
     }
 
@@ -112,5 +129,34 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('user', $userId)
             ->where('family', $familyId)
             ->update(['role' => RoleFamily::Admin->value]);
+    }
+
+
+    /**
+     * Grant access to a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function grantAccess(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->update(['status' => FamilyMemberStatus::Active]);
+    }
+
+    /**
+     * Revoke member access from a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function revokeMember(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->update(['status' => FamilyMemberStatus::Revoked]);
     }
 }

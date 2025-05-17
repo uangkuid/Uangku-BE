@@ -13,7 +13,8 @@ class FamilyMember extends BaseModel
     protected $fillable = [
         'user',
         'family',
-        'role'
+        'role',
+        'status'
     ];
 
     public function families(): BelongsTo

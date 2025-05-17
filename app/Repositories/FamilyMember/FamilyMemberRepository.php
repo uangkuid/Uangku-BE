@@ -48,10 +48,34 @@ interface FamilyMemberRepository extends Repository{
     function isHasAdmin(string $userId, string $familyId): bool;
 
     /**
+     * Check if the user has joined the family before
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function isHasJoinedBefore(string $userId, string $familyId): bool;
+
+    /**
      * Grant admin access to a user
      * @param string $userId
      * @param string $familyId
      * @return bool
      */
     function grantAdmin(string $userId, string $familyId): bool;
+
+    /**
+     * Grant access to a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function grantAccess(string $userId, string $familyId): bool;
+
+    /**
+     * Revoke member access from a user
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function revokeMember(string $userId, string $familyId): bool;
 }

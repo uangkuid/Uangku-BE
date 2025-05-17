@@ -16,6 +16,7 @@ use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Ramsey\Uuid\Uuid;
@@ -302,17 +303,24 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $familyInvitation = json_decode($familyInvitation, true);
+
         if ($familyInvitation['id'] != $invitationId) {
             throw new FamilyException('Family invitation not valid');
         }
 
         $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
 
-        $this->familyMemberRepository->create([
-            'user' => $user->id,
-            'family' => $familyId,
-            'role' => RoleFamily::Member,
-        ]);
+        $isHasJoinedBefore = $this->familyMemberRepository->isHasJoinedBefore($user->id, $familyId);
+
+        if ($isHasJoinedBefore) {
+            $this->familyMemberRepository->grantAccess($user->id, $familyId);
+        } else {
+            $this->familyMemberRepository->create([
+                'user' => $user->id,
+                'family' => $familyId,
+                'role' => RoleFamily::Member,
+            ]);
+        }
 
         return [
             'id' => $familyInvitation['id'],
@@ -345,5 +353,34 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $this->familyMemberRepository->grantAdmin($userId, $familyId);
+    }
+
+    /**
+     * Revoke member access to a family
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function revokeMember(string $familyId, string $userId, string $token): void
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        if ($userId == $user->id) {
+            throw new FamilyException('You cannot revoke your own access');
+        }
+
+        $isAlreadyAccess = $this->familyMemberRepository->isHasAccess($userId, $familyId);
+
+        if (!$isAlreadyAccess) {
+            throw new FamilyException('User has been revoked or left from this family');
+        }
+
+        $this->familyMemberRepository->revokeMember($userId, $familyId);
     }
 }

@@ -101,11 +101,25 @@ interface FamilyService extends BaseService{
      * @param string $familyId
      * @param string $userId
      * @param string $token
-     * @return array
+     * @return void
      */
     function grantAdmin(
         string $familyId,
         string $userId,
         string $token,
+    ): void;
+
+    /**
+     * Revoke member access to a family
+     * @param string $familyId
+     * @param string $userId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function revokeMember(
+        string $familyId,
+        string $userId,
+        string $token
     ): void;
 }
