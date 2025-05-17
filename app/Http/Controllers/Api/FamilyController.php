@@ -92,35 +92,15 @@ class FamilyController extends Controller
 
     public function leave(Request $request, string $id): JsonResponse
     {
-        /**
-         * Check is family exist?
-         */
-        $family = Family::find($id);
-
-        if (!$family) {
-            return response()->json(new BaseResponse(404, "Family not found!"), 404);
-        }
-
         try {
-            $familyMember = FamilyMember::where('family', $id);
-            $count = $familyMember->count();
-
-            if (($count - 1) == 0) {
-                return response()->json(new BaseResponse(409, "Failed to leave from family because no family member left!"), 409);
-            }
-
-            $familyMember = FamilyMember::where('family', $id)
-                ->where('user', $request->user()->id);
-
-            $familyMember->delete();
-
-            return response()->json(new BaseResponse(
-                201,
-                'Success leave from family.'
-            ));
+            $this->familyService->leave($id, $request->bearerToken());
+            return response()->json(new BaseResponse(200, "Success leave family"));
+        } catch (FamilyException $e) {
+            Log::error("Failed to leave family: " . $e->getMessage());
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json(new BaseResponse(409, "Failed to leave from family", $e->getMessage()), 409);
+            Log::error("Failed to leave family: " . $e->getMessage());
+            return response()->json(new BaseResponse(500, "Failed to leave family", $e->getMessage()), 500);
         }
     }
 
@@ -266,7 +246,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function grantAdmin(Request $request, string $id)
+    public function grantAdmin(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|string',
@@ -296,7 +276,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function revokeMember(Request $request, string $id, string $userId)
+    public function revokeMember(Request $request, string $id, string $userId): JsonResponse
     {
         try {
             $this->familyService->revokeMember(
@@ -318,7 +298,7 @@ class FamilyController extends Controller
         }
     }
 
-    public function revokeAdmin(Request $request, string $id, string $userId)
+    public function revokeAdmin(Request $request, string $id, string $userId): JsonResponse
     {
         try {
             $this->familyService->revokeAdmin(

@@ -136,4 +136,16 @@ interface FamilyService extends BaseService{
         string $userId,
         string $token
     ): void;
+
+    /**
+     * Leave from family
+     * @param string $familyId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function leave(
+        string $familyId,
+        string $token
+    );
 }

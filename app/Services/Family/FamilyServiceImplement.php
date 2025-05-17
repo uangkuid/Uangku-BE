@@ -412,4 +412,22 @@ class FamilyServiceImplement extends Service implements FamilyService
 
         $this->familyMemberRepository->revokeAdmin($userId, $familyId);
     }
+
+    /**
+     * Leave from family
+     * @param string $familyId
+     * @param string $token
+     * @return void
+     * @throws FamilyException
+     */
+    function leave(string $familyId, string $token)
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $this->familyMemberRepository->leaveFamily($user->id, $familyId);
+    }
 }

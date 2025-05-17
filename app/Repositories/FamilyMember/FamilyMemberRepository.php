@@ -94,4 +94,12 @@ interface FamilyMemberRepository extends Repository{
      * @return bool
      */
     function revokeAdmin(string $userId, string $familyId): bool;
+
+    /**
+     * Leave from family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function leaveFamily(string $userId, string $familyId): bool;
 }

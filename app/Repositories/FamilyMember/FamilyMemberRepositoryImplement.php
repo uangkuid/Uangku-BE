@@ -189,4 +189,18 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('family', $familyId)
             ->update(['role' => RoleFamily::Member->value]);
     }
+
+    /**
+     * Leave from family
+     * @param string $userId
+     * @param string $familyId
+     * @return bool
+     */
+    function leaveFamily(string $userId, string $familyId): bool
+    {
+        return $this->model
+            ->where('user', $userId)
+            ->where('family', $familyId)
+            ->update(['status' => FamilyMemberStatus::Left]);
+    }
 }
