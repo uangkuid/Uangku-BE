@@ -110,4 +110,11 @@ interface FamilyMemberRepository extends Repository{
      * @return FamilyMember|null
      */
     function getDetailFromUser(string $userId): ?FamilyMember;
+
+    /**
+     * Get a family member summary using family id
+     * @param string $familyId
+     * @return Collection
+     */
+    function getFamilyMemberSummary(string $familyId): Collection;
 }

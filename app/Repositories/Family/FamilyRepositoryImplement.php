@@ -20,4 +20,16 @@ class FamilyRepositoryImplement extends Eloquent implements FamilyRepository{
     }
 
     // Write something awesome :)
+
+    /**
+     * Get a family by its ID
+     * @param string $familyId
+     * @return Family|null
+     */
+    function getFamilyDetail(string $familyId): ?Family
+    {
+        return $this->model
+            ->select('id', 'name', 'avatar', 'created_by')
+            ->where('id', $familyId)->first();
+    }
 }

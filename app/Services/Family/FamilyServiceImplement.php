@@ -442,4 +442,42 @@ class FamilyServiceImplement extends Service implements FamilyService
     {
         return $this->familyMemberRepository->getDetailFromUser($userId);
     }
+
+    /**
+     * Get family summary
+     * @param string $familyId
+     * @return array
+     * @throws FamilyException
+     */
+    function getFamilySummary(string $familyId): array
+    {
+
+        $family = $this->mainRepository->getFamilyDetail($familyId);
+
+        if ($family == null) {
+            throw new FamilyException('Family not found');
+        }
+
+        $member = $this->familyMemberRepository->getFamilyMemberSummary($familyId);
+
+        return [
+            'id' => $family->id,
+            'name' =>$family->name,
+            'created_by' => $family->created_by,
+            'member' => $member->map(function ($member) {
+                $avatar = null;
+
+                if (!empty($member->users->avatar)) {
+                    $avatar = $this->s3Repository->getData('avatar/' . $member->users->id, $member->users->avatar);
+                }
+
+                return [
+                    'id' => $member->users->id,
+                    'email' => $member->users->email ?? null,
+                    'avatar' => $avatar,
+                    'role' => $member->role,
+                ];
+            }),
+        ];
+    }
 }

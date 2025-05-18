@@ -153,9 +153,19 @@ interface FamilyService extends BaseService{
     /**
      * Get family user info
      * @param string $userId
-     * @return FamilyMember
+     * @return FamilyMember|null
      */
     function getFamilyUserInfo(
         string $userId
     ): ?FamilyMember;
+
+    /**
+     * Get family summary
+     * @param string $familyId
+     * @return array
+     * @throws FamilyException
+     */
+    function getFamilySummary(
+        string $familyId,
+    ): array;
 }

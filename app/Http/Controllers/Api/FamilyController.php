@@ -88,7 +88,9 @@ class FamilyController extends Controller
     public function show(Request $request, string $id)
     {
         try {
-            $family = $this->familyService->getFamilySummary($id);
+            $family = $this->familyService->getFamilySummary(
+                familyId: $id,
+            );
 
             return response()->json(new BaseResponse(
                 200,

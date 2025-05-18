@@ -216,4 +216,21 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->where('user', $userId)
             ->first();
     }
+
+    /**
+     * Get a family member summary using family id
+     * @param string $familyId
+     * @return Collection
+     */
+    function getFamilyMemberSummary(string $familyId): Collection
+    {
+        return $this->model
+            ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
+            ->where('family', $familyId)
+            ->where('status', FamilyMemberStatus::Active)
+            ->with('users:id,email,avatar')
+            ->limit(5)
+            ->orderBy('created_at', 'asc')
+            ->get();
+    }
 }
