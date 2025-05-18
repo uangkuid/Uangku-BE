@@ -4,27 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Http\Resources\PaginationResponse;
 use App\Models\Category;
 use App\Models\TransactionType;
+use App\Services\General\GeneralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
 
-    }
+    protected GeneralService $generalService;
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function __construct(GeneralService $generalService)
     {
-        //
+        $this->generalService = $generalService;
     }
 
     /**
@@ -67,57 +61,68 @@ class CategoryController extends Controller
     {
         $type = $request->query('filter');
 
-        if ($type != null) {
-            $isExist = TransactionType::where('name', $type)->exists();
+        $resource = $this->generalService->getCategory(transaction_type: $type);
 
-            if (!$isExist) {
-                abort(404, "Category with transaction type $type not found");
-            }
-
-            $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
-                $query->where('name', $type);
-            })->orderBy('name')->paginate(10);
-
-            $categories = $categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'transaction_types' => [
-                        'id' => $category->transactionTypes->id,
-                        'name' => $category->transactionTypes->name,
-                    ],
-                    'created_at' => $category->created_at,
-                    'updated_at' => $category->updated_at,
-                ];
-            });
-
-            return response()->json(new BaseResponse(
-                200,
-                "Success get category",
-                $categories
-            ));
-        }
-
-        $categories = Category::has('transactionTypes')->orderBy('name')->paginate(10);
-
-        $categories = $categories->map(function ($category) {
-            return [
-                'id' => $category->id,
-                'name' => $category->name,
-                'transaction_types' => [
-                    'id' => $category->transactionTypes->id,
-                    'name' => $category->transactionTypes->name,
-                ],
-                'created_at' => $category->created_at,
-                'updated_at' => $category->updated_at,
-            ];
-        });
-
-        return response()->json(new BaseResponse(
+        return response()->json(new PaginationResponse(
             200,
             "Success get categories",
-            $categories
-        ));
+            page: $resource->currentPage(),
+            totalPage: $resource->currentPage(),
+            totalData: $resource->total(),
+            resource: $resource
+        ), 200);
+
+//        if ($type != null) {
+//            $isExist = TransactionType::where('name', $type)->exists();
+//
+//            if (!$isExist) {
+//                abort(404, "Category with transaction type $type not found");
+//            }
+//
+//            $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
+//                $query->where('name', $type);
+//            })->orderBy('name')->paginate(10);
+//
+//            $categories = $categories->map(function ($category) {
+//                return [
+//                    'id' => $category->id,
+//                    'name' => $category->name,
+//                    'transaction_types' => [
+//                        'id' => $category->transactionTypes->id,
+//                        'name' => $category->transactionTypes->name,
+//                    ],
+//                    'created_at' => $category->created_at,
+//                    'updated_at' => $category->updated_at,
+//                ];
+//            });
+//
+//            return response()->json(new BaseResponse(
+//                200,
+//                "Success get category",
+//                $categories
+//            ));
+//        }
+//
+//        $categories = Category::has('transactionTypes')->orderBy('name')->paginate(10);
+//
+//        $categories = $categories->map(function ($category) {
+//            return [
+//                'id' => $category->id,
+//                'name' => $category->name,
+//                'transaction_types' => [
+//                    'id' => $category->transactionTypes->id,
+//                    'name' => $category->transactionTypes->name,
+//                ],
+//                'created_at' => $category->created_at,
+//                'updated_at' => $category->updated_at,
+//            ];
+//        });
+//
+//        return response()->json(new BaseResponse(
+//            200,
+//            "Success get categories",
+//            $categories
+//        ));
     }
 
     /**

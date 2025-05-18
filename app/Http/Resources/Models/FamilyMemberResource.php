@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Models;
 
 use App\Repositories\S3\S3Repository;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class FamilyMemberResource extends JsonResource

@@ -169,9 +169,9 @@ return [
     |
     | This will determine whether a `prv` claim is automatically added to
     | the token. The purpose of this is to ensure that if you have multiple
-    | authentication models e.g. `App\User` & `App\OtherPerson`, then we
+    | authentication Models e.g. `App\User` & `App\OtherPerson`, then we
     | should prevent one authentication request from impersonating another,
-    | if 2 tokens happen to have the same id across the 2 different models.
+    | if 2 tokens happen to have the same id across the 2 different Models.
     |
     | Under specific circumstances, you may want to disable this behaviour
     | e.g. if you only have one authentication model, then you would save

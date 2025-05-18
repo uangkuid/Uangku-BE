@@ -68,6 +68,7 @@ erDiagram
         id uuid PK
         cash_flows uuid FK
         name varchar
+        icon varchar
         created_at timestamp
         updated_at timestamp
     }
@@ -230,22 +231,19 @@ This table contains the family members and their roles within the family. The ro
 | created_at | timestamp |       | Timestamp when the family member was created                             |
 | updated_at | timestamp |       | Timestamp when the family member was last updated                        |
 
-### Family Invitation Table
+### Category Table
 
-Table to store family invitation.
-This table contains the family invitations sent to users. The invitation can be in one of three states: "pending", "
-accepted", or "rejected".
+Table to store categories.
+This table contains the categories for cash flows, including the name and icon associated with each category.
 
-| Field      | Type      | Index | Description                                                                         |
-|------------|-----------|-------|-------------------------------------------------------------------------------------|
-| id         | uuid      | PK    | Unique identifier for the family invitation                                         |
-| family     | uuid      | FK    | Foreign key referencing the family table                                            |
-| inviter_id | uuid      | FK    | Foreign key referencing the users table, to store admin who invite user into family |
-| invitee_id | uuid      | FK    | Foreign key referencing the users table, to store user who invited into family      |
-| status     | enum      |       | Status of the invitation, can be either "pending", "accepted", or "rejected"        |
-| expired_at | timestamp |       | Timestamp when the invitation expires                                               |
-| created_at | timestamp |       | Timestamp when the family invitation was created                                    |
-| updated_at | timestamp |       | Timestamp when the family invitation was last updated                               |
+| Field      | Type      | Index | Description                                  |
+|------------|-----------|-------|----------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the category           |
+| cash_flows | uuid      | FK    | Foreign key referencing the cash flows table |
+| name       | varchar   |       | Name of the category                         |
+| icon       | varchar   |       | Icon associated with the category            |
+| created_at | timestamp |       | Timestamp when the category was created      |
+| updated_at | timestamp |       | Timestamp when the category was last updated |
 
 ## Secret Keys
 
