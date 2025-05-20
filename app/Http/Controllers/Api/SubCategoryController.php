@@ -2,15 +2,30 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\UserException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Http\Resources\PaginationResponse;
 use App\Models\Category;
 use App\Models\SubCategory;
+use App\Services\General\GeneralService;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class SubCategoryController extends Controller
 {
+
+    protected GeneralService $generalService;
+
+    public function __construct(
+        GeneralService $generalService
+    )
+    {
+        $this->generalService = $generalService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -74,38 +89,67 @@ class SubCategoryController extends Controller
      */
     public function getSubCategories(Request $request, string $id)
     {
-        $current_user = $request->user();
-        $subCategories = SubCategory::where(function ($query) use ($id, $current_user) {
-            $query->where('categories', $id)->where('users', $current_user->id);
-        })->orderBy('name')->paginate(10);
+        try {
+            $resource = $this->generalService->getSubCategory(
+                id: $id,
+                token: $request->bearerToken(),
+            );
 
-        $subCategories = $subCategories->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'users' => [
-                    'id' => $item->user->id,
-                    'name' => $item->user->name,
-                    'avatar' => $item->user->avatar,
-                ],
-                'categories' => [
-                    'id' => $item->category->id,
-                    'name' => $item->category->name,
-                    'transaction_types' => [
-                        'id' => $item->category->transactionTypes->id,
-                        'name' => $item->category->transactionTypes->name,
-                    ],
-                ],
-                'created_at' => $item->created_at,
-                'updated_at' => $item->updated_at,
-            ];
-        });
+            return response()->json(new PaginationResponse(
+                200,
+                "Success get sub categories",
+                page: $resource->currentPage(),
+                totalPage: $resource->lastPage(),
+                totalData: $resource->total(),
+                resource: $resource
+            ));
+        } catch (UserException $e) {
+            Log::error("Failed get sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 400,
+                message: $e->getMessage()
+            ), 400);
+        } catch (Exception $e) {
+            Log::error("Failed get sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 500,
+                message: "Failed get sub categories ",
+                resource: $e->getMessage()
+            ), 500);
+        }
 
-        return response()->json(new BaseResponse(
-            200,
-            "Success get categories",
-            $subCategories
-        ));
+//        $current_user = $request->user();
+//        $subCategories = SubCategory::where(function ($query) use ($id, $current_user) {
+//            $query->where('categories', $id)->where('users', $current_user->id);
+//        })->orderBy('name')->paginate(10);
+//
+//        $subCategories = $subCategories->map(function ($item) {
+//            return [
+//                'id' => $item->id,
+//                'name' => $item->name,
+//                'users' => [
+//                    'id' => $item->user->id,
+//                    'name' => $item->user->name,
+//                    'avatar' => $item->user->avatar,
+//                ],
+//                'categories' => [
+//                    'id' => $item->category->id,
+//                    'name' => $item->category->name,
+//                    'transaction_types' => [
+//                        'id' => $item->category->transactionTypes->id,
+//                        'name' => $item->category->transactionTypes->name,
+//                    ],
+//                ],
+//                'created_at' => $item->created_at,
+//                'updated_at' => $item->updated_at,
+//            ];
+//        });
+//
+//        return response()->json(new BaseResponse(
+//            200,
+//            "Success get categories",
+//            $subCategories
+//        ));
     }
 
     /**

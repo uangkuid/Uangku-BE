@@ -99,11 +99,6 @@ Route::controller(UserController::class)->prefix("user")->middleware('auth:api')
 
 Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'getCategories');
-    Route::middleware('auth:api')->group(function () {
-        Route::post('categories', 'store');
-        Route::put('categories/{id}', 'update');
-        Route::delete('categories/{id}', 'destroy');
-    });
 });
 
 Route::controller(SubCategoryController::class)->middleware('auth:api')->group(function () {

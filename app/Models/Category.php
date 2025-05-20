@@ -15,7 +15,7 @@ class Category extends BaseModel
         'transaction_types'
     ];
 
-    public function transactionTypes(): BelongsTo
+    public function transactionType(): BelongsTo
     {
         return $this->belongsTo(TransactionType::class, 'transaction_types');
     }

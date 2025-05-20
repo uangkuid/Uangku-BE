@@ -71,58 +71,6 @@ class CategoryController extends Controller
             totalData: $resource->total(),
             resource: $resource
         ), 200);
-
-//        if ($type != null) {
-//            $isExist = TransactionType::where('name', $type)->exists();
-//
-//            if (!$isExist) {
-//                abort(404, "Category with transaction type $type not found");
-//            }
-//
-//            $categories = Category::whereHas('transactionTypes', function ($query) use ($type) {
-//                $query->where('name', $type);
-//            })->orderBy('name')->paginate(10);
-//
-//            $categories = $categories->map(function ($category) {
-//                return [
-//                    'id' => $category->id,
-//                    'name' => $category->name,
-//                    'transaction_types' => [
-//                        'id' => $category->transactionTypes->id,
-//                        'name' => $category->transactionTypes->name,
-//                    ],
-//                    'created_at' => $category->created_at,
-//                    'updated_at' => $category->updated_at,
-//                ];
-//            });
-//
-//            return response()->json(new BaseResponse(
-//                200,
-//                "Success get category",
-//                $categories
-//            ));
-//        }
-//
-//        $categories = Category::has('transactionTypes')->orderBy('name')->paginate(10);
-//
-//        $categories = $categories->map(function ($category) {
-//            return [
-//                'id' => $category->id,
-//                'name' => $category->name,
-//                'transaction_types' => [
-//                    'id' => $category->transactionTypes->id,
-//                    'name' => $category->transactionTypes->name,
-//                ],
-//                'created_at' => $category->created_at,
-//                'updated_at' => $category->updated_at,
-//            ];
-//        });
-//
-//        return response()->json(new BaseResponse(
-//            200,
-//            "Success get categories",
-//            $categories
-//        ));
     }
 
     /**
