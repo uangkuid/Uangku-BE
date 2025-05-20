@@ -2,9 +2,11 @@
 
 namespace App\Services\General;
 
+use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Http\Resources\Models\CategoryResource;
 use App\Http\Resources\Models\SubCategoryResource;
+use App\Models\SubCategory;
 use App\Repositories\Category\CategoryRepository;
 use App\Repositories\General\GeneralRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
@@ -70,5 +72,45 @@ class GeneralServiceImplement extends Service implements GeneralService
         );
 
         return SubCategoryResource::collection($paginator);
+    }
+
+    /**
+     * Create a new subcategory
+     * @param string $name
+     * @param string $id
+     * @param string $token
+     * @return SubCategory
+     * @throws GeneralException
+     * @throws UserException
+     */
+    function createSubCategory(string $name, string $id, string $token): SubCategory
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new UserException("User not found");
+        }
+
+        $category = $this->categoryRepository->find($id);
+
+        if ($category == null) {
+            throw new GeneralException("Category not found");
+        }
+
+        $isExist = $this->subCategoryRepository->isExist(
+            name: $name,
+            userId: $user->id,
+            id: $category->id
+        );
+
+        if ($isExist) {
+            throw new GeneralException("Sub category {$name} already exists");
+        }
+
+        return $this->subCategoryRepository->create([
+            'name' => $name,
+            'categories' => $category->id,
+            'users' => $user->id,
+        ]);
     }
 }

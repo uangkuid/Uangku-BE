@@ -40,4 +40,21 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
             ->where('users', $userId)
             ->paginate($perPage);
     }
+
+    /**
+     * Check if a subcategory name already exists for a given category and user
+     * @param string $name
+     * @param string $userId
+     * @param string $id
+     * @return bool
+     */
+    function isExist(string $name, string $userId, string $id): bool
+    {
+        return $this->model
+            ->select('id')
+            ->where('name', $name)
+            ->where('users', $userId)
+            ->where('categories', $id)
+            ->exists();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
@@ -27,34 +28,10 @@ class SubCategoryController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request, string $id)
     {
-        $current_user = $request->user();
-
-        $category = Category::find($id);
-
-        if(!$category){
-            return response()->json(new BaseResponse(400, "Categories not found"), 400);
-        }
-
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
         ]);
@@ -63,25 +40,74 @@ class SubCategoryController extends Controller
             return response()->json(new BaseResponse(400, "Failed to create new sub categories", $validator->errors()), 400);
         }
 
-        $subCategory = SubCategory::where('name', $request->name)
-            ->where('categories', $category->id)
-            ->where('users', $current_user->id);
+        try {
+            $resource = $this->generalService->createSubCategory(
+                name: $request->name,
+                id: $id,
+                token: $request->bearerToken(),
+            );
 
-        if ($subCategory->exists()){
-            return response()->json(new BaseResponse(400, "Sub categories " . $request->name . " already exist!"), 400);
+            return response()->json(new BaseResponse(
+                200,
+                "Create sub category successful",
+                $resource
+            ));
+        } catch (UserException $e) {
+            Log::error("Failed create sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 400,
+                message: $e->getMessage()
+            ), 400);
+        } catch (GeneralException $e) {
+            Log::error("Failed create sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 400,
+                message: $e->getMessage()
+            ), 500);
+        } catch (Exception $e) {
+            Log::error("Failed create sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 500,
+                message: "Failed create sub categories ",
+                resource: $e->getMessage()
+            ), 500);
         }
 
-        $subCategory = SubCategory::create([
-            'name' => $request->name,
-            'categories' => $id,
-            'users' => $current_user->id,
-        ]);
-
-        return response()->json(new BaseResponse(
-            200,
-            "Create sub category successful",
-            $subCategory
-        ));
+//        $current_user = $request->user();
+//
+//        $category = Category::find($id);
+//
+//        if(!$category){
+//            return response()->json(new BaseResponse(400, "Categories not found"), 400);
+//        }
+//
+//        $validator = Validator::make($request->all(), [
+//            'name' => ['required', 'string', 'max:255'],
+//        ]);
+//
+//        if ($validator->fails()) {
+//            return response()->json(new BaseResponse(400, "Failed to create new sub categories", $validator->errors()), 400);
+//        }
+//
+//        $subCategory = SubCategory::where('name', $request->name)
+//            ->where('categories', $category->id)
+//            ->where('users', $current_user->id);
+//
+//        if ($subCategory->exists()){
+//            return response()->json(new BaseResponse(400, "Sub categories " . $request->name . " already exist!"), 400);
+//        }
+//
+//        $subCategory = SubCategory::create([
+//            'name' => $request->name,
+//            'categories' => $id,
+//            'users' => $current_user->id,
+//        ]);
+//
+//        return response()->json(new BaseResponse(
+//            200,
+//            "Create sub category successful",
+//            $subCategory
+//        ));
     }
 
     /**
@@ -150,14 +176,6 @@ class SubCategoryController extends Controller
 //            "Success get categories",
 //            $subCategories
 //        ));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**

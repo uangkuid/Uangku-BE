@@ -15,4 +15,13 @@ interface SubCategoryRepository extends Repository{
      * @return LengthAwarePaginator
      */
     function getSubCategory(string $id, string $userId, int $perPage = 10): LengthAwarePaginator;
+
+    /**
+     * Check if a subcategory name already exists for a given category and user
+     * @param string $name
+     * @param string $userId
+     * @param string $id
+     * @return bool
+     */
+    function isExist(string $name, string $userId, string $id): bool;
 }
