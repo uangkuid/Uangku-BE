@@ -97,7 +97,7 @@ class GeneralServiceImplement extends Service implements GeneralService
             throw new GeneralException("Category not found");
         }
 
-        $isExist = $this->subCategoryRepository->isExist(
+        $isExist = $this->subCategoryRepository->isExistWithName(
             name: $name,
             userId: $user->id,
             id: $category->id
@@ -112,5 +112,35 @@ class GeneralServiceImplement extends Service implements GeneralService
             'categories' => $category->id,
             'users' => $user->id,
         ]);
+    }
+
+    /**
+     * Update an existing subcategory
+     * @param string $name
+     * @param string $id
+     * @param string $token
+     * @return SubCategory
+     * @throws GeneralException
+     * @throws UserException
+     */
+    function updateSubCategory(string $name, string $id, string $token): SubCategory
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new UserException("User not found");
+        }
+
+        $subCategory = $this->subCategoryRepository->find($id);
+
+        if ($subCategory == null) {
+            throw new GeneralException("Sub category not found");
+        }
+
+        $this->subCategoryRepository->update($id, [
+            'name' => $name,
+        ]);
+
+        return $this->subCategoryRepository->find($id) ?: throw new GeneralException("Failed to update sub category");
     }
 }

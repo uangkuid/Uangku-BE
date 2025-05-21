@@ -52,18 +52,12 @@ class SubCategoryController extends Controller
                 "Create sub category successful",
                 $resource
             ));
-        } catch (UserException $e) {
+        } catch (UserException|GeneralException $e) {
             Log::error("Failed create sub categories: " . $e->getMessage());
             return response()->json(new BaseResponse(
                 status: 400,
                 message: $e->getMessage()
             ), 400);
-        } catch (GeneralException $e) {
-            Log::error("Failed create sub categories: " . $e->getMessage());
-            return response()->json(new BaseResponse(
-                status: 400,
-                message: $e->getMessage()
-            ), 500);
         } catch (Exception $e) {
             Log::error("Failed create sub categories: " . $e->getMessage());
             return response()->json(new BaseResponse(
@@ -72,42 +66,6 @@ class SubCategoryController extends Controller
                 resource: $e->getMessage()
             ), 500);
         }
-
-//        $current_user = $request->user();
-//
-//        $category = Category::find($id);
-//
-//        if(!$category){
-//            return response()->json(new BaseResponse(400, "Categories not found"), 400);
-//        }
-//
-//        $validator = Validator::make($request->all(), [
-//            'name' => ['required', 'string', 'max:255'],
-//        ]);
-//
-//        if ($validator->fails()) {
-//            return response()->json(new BaseResponse(400, "Failed to create new sub categories", $validator->errors()), 400);
-//        }
-//
-//        $subCategory = SubCategory::where('name', $request->name)
-//            ->where('categories', $category->id)
-//            ->where('users', $current_user->id);
-//
-//        if ($subCategory->exists()){
-//            return response()->json(new BaseResponse(400, "Sub categories " . $request->name . " already exist!"), 400);
-//        }
-//
-//        $subCategory = SubCategory::create([
-//            'name' => $request->name,
-//            'categories' => $id,
-//            'users' => $current_user->id,
-//        ]);
-//
-//        return response()->json(new BaseResponse(
-//            200,
-//            "Create sub category successful",
-//            $subCategory
-//        ));
     }
 
     /**
@@ -183,37 +141,41 @@ class SubCategoryController extends Controller
      */
     public function update(Request $request, string $categoryId, string $id)
     {
-        $current_user = $request->user();
-
-        $subCategory = SubCategory::where('id', $id)
-            ->where('users', $current_user->id);
-
-        if ($subCategory->count() < 1) {
-            return response()->json(new BaseResponse(400, "Sub Category requested not found"), 400);
-        }
-
-        $category = Category::find($categoryId);
-
-        if(!$category){
-            return response()->json(new BaseResponse(400, "Categories not found"), 400);
-        }
 
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to create new sub categories", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, "Failed to update sub categories", $validator->errors()), 400);
         }
 
-        $subCategory->update([
-            'name' => $request->name,
-        ]);
+        try {
+            $resource = $this->generalService->updateSubCategory(
+                name: $request->name,
+                id: $id,
+                token: $request->bearerToken(),
+            );
 
-        return response()->json(new BaseResponse(
-            200,
-            "Update sub category successful"
-        ));
+            return response()->json(new BaseResponse(
+                200,
+                "Update sub category successful",
+                $resource
+            ));
+        } catch (UserException|GeneralException $e) {
+            Log::error("Failed update sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 400,
+                message: $e->getMessage()
+            ), 400);
+        } catch (Exception $e) {
+            Log::error("Failed update sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 500,
+                message: "Failed update sub categories ",
+                resource: $e->getMessage()
+            ), 500);
+        }
     }
 
     /**

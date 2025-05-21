@@ -23,5 +23,13 @@ interface SubCategoryRepository extends Repository{
      * @param string $id
      * @return bool
      */
-    function isExist(string $name, string $userId, string $id): bool;
+    function isExistWithName(string $name, string $userId, string $id): bool;
+
+    /**
+     * Check if a subcategory exists by id for a given user
+     * @param string $userId
+     * @param string $id
+     * @return bool
+     */
+    function isExist(string $userId, string $id): bool;
 }
