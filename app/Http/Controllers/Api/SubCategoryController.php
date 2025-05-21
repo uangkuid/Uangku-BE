@@ -183,26 +183,51 @@ class SubCategoryController extends Controller
      */
     public function destroy(Request $request, string $categoryId, string $id)
     {
-        $current_user = $request->user();
+        try {
+            $this->generalService->deleteSubCategory(
+                id: $id,
+                token: $request->bearerToken(),
+            );
 
-        $subCategory = SubCategory::where('id', $id)
-            ->where('users', $current_user->id);
-
-        if ($subCategory->count() < 1) {
-            return response()->json(new BaseResponse(400, "Sub Category requested not found"), 400);
+            return response()->json(new BaseResponse(
+                200,
+                "Delete sub category successful"
+            ));
+        } catch (UserException|GeneralException $e) {
+            Log::error("Failed delete sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 400,
+                message: $e->getMessage()
+            ), 400);
+        } catch (Exception $e) {
+            Log::error("Failed delete sub categories: " . $e->getMessage());
+            return response()->json(new BaseResponse(
+                status: 500,
+                message: "Failed delete sub categories ",
+                resource: $e->getMessage()
+            ), 500);
         }
 
-        $category = Category::find($categoryId);
-
-        if(!$category){
-            return response()->json(new BaseResponse(400, "Categories not found"), 400);
-        }
-
-        $subCategory->delete();
-
-        return response()->json(new BaseResponse(
-            200,
-            "Delete sub category successful"
-        ));
+//        $current_user = $request->user();
+//
+//        $subCategory = SubCategory::where('id', $id)
+//            ->where('users', $current_user->id);
+//
+//        if ($subCategory->count() < 1) {
+//            return response()->json(new BaseResponse(400, "Sub Category requested not found"), 400);
+//        }
+//
+//        $category = Category::find($categoryId);
+//
+//        if(!$category){
+//            return response()->json(new BaseResponse(400, "Categories not found"), 400);
+//        }
+//
+//        $subCategory->delete();
+//
+//        return response()->json(new BaseResponse(
+//            200,
+//            "Delete sub category successful"
+//        ));
     }
 }

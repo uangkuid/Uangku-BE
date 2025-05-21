@@ -143,4 +143,29 @@ class GeneralServiceImplement extends Service implements GeneralService
 
         return $this->subCategoryRepository->find($id) ?: throw new GeneralException("Failed to update sub category");
     }
+
+    /**
+     * Delete a subcategory
+     * @param string $id
+     * @param string $token
+     * @return void
+     * @throws GeneralException
+     * @throws UserException
+     */
+    function deleteSubCategory(string $id, string $token): void
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new UserException("User not found");
+        }
+
+        $subCategory = $this->subCategoryRepository->find($id);
+
+        if ($subCategory == null) {
+            throw new GeneralException("Sub category not found");
+        }
+
+        $this->subCategoryRepository->delete($id);
+    }
 }

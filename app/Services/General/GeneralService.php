@@ -50,4 +50,14 @@ interface GeneralService extends BaseService
      * @throws UserException
      */
     function updateSubCategory(string $name, string $id, string $token): SubCategory;
+
+    /**
+     * Delete a subcategory
+     * @param string $id
+     * @param string $token
+     * @return void
+     * @throws GeneralException
+     * @throws UserException
+     */
+    function deleteSubCategory(string $id, string $token): void;
 }
