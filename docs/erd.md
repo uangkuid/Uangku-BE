@@ -124,6 +124,42 @@ erDiagram
         updated_at timestamp
     }
 
+    staff_accounts {
+        id uuid PK
+        email varchar
+        name varchar
+        password varchar
+        avatar varchar
+        role enum
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    staff_keys {
+        id uuid PK
+        staff_id uuid FK
+        public_key varchar
+        private_key varchar
+        hashed_key varchar
+        hashed_pin varchar
+    }
+
+    system_configs {
+        id uuid PK
+        key varchar
+        value text
+        updated_by uuid FK
+        updated_at timestamp
+    }
+
+    feature_statuses {
+        id uuid PK
+        feature_name varchar
+        is_enabled boolean
+        updated_by uuid FK
+        updated_at timestamp
+    }
+
     cash_flows ||--o{ categories: has
     cash_flows ||--o{ transactions: has
     categories ||--o{ sub_categories: has
@@ -144,6 +180,9 @@ erDiagram
     wallet_access ||--o{ wallet_transactions: has
     wallet_transactions ||--o| transactions: has
     wallet ||--o{ wallet_transactions: has
+    staff_accounts ||--o{ staff_keys: has
+    staff_accounts ||--o{ system_configs: has
+    staff_accounts ||--o{ feature_statuses: has
 ```
 
 ## Table Details
@@ -244,6 +283,76 @@ This table contains the categories for cash flows, including the name and icon a
 | icon       | varchar   |       | Icon associated with the category            |
 | created_at | timestamp |       | Timestamp when the category was created      |
 | updated_at | timestamp |       | Timestamp when the category was last updated |
+
+### Sub Category Table
+
+Table to store subcategories.
+This table contains the subcategories for cash flows, including the name and icon associated with each subcategory.
+
+| Field      | Type      | Index | Description                                     |
+|------------|-----------|-------|-------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the subcategory           |
+| categories | uuid      | FK    | Foreign key referencing the categories table    |
+| users      | uuid      | FK    | Foreign key referencing the users table         |
+| name       | string    |       | Name of the subcategory                         |
+| created_at | timestamp |       | Timestamp when the subcategory was created      |
+| updated_at | timestamp |       | Timestamp when the subcategory was last updated |
+
+### Staff Accounts Table
+
+Table to store staff account data.
+This table separates staff from regular users and supports role-based access control (admin or member).
+
+| Field       | Type      | Index | Description                                 |
+|-------------|-----------|-------|---------------------------------------------|
+| id          | uuid      | PK    | Unique identifier for the staff account     |
+| email       | varchar   |       | Staff email, must be unique                 |
+| name        | varchar   |       | Name of the staff                           |
+| password    | varchar   |       | Hashed password for authentication          |
+| avatar      | varchar   |       | Avatar image path (optional)                |
+| role        | enum      |       | Staff role: `admin` or `member`             |
+| created\_at | timestamp |       | Timestamp when the account was created      |
+| updated\_at | timestamp |       | Timestamp when the account was last updated |
+
+### Staff Keys Table
+
+Table to store staff public and private encryption keys.
+This provides encrypted identity validation for staff operations.
+
+| Field        | Type    | Index | Description                                                      |
+|--------------|---------|-------|------------------------------------------------------------------|
+| id           | uuid    | PK    | Unique identifier for the staff key                              |
+| staff\_id    | uuid    | FK    | Foreign key referencing the `staff_accounts`                     |
+| public\_key  | varchar |       | Public encryption key of the staff                               |
+| private\_key | varchar |       | Private encryption key of the staff                              |
+| hashed\_key  | varchar |       | Hashed key used for secret key using bcrypt                      |
+| hashed\_pin  | varchar |       | Optional hashed PIN for extra authentication hashed using bcrypt |
+
+### System Configs Table
+
+Table to store global system configurations.
+Each key-value pair represents a configurable item that can be edited by staff.
+
+| Field       | Type      | Index | Description                                     |
+|-------------|-----------|-------|-------------------------------------------------|
+| id          | uuid      | PK    | Unique identifier for the system config         |
+| key         | varchar   |       | Unique key name of the config                   |
+| value       | text      |       | Config value, can be stringified JSON if needed |
+| updated\_by | uuid      | FK    | Foreign key referencing the `staff_accounts`    |
+| updated\_at | timestamp |       | Timestamp when the config was last updated      |
+
+### Feature Statuses Table
+
+Table to store enabled/disabled status of features.
+Used for feature toggling by staff without code deployment.
+
+| Field         | Type      | Index | Description                                     |
+|---------------|-----------|-------|-------------------------------------------------|
+| id            | uuid      | PK    | Unique identifier for the feature status        |
+| feature\_name | varchar   |       | Unique name of the feature being controlled     |
+| is\_enabled   | boolean   |       | Status flag: true if enabled, false if disabled |
+| updated\_by   | uuid      | FK    | Foreign key referencing the `staff_accounts`    |
+| updated\_at   | timestamp |       | Timestamp when the status was last updated      |
 
 ## Secret Keys
 
