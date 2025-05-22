@@ -303,30 +303,30 @@ This table contains the subcategories for cash flows, including the name and ico
 Table to store staff account data.
 This table separates staff from regular users and supports role-based access control (admin or member).
 
-| Field       | Type      | Index | Description                                 |
-|-------------|-----------|-------|---------------------------------------------|
-| id          | uuid      | PK    | Unique identifier for the staff account     |
-| email       | varchar   |       | Staff email, must be unique                 |
-| name        | varchar   |       | Name of the staff                           |
-| password    | varchar   |       | Hashed password for authentication          |
-| avatar      | varchar   |       | Avatar image path (optional)                |
-| role        | enum      |       | Staff role: `admin` or `member`             |
-| created\_at | timestamp |       | Timestamp when the account was created      |
-| updated\_at | timestamp |       | Timestamp when the account was last updated |
+| Field       | Type      | Index | Description                                                            |
+|-------------|-----------|-------|------------------------------------------------------------------------|
+| id          | uuid      | PK    | Unique identifier for the staff account                                |
+| email       | varchar   |       | Staff email, encrypted using AES-CBC-256 using system secret key       |
+| name        | varchar   |       | Name of the staff, encrypted using AES-CBC-256 using system secret key |
+| password    | varchar   |       | Hashed password for authentication, hash using bcrypt                  |
+| avatar      | varchar   |       | Avatar image path (optional)                                           |
+| role        | enum      |       | Staff role: `admin` or `member`                                        |
+| created\_at | timestamp |       | Timestamp when the account was created                                 |
+| updated\_at | timestamp |       | Timestamp when the account was last updated                            |
 
 ### Staff Keys Table
 
 Table to store staff public and private encryption keys.
 This provides encrypted identity validation for staff operations.
 
-| Field        | Type    | Index | Description                                                      |
-|--------------|---------|-------|------------------------------------------------------------------|
-| id           | uuid    | PK    | Unique identifier for the staff key                              |
-| staff\_id    | uuid    | FK    | Foreign key referencing the `staff_accounts`                     |
-| public\_key  | varchar |       | Public encryption key of the staff                               |
-| private\_key | varchar |       | Private encryption key of the staff                              |
-| hashed\_key  | varchar |       | Hashed key used for secret key using bcrypt                      |
-| hashed\_pin  | varchar |       | Optional hashed PIN for extra authentication hashed using bcrypt |
+| Field        | Type    | Index | Description                                                               |
+|--------------|---------|-------|---------------------------------------------------------------------------|
+| id           | uuid    | PK    | Unique identifier for the staff key                                       |
+| staffs       | uuid    | FK    | Foreign key referencing the `staff_accounts`                              |
+| public\_key  | varchar |       | Public encryption key of the staff                                        |
+| private\_key | varchar |       | Private encryption key of the staff, encrypted using staff secret key     |
+| hashed\_key  | varchar |       | Hashed key used for secret key using bcrypt and salt                      |
+| hashed\_pin  | varchar |       | Optional hashed PIN for extra authentication hashed using bcrypt and salt |
 
 ### System Configs Table
 
@@ -361,6 +361,7 @@ Used for feature toggling by staff without code deployment.
 - **Users Secret Key** : Secret key account binding
 - **Families Secret Key** : Secret key family binding
 - **System Secret Key** : Secret key system binding
+- **Staff Secret Key** : Secret key staff binding
 
 ## Secret Key Mapping
 
