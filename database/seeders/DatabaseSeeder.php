@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             SubCategorySeeder::class,
             WalletSeeder::class,
-            WalletAccessSeeder::class
+            WalletAccessSeeder::class,
+            StaffAccountSeeder::class
         ]);
     }
 }
