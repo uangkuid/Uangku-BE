@@ -11,6 +11,7 @@ use App\Repositories\Category\CategoryRepository;
 use App\Repositories\FeatureStatus\FeatureStatusRepository;
 use App\Repositories\General\GeneralRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
+use App\Repositories\SystemConfig\SystemConfigRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
@@ -27,18 +28,21 @@ class GeneralServiceImplement extends Service implements GeneralService
     protected CategoryRepository $categoryRepository;
     protected SubCategoryRepository $subCategoryRepository;
     protected FeatureStatusRepository $featureStatusRepository;
+    protected SystemConfigRepository $systemConfigRepository;
 
     public function __construct(
         GeneralRepository     $mainRepository,
         CategoryRepository    $categoryRepository,
         SubCategoryRepository $subCategoryRepository,
-        FeatureStatusRepository $featureStatusRepository
+        FeatureStatusRepository $featureStatusRepository,
+        SystemConfigRepository $systemConfigRepository
     )
     {
         $this->mainRepository = $mainRepository;
         $this->categoryRepository = $categoryRepository;
         $this->subCategoryRepository = $subCategoryRepository;
         $this->featureStatusRepository = $featureStatusRepository;
+        $this->systemConfigRepository = $systemConfigRepository;
     }
 
     /**
@@ -180,8 +184,15 @@ class GeneralServiceImplement extends Service implements GeneralService
      */
     function getFeatureStatus(): array
     {
-        $data = $this->featureStatusRepository->getFeatureStatus();
-        Log::info($data);
-        return $data;
+        return $this->featureStatusRepository->getFeatureStatus();
+    }
+
+    /**
+     * Get system configuration
+     * @return array
+     */
+    function getSystemConfig(): array
+    {
+        return $this->systemConfigRepository->getSystemConfig();
     }
 }

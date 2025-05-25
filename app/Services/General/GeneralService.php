@@ -66,4 +66,10 @@ interface GeneralService extends BaseService
      * @return array
      */
     function getFeatureStatus():array;
+
+    /**
+     * Get system configuration
+     * @return array
+     */
+    function getSystemConfig(): array;
 }

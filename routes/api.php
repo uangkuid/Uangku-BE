@@ -36,7 +36,7 @@ Route::middleware('session')->group(function () {
 Route::controller(GeneralController::class)->group(function () {
     Route::prefix("general")->group(function () {
         Route::get('feature-status', 'getFeatureStatus');
-        Route::get('system-config', 'system-config');
+        Route::get('system-config', 'getSystemConfig');
     });
 });
 
