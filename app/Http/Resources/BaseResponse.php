@@ -38,6 +38,8 @@ class BaseResponse extends JsonResource
             } else {
                 $payload = $this->resource;
             }
+        } else {
+            $payload = $this->resource;
         }
 
         return [

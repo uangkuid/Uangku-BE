@@ -8,9 +8,11 @@ use App\Http\Resources\Models\CategoryResource;
 use App\Http\Resources\Models\SubCategoryResource;
 use App\Models\SubCategory;
 use App\Repositories\Category\CategoryRepository;
+use App\Repositories\FeatureStatus\FeatureStatusRepository;
 use App\Repositories\General\GeneralRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -24,16 +26,19 @@ class GeneralServiceImplement extends Service implements GeneralService
     protected GeneralRepository $mainRepository;
     protected CategoryRepository $categoryRepository;
     protected SubCategoryRepository $subCategoryRepository;
+    protected FeatureStatusRepository $featureStatusRepository;
 
     public function __construct(
         GeneralRepository     $mainRepository,
         CategoryRepository    $categoryRepository,
-        SubCategoryRepository $subCategoryRepository
+        SubCategoryRepository $subCategoryRepository,
+        FeatureStatusRepository $featureStatusRepository
     )
     {
         $this->mainRepository = $mainRepository;
         $this->categoryRepository = $categoryRepository;
         $this->subCategoryRepository = $subCategoryRepository;
+        $this->featureStatusRepository = $featureStatusRepository;
     }
 
     /**
@@ -167,5 +172,16 @@ class GeneralServiceImplement extends Service implements GeneralService
         }
 
         $this->subCategoryRepository->delete($id);
+    }
+
+    /**
+     * Get feature status
+     * @return array
+     */
+    function getFeatureStatus(): array
+    {
+        $data = $this->featureStatusRepository->getFeatureStatus();
+        Log::info($data);
+        return $data;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FeatureStatus;
 
+use Illuminate\Support\Facades\Log;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\FeatureStatus;
 
@@ -22,6 +23,10 @@ class FeatureStatusRepositoryImplement extends Eloquent implements FeatureStatus
     // Write something awesome :)
     function getFeatureStatus(): array
     {
-        return $this->model->all();
+        $data = $this->model->all()->toArray();
+
+        Log::info($data);
+
+        return $data;
     }
 }

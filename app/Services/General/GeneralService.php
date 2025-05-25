@@ -60,4 +60,10 @@ interface GeneralService extends BaseService
      * @throws UserException
      */
     function deleteSubCategory(string $id, string $token): void;
+
+    /**
+     * Get feature status
+     * @return array
+     */
+    function getFeatureStatus():array;
 }
