@@ -6,12 +6,17 @@ use App\Filament\Resources\SystemConfigResource\Pages;
 use App\Filament\Resources\SystemConfigResource\RelationManagers;
 use App\Models\SystemConfig;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SystemConfigResource extends Resource
 {
@@ -24,7 +29,19 @@ class SystemConfigResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('key')
+                    ->required()
+                    ->maxLength(255)
+                    ->alphaDash()
+                    ->unique(
+                        table: 'system_configs',
+                        column: 'key',
+                        ignoreRecord: true
+                    )
+                    ->columnSpanFull(),
+                Textarea::make('value')
+                    ->required()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -32,7 +49,18 @@ class SystemConfigResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->searchable()
+                    ->hidden(),
+                Tables\Columns\TextColumn::make('key')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('value')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -62,4 +90,10 @@ class SystemConfigResource extends Resource
             'edit' => Pages\EditSystemConfig::route('/{record}/edit'),
         ];
     }
+
+//    public static function mutateFormDataBeforeCreate(array $data): array
+//    {
+//        $data['updated_by'] = auth()->id(); // atau auth()->id()
+//        return $data;
+//    }
 }

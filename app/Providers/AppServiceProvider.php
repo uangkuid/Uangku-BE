@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +35,12 @@ class AppServiceProvider extends ServiceProvider
 
         DB::listen(function ($query) {
             Log::debug("SQL: {$query->sql}, Bindings: " . json_encode($query->bindings));
+        });
+
+        Table::configureUsing(function (Table $table): void {
+            $table
+                ->deferLoading()
+                ->paginationPageOptions([10, 25, 50]);
         });
     }
 }

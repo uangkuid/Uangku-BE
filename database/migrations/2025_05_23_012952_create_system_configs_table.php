@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('key')->unique();
             $table->text('value');
             $table->uuid('updated_by')->nullable();
-            $table->timestamp('updated_at')->useCurrent();
+            $table->timestamps();
             $table->foreign('updated_by')->references('id')->on('staff_accounts')->nullOnDelete();
         });
     }
