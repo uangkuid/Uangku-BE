@@ -3,12 +3,15 @@ FROM composer:2 AS vendor
 
 WORKDIR /app
 COPY . /app
+
+RUN install-php-extensions intl
+
 RUN composer install --no-dev --optimize-autoloader
 
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp
 
-RUN install-php-extensions pcntl pdo_mysql
+RUN install-php-extensions pcntl pdo_mysql intl
 
 COPY --from=vendor /app /app
 
