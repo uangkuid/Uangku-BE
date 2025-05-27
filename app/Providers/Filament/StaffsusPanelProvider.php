@@ -27,9 +27,9 @@ class StaffsusPanelProvider extends PanelProvider
             ->id('staffsus')
             ->path('staffsus')
             ->login()
-            ->colors([
-                'primary' => Color::Sky,
-            ])
+//            ->colors([
+//                'primary' => Color::Sky,
+//            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
