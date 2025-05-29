@@ -69,7 +69,7 @@ class CategoryResource extends Resource
                             $q->where('name', 'like', "%{$search}%");
                         });
                     })
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

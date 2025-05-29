@@ -32,3 +32,9 @@ php artisan jwt:secret
 ```
 php artisan vendor:publish --provider="LaravelEasyRepository\LaravelEasyRepositoryServiceProvider" --tag="easy-repository-config"
 ```
+
+### Filament
+
+```
+php artisan vendor:publish --tag=filament-config
+```
