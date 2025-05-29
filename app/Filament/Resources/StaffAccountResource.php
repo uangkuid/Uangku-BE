@@ -17,7 +17,7 @@ class StaffAccountResource extends Resource
     protected static ?string $model = StaffAccount::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static ?string $navigationGroup = 'Staff Management';
 
     public static function form(Form $form): Form
     {

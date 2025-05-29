@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -52,5 +53,10 @@ class StaffAccount extends Authenticatable implements JWTSubject
                 "staff_id" => $this->id
             ]
         ];
+    }
+
+    public function featureStatuses(): HasMany
+    {
+        return $this->hasMany(FeatureStatus::class, 'updated_by');
     }
 }

@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\SystemConfigResource\Pages;
+namespace App\Filament\Resources\FeatureStatusResource\Pages;
 
-use App\Filament\Resources\SystemConfigResource;
+use App\Filament\Resources\FeatureStatusResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Log;
 
-class CreateSystemConfig extends CreateRecord
+class CreateFeatureStatus extends CreateRecord
 {
-    protected static string $resource = SystemConfigResource::class;
+    protected static string $resource = FeatureStatusResource::class;
 
     protected function getRedirectUrl(): string
     {
