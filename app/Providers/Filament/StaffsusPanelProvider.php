@@ -23,6 +23,7 @@ class StaffsusPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->spa()
             ->default()
             ->id('staffsus')
             ->path('staffsus')

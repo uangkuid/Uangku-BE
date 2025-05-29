@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('feature_name')->unique();
             $table->boolean('is_enabled')->default(true);
             $table->uuid('updated_by')->nullable();
-            $table->timestamp('updated_at')->useCurrent();
+            $table->timestamps();
             $table->foreign('updated_by')->references('id')->on('staff_accounts')->nullOnDelete();
         });
     }
