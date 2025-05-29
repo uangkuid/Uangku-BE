@@ -33,7 +33,7 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('icon')
                     ->maxLength(255)
                     ->default(null),
-                Forms\Components\TextInput::make('transaction_types')
+                Forms\Components\Select::make('transaction_types')
                     ->required()
                     ->relationship('transactionType', 'name')
             ]);
