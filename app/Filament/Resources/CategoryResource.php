@@ -6,6 +6,7 @@ use App\Filament\Resources\CategoryResource\Pages;
 use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -30,9 +31,13 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('icon')
-                    ->maxLength(255)
-                    ->default(null),
+                FileUpload::make('icon')
+                    ->disk('minio')
+                    ->directory('category')
+                    ->visibility('private')
+                    ->image()
+                    ->imagePreviewHeight('100') // optional preview
+                    ->previewable(true), // pastikan preview aktif
                 Forms\Components\Select::make('transaction_types')
                     ->required()
                     ->relationship('transactionType', 'name')

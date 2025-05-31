@@ -12,7 +12,8 @@ class Category extends BaseModel
     use HasFactory, HasUuids;
     protected $fillable = [
         'name',
-        'transaction_types'
+        'transaction_types',
+        'icon'
     ];
 
     public function transactionType(): BelongsTo

@@ -74,11 +74,11 @@ class StaffAccountResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('created_at')
                             ->label('Created at')
-                            ->content(fn(StaffAccount $record): ?string => $record->created_at?->format('d M Y - H:i:s')),
+                            ->content(fn(StaffAccount $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                         Forms\Components\Placeholder::make('updated_at')
                             ->label('Last modified at')
-                            ->content(fn(StaffAccount $record): ?string => $record->updated_at?->diffForHumans()),
+                            ->content(fn(StaffAccount $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
                     ->columnSpan(['lg' => 1])
                     ->hidden(fn(?StaffAccount $record) => $record === null),
