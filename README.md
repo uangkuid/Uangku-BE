@@ -38,3 +38,9 @@ php artisan vendor:publish --provider="LaravelEasyRepository\LaravelEasyReposito
 ```
 php artisan vendor:publish --tag=filament-config
 ```
+
+### Laravel Debugbar
+
+```
+php artisan vendor:publish --provider="Barryvdh\Debugbar\ServiceProvider"
+```

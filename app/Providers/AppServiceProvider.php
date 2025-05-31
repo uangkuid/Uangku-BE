@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\StaffAccount;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;

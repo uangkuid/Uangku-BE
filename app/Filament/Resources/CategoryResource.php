@@ -8,6 +8,13 @@ use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
@@ -28,20 +35,44 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                FileUpload::make('icon')
-                    ->disk('minio')
-                    ->directory('category')
-                    ->visibility('private')
-                    ->image()
-                    ->imagePreviewHeight('100') // optional preview
-                    ->previewable(true), // pastikan preview aktif
-                Forms\Components\Select::make('transaction_types')
-                    ->required()
-                    ->relationship('transactionType', 'name')
-            ]);
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Category Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Select::make('transaction_types')
+                                    ->required()
+                                    ->relationship('transactionType', 'name')
+                            ]),
+                        Forms\Components\Section::make('Image')
+                            ->schema([
+                                FileUpload::make('icon')
+                                    ->hiddenLabel()
+                                    ->disk('minio')
+                                    ->directory('category')
+                                    ->visibility('private')
+                                    ->image()
+                                    ->imagePreviewHeight('100') // optional preview
+                                    ->previewable(true), // pastikan preview aktif
+                            ]),
+                    ])
+                    ->columnSpan(['lg' => fn(?Category $record) => $record === null ? 3 : 2]),
+                Forms\Components\Section::make('General Information')
+                    ->schema([
+                        Forms\Components\Placeholder::make('created_at')
+                            ->label('Created at')
+                            ->content(fn(Category $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
+
+                        Forms\Components\Placeholder::make('updated_at')
+                            ->label('Last modified at')
+                            ->content(fn(Category $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
+                    ])
+                    ->columnSpan(['lg' => 1])
+                    ->hidden(fn(?Category $record) => $record === null),
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -93,6 +124,7 @@ class CategoryResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -102,10 +134,59 @@ class CategoryResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make()
+                    ->schema([
+                        Split::make([
+                            Grid::make(2)
+                                ->schema([
+                                    Group::make([
+                                        TextEntry::make('id')
+                                            ->label('Category ID')
+                                            ->copyable()
+                                            ->copyMessage('Copied!')
+                                            ->copyMessageDuration(1500),
+                                        TextEntry::make('name'),
+                                        TextEntry::make('transactionType.name')
+                                            ->badge()
+                                            ->color(fn($state) => match ($state) {
+                                                'Income' => 'success',
+                                                'Spending', 'Expense', 'Expanse' => 'danger', // Tambahkan variasi jika perlu
+                                                default => 'primary',
+                                            })
+                                    ]),
+                                    Group::make([
+                                        TextEntry::make('created_at')
+                                            ->label('Created At')
+                                            ->dateTime(),
+                                        TextEntry::make('updated_at')
+                                            ->label('Last Modified At')
+                                            ->since(),
+                                    ]),
+                                ]),
+                            ImageEntry::make('icon')
+                                ->disk('minio')
+                                ->visibility('private')
+                                ->hiddenLabel()
+                                ->getStateUsing(function ($record) {
+                                    return Storage::disk('minio')->temporaryUrl(
+                                        "category/{$record->icon}",
+                                        now()->addMinutes(60)
+                                    );
+                                })
+                                ->grow(false),
+                        ])->from('lg'),
+                    ])
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\SubCategoriesRelationManager::class
         ];
     }
 
@@ -115,6 +196,7 @@ class CategoryResource extends Resource
             'index' => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
             'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'view' => Pages\ViewCategory::route('/{record}'),
         ];
     }
 }

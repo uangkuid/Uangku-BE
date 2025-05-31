@@ -25,6 +25,8 @@ class StaffsusPanelProvider extends PanelProvider
         return $panel
             ->spa()
             ->default()
+            ->brandLogo(asset('images/logo.svg'))
+            ->brandLogoHeight('2.3rem')
             ->id('staffsus')
             ->path('staffsus')
             ->login()

@@ -20,7 +20,25 @@ class EditCategory extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        Log::info("Editing category with data: ", $data);
+        if (!empty($data['icon'])) {
+            $data['icon'] = preg_replace('/^category\//', '', $data['icon']);
+        }
         return $data;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+
+        if (isset($data['icon']) && is_string($data['icon'])) {
+            // Add the 'category/' prefix to the icon path
+            $data['icon'] = "category/{$data['icon']}";
+        }
+
+        return parent::mutateFormDataBeforeFill($data);
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

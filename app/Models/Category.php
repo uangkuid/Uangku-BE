@@ -23,6 +23,6 @@ class Category extends BaseModel
 
     public function subCategories(): HasMany
     {
-        return $this->hasMany(SubCategory::class);
+        return $this->hasMany(SubCategory::class, 'categories', 'id');
     }
 }
