@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Auth\CachedEloquentStaffProvider;
 use App\Models\StaffAccount;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Auth::provider('cached_eloquent', function ($app, array $config) {
+            return new CachedEloquentStaffProvider($app['hash'], $config['model']);
+        });
         Password::defaults(function () {
             $rule = Password::min(8);
 

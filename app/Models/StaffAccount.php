@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 #[ObservedBy([StaffAccountObserver::class])]
@@ -82,5 +83,19 @@ class StaffAccount extends Authenticatable implements JWTSubject
     public function newQueryWithoutScopes()
     {
         return parent::newQueryWithoutScopes()->select($this->defaultSelect);
+    }
+
+    // Override untuk invalidate cache saat update
+    public function save(array $options = [])
+    {
+        $result = parent::save($options);
+        Cache::forget("staff." . $this->id);
+        return $result;
+    }
+
+    public function delete()
+    {
+        Cache::forget("staff." . $this->id);
+        return parent::delete();
     }
 }

@@ -70,7 +70,7 @@ return [
         ],
 
         'staff' => [
-            'driver' => 'eloquent',
+            'driver' => 'cached_eloquent',
             'model' => env('STAFF_AUTH_MODEL', App\Models\StaffAccount::class)
         ]
 

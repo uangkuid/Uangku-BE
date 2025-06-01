@@ -12,7 +12,7 @@ class StaffAccountObserver
      */
     public function created(StaffAccount $staffAccount): void
     {
-        Cache::forget('staff_accounts:{$staffAccount->id}');
+        Cache::forget('staff.{$staffAccount->id}');
     }
 
     /**
@@ -20,7 +20,7 @@ class StaffAccountObserver
      */
     public function updated(StaffAccount $staffAccount): void
     {
-        Cache::forget('staff_accounts:{$staffAccount->id}');
+        Cache::forget('staff.{$staffAccount->id}');
     }
 
     /**
@@ -28,7 +28,7 @@ class StaffAccountObserver
      */
     public function deleted(StaffAccount $staffAccount): void
     {
-        Cache::forget('staff_accounts:{$staffAccount->id}');
+        Cache::forget('staff.{$staffAccount->id}');
     }
 
     /**
@@ -36,7 +36,7 @@ class StaffAccountObserver
      */
     public function restored(StaffAccount $staffAccount): void
     {
-        Cache::forget('staff_accounts:{$staffAccount->id}');
+        Cache::forget('staff.{$staffAccount->id}');
     }
 
     /**
@@ -44,6 +44,6 @@ class StaffAccountObserver
      */
     public function forceDeleted(StaffAccount $staffAccount): void
     {
-        Cache::forget('staff_accounts:{$staffAccount->id}');
+        Cache::forget('staff.{$staffAccount->id}');
     }
 }
