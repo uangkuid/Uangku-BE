@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Octane\Facades\Octane;
 use Spatie\Color\Hex;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Auth::provider('cached_eloquent', function ($app, array $config) {
             return new CachedEloquentStaffProvider($app['hash'], $config['model']);
         });
+
         Password::defaults(function () {
             $rule = Password::min(8);
 
