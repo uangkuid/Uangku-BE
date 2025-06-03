@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -26,6 +27,27 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'email_verified_at'
     ];
+
+    protected $defaultSelect = [
+        'id',
+        'name',
+        'email',
+        'password',
+        'email_verified_at',
+        'avatar',
+        'created_at',
+        'updated_at'
+    ];
+
+    public function newQuery(): Builder
+    {
+        return parent::newQuery()->select($this->defaultSelect);
+    }
+
+    public function newQueryWithoutScopes()
+    {
+        return parent::newQueryWithoutScopes()->select($this->defaultSelect);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

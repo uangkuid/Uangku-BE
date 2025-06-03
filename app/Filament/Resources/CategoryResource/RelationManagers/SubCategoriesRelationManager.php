@@ -5,6 +5,9 @@ namespace App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Helpers\EncryptionHelper;
 use App\Models\SubCategory;
 use Exception;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -27,7 +30,44 @@ class SubCategoriesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-            ]);
+                \Filament\Forms\Components\Group::make()
+                    ->schema([
+                        Section::make('Sub Category Information')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpanFull(),
+                            ]),
+                        Section::make('Users Information')
+                            ->schema([
+                                Placeholder::make('user.id')
+                                    ->label('User ID')
+                                    ->content(fn(SubCategory $record): ?string => $record->user?->id),
+                                Placeholder::make('user.email')
+                                    ->label('Email')
+                                    ->content(fn(SubCategory $record): ?string => EncryptionHelper::decryptFromString(
+                                        encryptedData: $record->user?->email,
+                                        key: EncryptionHelper::getSystemSecretKey()
+                                    ))
+                                    ->columnSpanFull(),
+                            ])
+                    ])
+                    ->columnSpan(['lg' => fn(?SubCategory $record) => $record === null ? 3 : 2]),
+                Section::make('General Information')
+                    ->schema([
+                        Placeholder::make('created_at')
+                            ->label('Created at')
+                            ->content(fn(SubCategory $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
+
+                        Placeholder::make('updated_at')
+                            ->label('Last modified at')
+                            ->content(fn(SubCategory $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
+                    ])
+                    ->columnSpan(['lg' => 1])
+                    ->hidden(fn(?SubCategory $record) => $record === null),
+            ])
+            ->columns(3);
     }
 
     public function table(Table $table): Table
@@ -72,7 +112,7 @@ class SubCategoriesRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+
             ])
             ->headerActions([
             ])

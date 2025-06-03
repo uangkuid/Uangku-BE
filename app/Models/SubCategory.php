@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,24 @@ class SubCategory extends Model
         'categories',
         'users'
     ];
+    protected $defaultSelect = [
+        'id',
+        'name',
+        'categories',
+        'users',
+        'created_at',
+        'updated_at'
+    ];
+
+    public function newQuery(): Builder
+    {
+        return parent::newQuery()->select($this->defaultSelect);
+    }
+
+    public function newQueryWithoutScopes()
+    {
+        return parent::newQueryWithoutScopes()->select($this->defaultSelect);
+    }
 
     public function category(): BelongsTo {
         return $this->belongsTo(Category::class, 'categories');
