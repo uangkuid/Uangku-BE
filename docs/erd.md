@@ -100,6 +100,8 @@ erDiagram
         id uuid PK
         name varchar
         amount double
+        type enum
+        status enum
         families uuid FK
         created_by uuid FK
         created_at timestamp
@@ -193,15 +195,15 @@ Table to store user information.
 This table contains the user's personal information, including their name, email, password, and avatar. The password is
 hashed for security purposes.
 
-| Field      | Type      | Index | Description                                                                                 |
-|------------|-----------|-------|---------------------------------------------------------------------------------------------|
-| id         | uuid      | PK    | Unique identifier for the user                                                              |
-| name       | varchar   |       | Name of the user, encrypted using AES-CBC-256 key using Raw public key from table user_keys |
-| email      | varchar   |       | Email address of the user, encrypted using AES-CBC-256 secret key system                    |
-| password   | varchar   |       | Password for the user hashed using bcrypt                                                   |
-| avatar     | varchar   |       | Avatar of the user                                                                          |
-| created_at | timestamp |       | Timestamp when the user was created                                                         |
-| updated_at | timestamp |       | Timestamp when the user was last updated                                                    |
+| Field      | Type      | Index | Description                                                                              |
+|------------|-----------|-------|------------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the user                                                           |
+| name       | varchar   |       | Name of the user, encrypted using RSA Asymmetric key Raw public key from table user_keys |
+| email      | varchar   |       | Email address of the user, encrypted using AES-CBC-256 secret key system                 |
+| password   | varchar   |       | Password for the user hashed using bcrypt                                                |
+| avatar     | varchar   |       | Avatar of the user                                                                       |
+| created_at | timestamp |       | Timestamp when the user was created                                                      |
+| updated_at | timestamp |       | Timestamp when the user was last updated                                                 |
 
 ### User Keys Table
 
@@ -234,12 +236,27 @@ This table contains the refresh token for the user session, which is used for au
 Table to store user configuration.
 This table contains the user's configuration settings, including whether the PIN is enabled or not.
 
-| Field            | Type    | Index | Description                                                                                                            |
-|------------------|---------|-------|------------------------------------------------------------------------------------------------------------------------|
-| id               | uuid    | PK    | Unique identifier for the user configuration                                                                           |
-| users            | uuid    | FK    | Foreign key referencing the users table                                                                                |
-| is_pin_enabled   | boolean |       | Indicates whether the PIN is enabled for the user                                                                      |
-| start_date_month | varchar |       | Start date month for the user configuration, encrypted using AES-CBC-256 key using Raw public key from table user_keys |
+| Field            | Type    | Index | Description                                                                                                         |
+|------------------|---------|-------|---------------------------------------------------------------------------------------------------------------------|
+| id               | uuid    | PK    | Unique identifier for the user configuration                                                                        |
+| users            | uuid    | FK    | Foreign key referencing the users table                                                                             |
+| is_pin_enabled   | boolean |       | Indicates whether the PIN is enabled for the user                                                                   |
+| start_date_month | varchar |       | Start date month for the user configuration, encrypted using RSA Asymmetric key Raw public key from table user_keys |
+
+### Family Table
+
+Table to store family information.
+This table contains the family's name, avatar, and the user who created the family. It also includes timestamps for
+creation and last update.
+
+| Field      | Type      | Index | Description                                                                                  |
+|------------|-----------|-------|----------------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the family                                                             |
+| name       | string    |       | Name of the family, encrypted using RSA Asymmetric key Raw public key from table family_keys |
+| avatar     | varchar   |       | Avatar of the family                                                                         |
+| created_by | uuid      | FK    | Foreign key referencing the users table                                                      |
+| created_at | timestamp |       | Timestamp when the family was created                                                        |
+| updated_at | timestamp |       | Timestamp when the family was last updated                                                   |
 
 ### Family Keys Table
 
@@ -353,6 +370,36 @@ Used for feature toggling by staff without code deployment.
 | is\_enabled   | boolean   |       | Status flag: true if enabled, false if disabled |
 | updated\_by   | uuid      | FK    | Foreign key referencing the `staff_accounts`    |
 | updated\_at   | timestamp |       | Timestamp when the status was last updated      |
+
+### Wallet Table
+
+Table to store wallet information.
+This table contains the wallet details, including the name, amount, type, status, and family association.
+
+| Field      | Type      | Index | Description                                                                                                                                                                                  |
+|------------|-----------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the wallet                                                                                                                                                             |
+| name       | string    |       | Name of the wallet, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets.   |
+| amount     | string    |       | Amount in the wallet, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets. |
+| type       | enum      |       | Type of wallet, can be either "personal" or "family"                                                                                                                                         |
+| status     | enum      |       | Status of the wallet, can be either "active", "inactive", or "archived"                                                                                                                      |
+| families   | uuid      | FK    | Foreign key referencing the `family` table, null for personal wallets                                                                                                                        |
+| created_by | uuid      | FK    | Foreign key referencing the `users` table, null for family wallets                                                                                                                           |
+| created_at | timestamp |       | Timestamp when the wallet was created                                                                                                                                                        |
+| updated_at | timestamp |       | Timestamp when the wallet was last updated                                                                                                                                                   |
+
+### Wallet Access Table
+
+Table to store wallet access permissions.
+This table contains the access permissions for users to wallets, including their roles and active status.
+
+| Field     | Type    | Index | Description                                                          |
+|-----------|---------|-------|----------------------------------------------------------------------|
+| id        | uuid    | PK    | Unique identifier for the wallet access                              |
+| users     | uuid    | FK    | Foreign key referencing the `users` table                            |
+| wallet    | uuid    | FK    | Foreign key referencing the `wallet` table                           |
+| is_active | boolean |       | Indicates whether the access is active for the user                  |
+| role      | enum    |       | Role of the user in the wallet, can be "owner", "admin", or "member" |
 
 ## Secret Keys
 
