@@ -17,6 +17,8 @@ return new class extends Migration
             $table->text('amount');
             $table->uuid('families')->nullable();
             $table->uuid('created_by')->nullable();
+            $table->enum("type", ['personal', 'family']);
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
 
             $table->foreign('families')->references('id')->on('families');

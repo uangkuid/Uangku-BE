@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('users');
             $table->uuid('wallets');
             $table->boolean("is_active");
-            $table->enum("role", ['Admin', 'Member']);
+            $table->enum("role", ['Admin', 'Member'])->default('Member');
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');
