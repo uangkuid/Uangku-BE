@@ -48,4 +48,16 @@ class WalletServiceImplement extends Service implements WalletService{
     {
         return $this->mainRepository->getIndividualWallet($userId);
     }
+
+    /**
+     * Create a new wallet for a user.
+     * @param string $name
+     * @param string $userId
+     * @param string|null $familyId
+     * @return array
+     */
+    function createWallet(string $name, string $userId, ?string $familyId = null): array
+    {
+        return [];
+    }
 }

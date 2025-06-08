@@ -9,6 +9,8 @@ use App\Http\Resources\BaseResponse;
 use App\Models\FamilyMember;
 use App\Models\Wallet;
 use App\Models\WalletAccess;
+use App\Services\User\UserService;
+use App\Services\Wallet\WalletService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,16 @@ use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
 {
+
+    protected WalletService $walletService;
+    protected UserService $userService;
+
+    public function __construct(WalletService $walletService, UserService $userService)
+    {
+        $this->walletService = $walletService;
+        $this->userService = $userService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -56,6 +68,8 @@ class WalletController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $user = $this->userService->getUserByToken($request->bearerToken());
 
             $secret_key = $request->personal_secret_key;
             $familyKey = $request->family_secret_key;

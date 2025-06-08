@@ -140,6 +140,6 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
 });
 
 Route::controller(WalletController::class)->middleware(['auth:api'])->group(function () {
-    Route::get('wallet', 'index')->middleware('wallet');
-    Route::post('wallet', 'store')->middleware('auto-auth');
+    Route::get('wallet', 'index');
+    Route::post('wallet', 'store');
 });
