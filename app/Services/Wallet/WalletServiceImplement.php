@@ -3,24 +3,46 @@
 namespace App\Services\Wallet;
 
 use App\Enums\RoleWallet;
+use App\Exceptions\EncryptionException;
+use App\Exceptions\FamilyException;
+use App\Exceptions\GeneralException;
+use App\Exceptions\UserException;
+use App\Helpers\EncryptionHelper;
 use App\Models\WalletAccess;
-use LaravelEasyRepository\Service;
+use App\Repositories\FamilyKey\FamilyKeyRepository;
+use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\User\UserRepository;
 use App\Repositories\Wallet\WalletRepository;
+use LaravelEasyRepository\Service;
 
-class WalletServiceImplement extends Service implements WalletService{
+class WalletServiceImplement extends Service implements WalletService
+{
 
-     /**
+    /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
-     protected WalletRepository $mainRepository;
-     private WalletAccess $access;
+    protected WalletRepository $mainRepository;
+    protected WalletAccess $access;
+    protected FamilyKeyRepository $familyKeyRepository;
+    protected FamilyMemberRepository $familyMemberRepository;
+    protected UserRepository $userRepository;
 
-    public function __construct(WalletRepository $mainRepository, WalletAccess $access)
+    public function __construct(
+        WalletRepository    $mainRepository,
+        WalletAccess        $access,
+        FamilyKeyRepository $familyKeyRepository,
+        FamilyMemberRepository $familyMemberRepository,
+        UserRepository      $userRepository
+    )
     {
         $this->mainRepository = $mainRepository;
         $this->access = $access;
+        $this->familyKeyRepository = $familyKeyRepository;
+        $this->familyMemberRepository = $familyMemberRepository;
+        $this->userRepository = $userRepository;
     }
+
     /**
      * Grant access to a user for a specific wallet.
      *
@@ -55,9 +77,53 @@ class WalletServiceImplement extends Service implements WalletService{
      * @param string $userId
      * @param string|null $familyId
      * @return array
+     * @throws FamilyException
+     * @throws EncryptionException
+     * @throws UserException
+     * @throws GeneralException
      */
     function createWallet(string $name, string $userId, ?string $familyId = null): array
     {
+        if ($familyId != null) {
+            $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+            if ($familyKey == null) {
+                throw new FamilyException("FamilyKey not found");
+            }
+
+            $name = EncryptionHelper::encryptAsymmetric(
+                data: $name,
+                publicKey: $familyKey->public_key
+            );
+
+            $amount = EncryptionHelper::encryptAsymmetric(
+                data: "0",
+                publicKey: $familyKey->public_key
+            );
+
+            $isExist = $this->mainRepository->isNameExist(name: $name, familyId: $familyId);
+
+            if ($isExist) {
+                throw new GeneralException("Wallet name already exists in this family");
+            }
+        } else {
+            $userKey = $this->userRepository->getUserKey($userId);
+
+            if ($userKey == null) {
+                throw new UserException("User key not found");
+            }
+
+            $name = EncryptionHelper::encryptAsymmetric(
+                data: $name,
+                publicKey: $userKey->public_key
+            );
+
+            $amount = EncryptionHelper::encryptAsymmetric(
+                data: "0",
+                publicKey: $userKey->public_key
+            );
+        }
+
         return [];
     }
 }

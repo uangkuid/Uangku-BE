@@ -13,4 +13,12 @@ interface WalletRepository extends Repository{
      * @return array
      */
     function getIndividualWallet(string $id): array;
+
+    /**
+     * Check if a wallet name already exists.
+     * @param string $name
+     * @param string|null $familyId
+     * @return bool
+     */
+    function isNameExist(string $name, ?string $familyId = null): bool;
 }

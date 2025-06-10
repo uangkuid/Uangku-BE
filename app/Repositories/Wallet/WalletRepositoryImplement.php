@@ -49,4 +49,31 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
             })
             ->toArray();
     }
+
+    /**
+     * Check if a wallet name already exists.
+     * @param string $name
+     * @param string|null $familyId
+     * @return bool
+     */
+    function isNameExist(string $name, ?string $familyId = null): bool
+    {
+        if ($familyId != null) {
+            return $this->model
+                ->select('id')
+                ->where('name', $name)
+                ->when($familyId, function ($query) use ($familyId) {
+                    return $query->where('family', $familyId);
+                })
+                ->limit(1)
+                ->exists();
+        } else {
+            return $this->model
+                ->select('id')
+                ->where('name', $name)
+                ->whereNull('family')
+                ->limit(1)
+                ->exists();
+        }
+    }
 }
