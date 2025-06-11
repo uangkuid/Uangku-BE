@@ -76,4 +76,30 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
                 ->exists();
         }
     }
+
+    /**
+     * C
+     * @param string $name
+     * @param string $amount
+     * @param string $userId
+     * @param string|null $familyId
+     * @return Wallet
+     */
+    function createWallet(string $name, string $amount, string $userId, ?string $familyId = null,): Wallet
+    {
+        if ($familyId != null) {
+            return $this->model->create([
+                'name' => $name,
+                'amount' => $amount,
+                'created_by' => $userId,
+                'family' => $familyId
+            ]);
+        } else {
+            return $this->model->create([
+                'name' => $name,
+                'amount' => $amount,
+                'created_by' => $userId,
+            ]);
+        }
+    }
 }
