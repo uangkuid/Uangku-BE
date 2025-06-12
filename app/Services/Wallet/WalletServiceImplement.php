@@ -113,6 +113,7 @@ class WalletServiceImplement extends Service implements WalletService
                 userId: $userId,
                 familyId: $familyId
             );
+
         } else {
             $userKey = $this->userRepository->getUserKey($userId);
 
@@ -135,8 +136,24 @@ class WalletServiceImplement extends Service implements WalletService
             if ($isExist) {
                 throw new GeneralException("Wallet name already exists in this family");
             }
+
+            $wallet = $this->mainRepository->createWallet(
+                name: $name,
+                amount: $amount,
+                userId: $userId
+            );
+
         }
 
-        return [];
+        $access = $this->grantAccess(
+            userId: $userId,
+            walletId: $wallet->id,
+            accessType: RoleWallet::Admin
+        );
+
+        return [
+            'wallet' => $wallet,
+            'access' => $access
+        ];
     }
 }
