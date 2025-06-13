@@ -93,12 +93,12 @@ class WalletServiceImplement extends Service implements WalletService
 
             $name = EncryptionHelper::encryptAsymmetric(
                 data: $name,
-                publicKey: $familyKey->public_key
+                publicKey: base64_decode($familyKey->public_key)
             );
 
             $amount = EncryptionHelper::encryptAsymmetric(
                 data: "0",
-                publicKey: $familyKey->public_key
+                publicKey: base64_decode($familyKey->public_key)
             );
 
             $isExist = $this->mainRepository->isNameExist(name: $name, familyId: $familyId);
@@ -123,12 +123,12 @@ class WalletServiceImplement extends Service implements WalletService
 
             $name = EncryptionHelper::encryptAsymmetric(
                 data: $name,
-                publicKey: $userKey->public_key
+                publicKey: base64_decode($userKey->public_key)
             );
 
             $amount = EncryptionHelper::encryptAsymmetric(
                 data: "0",
-                publicKey: $userKey->public_key
+                publicKey: base64_decode($userKey->public_key)
             );
 
             $isExist = $this->mainRepository->isNameExist(name: $name);

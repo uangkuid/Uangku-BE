@@ -154,13 +154,13 @@ class WalletController extends Controller
                 201,
                 'Family created successfully.',
                 [
-                    "id" => $wallet->id,
+                    "id" => $wallet["wallet"]->id,
                     "name" => $request->name,
                     "amount" => "0",
-                    "role" => [
-                        "role" => $walletAccess->role,
-                        "is_active" => $walletAccess->is_active,
-                    ]
+//                    "role" => [
+//                        "role" => $walletAccess->role,
+//                        "is_active" => $walletAccess->is_active,
+//                    ]
                 ]
             ));
         } catch (Exception $e) {

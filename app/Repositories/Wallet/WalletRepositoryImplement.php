@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Wallet;
 
+use App\Enums\WalletType;
 use App\Models\WalletAccess;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\Wallet;
@@ -63,7 +64,7 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
                 ->select('id')
                 ->where('name', $name)
                 ->when($familyId, function ($query) use ($familyId) {
-                    return $query->where('family', $familyId);
+                    return $query->where('families', $familyId);
                 })
                 ->limit(1)
                 ->exists();
@@ -71,14 +72,14 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
             return $this->model
                 ->select('id')
                 ->where('name', $name)
-                ->whereNull('family')
+                ->whereNull('families')
                 ->limit(1)
                 ->exists();
         }
     }
 
     /**
-     * C
+     * Create a new wallet.
      * @param string $name
      * @param string $amount
      * @param string $userId
@@ -92,13 +93,15 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
                 'name' => $name,
                 'amount' => $amount,
                 'created_by' => $userId,
-                'family' => $familyId
+                'families' => $familyId,
+                'type' => WalletType::Family
             ]);
         } else {
             return $this->model->create([
                 'name' => $name,
                 'amount' => $amount,
                 'created_by' => $userId,
+                'type' => WalletType::Personal
             ]);
         }
     }

@@ -24,7 +24,7 @@ interface WalletRepository extends Repository{
     function isNameExist(string $name, ?string $familyId = null): bool;
 
     /**
-     * C
+     * Create a new wallet.
      * @param string $name
      * @param string $amount
      * @param string $userId

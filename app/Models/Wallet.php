@@ -15,7 +15,8 @@ class Wallet extends Model
         'name',
         'amount',
         'created_by',
-        'families'
+        'families',
+        'type'
     ];
 
     public function access(): HasMany
