@@ -8,11 +8,14 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Helpers\EncryptionHelper;
+use App\Http\Resources\Models\WalletResource;
 use App\Models\WalletAccess;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\Wallet\WalletRepository;
+use App\Repositories\WalletAccess\WalletAccessRepository;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\Service;
 
 class WalletServiceImplement extends Service implements WalletService
@@ -23,17 +26,17 @@ class WalletServiceImplement extends Service implements WalletService
      * because used in extends service class
      */
     protected WalletRepository $mainRepository;
-    protected WalletAccess $access;
+    protected WalletAccessRepository $access;
     protected FamilyKeyRepository $familyKeyRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected UserRepository $userRepository;
 
     public function __construct(
-        WalletRepository    $mainRepository,
-        WalletAccess        $access,
-        FamilyKeyRepository $familyKeyRepository,
+        WalletRepository       $mainRepository,
+        WalletAccessRepository $access,
+        FamilyKeyRepository    $familyKeyRepository,
         FamilyMemberRepository $familyMemberRepository,
-        UserRepository      $userRepository
+        UserRepository         $userRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -41,24 +44,6 @@ class WalletServiceImplement extends Service implements WalletService
         $this->familyKeyRepository = $familyKeyRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->userRepository = $userRepository;
-    }
-
-    /**
-     * Grant access to a user for a specific wallet.
-     *
-     * @param string $userId
-     * @param string $walletId
-     * @param RoleWallet $accessType
-     * @return WalletAccess
-     */
-    function grantAccess(string $userId, string $walletId, RoleWallet $accessType): WalletAccess
-    {
-        return $this->access->create([
-            'users' => $userId,
-            'wallets' => $walletId,
-            'role' => $accessType,
-            'is_active' => true,
-        ]);
     }
 
     /**
@@ -161,5 +146,40 @@ class WalletServiceImplement extends Service implements WalletService
             'wallet' => $wallet,
             'access' => $access
         ];
+    }
+
+    /**
+     * Grant access to a user for a specific wallet.
+     *
+     * @param string $userId
+     * @param string $walletId
+     * @param RoleWallet $accessType
+     * @return WalletAccess
+     */
+    function grantAccess(string $userId, string $walletId, RoleWallet $accessType): WalletAccess
+    {
+        return $this->access->create([
+            'users' => $userId,
+            'wallets' => $walletId,
+            'role' => $accessType,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * @param string $userId
+     * @param int $perPage
+     * @param string|null $familyId
+     * @return AnonymousResourceCollection
+     */
+    function getWallet(string $userId, int $perPage = 10, ?string $familyId = null): AnonymousResourceCollection
+    {
+        $paginator = $this->access->getWalletPaging(
+            userId: $userId,
+            perPage: $perPage,
+            familyId: $familyId
+        );
+
+        return WalletResource::collection($paginator);
     }
 }

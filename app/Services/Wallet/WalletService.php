@@ -8,6 +8,7 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Models\WalletAccess;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 
 interface WalletService extends BaseService{
@@ -49,4 +50,16 @@ interface WalletService extends BaseService{
         string $userId,
         ?string $familyId = null
     ): array;
+
+    /**
+     * @param string $userId
+     * @param int $perPage
+     * @param string|null $familyId
+     * @return AnonymousResourceCollection
+     */
+    function getWallet(
+        string $userId,
+        int $perPage = 10,
+        ?string $familyId = null,
+    ): AnonymousResourceCollection;
 }

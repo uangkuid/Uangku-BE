@@ -2,9 +2,16 @@
 
 namespace App\Repositories\WalletAccess;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
 interface WalletAccessRepository extends Repository{
-
-    // Write something awesome :)
+    /**
+     * Get wallet access for a user.
+     * @param string $userId
+     * @param int $perPage
+     * @param string|null $familyId
+     * @return LengthAwarePaginator
+     */
+    function getWalletPaging(string $userId, int $perPage = 10, ?string $familyId = null): LengthAwarePaginator;
 }
