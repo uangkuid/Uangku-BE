@@ -3,6 +3,10 @@
 namespace App\Services\Wallet;
 
 use App\Enums\RoleWallet;
+use App\Exceptions\EncryptionException;
+use App\Exceptions\FamilyException;
+use App\Exceptions\GeneralException;
+use App\Exceptions\UserException;
 use App\Models\WalletAccess;
 use LaravelEasyRepository\BaseService;
 
@@ -35,6 +39,10 @@ interface WalletService extends BaseService{
      * @param string $userId
      * @param string|null $familyId
      * @return array
+     * @throws FamilyException
+     * @throws EncryptionException
+     * @throws UserException
+     * @throws GeneralException
      */
     function createWallet(
         string $name,

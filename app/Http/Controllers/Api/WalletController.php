@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\RoleWallet;
-use App\Helpers\EncryptionHelper;
+use App\Exceptions\FamilyException;
+use App\Exceptions\GeneralException;
+use App\Exceptions\UserException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
-use App\Models\FamilyMember;
 use App\Models\Wallet;
-use App\Models\WalletAccess;
 use App\Services\User\UserService;
 use App\Services\Wallet\WalletService;
 use Exception;
@@ -148,6 +147,8 @@ class WalletController extends Controller
 //                'role' => RoleWallet::Admin
 //            ]);
 
+//            dd($wallet);
+
             DB::commit();
 
             return response()->json(new BaseResponse(
@@ -163,9 +164,12 @@ class WalletController extends Controller
 //                    ]
                 ]
             ));
+        } catch (FamilyException|GeneralException|UserException $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(409, "Failed to create wallet", $e->getMessage()), 409);
+            return response()->json(new BaseResponse(500, "Failed to create wallet", $e->getMessage()), 500);
         }
     }
 

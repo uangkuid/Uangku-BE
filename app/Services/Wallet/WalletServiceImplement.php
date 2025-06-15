@@ -85,6 +85,12 @@ class WalletServiceImplement extends Service implements WalletService
     function createWallet(string $name, string $userId, ?string $familyId = null): array
     {
         if ($familyId != null) {
+            $isHasAdmin = $this->familyMemberRepository->isHasAdmin($userId, $familyId);
+
+            if (!$isHasAdmin) {
+                throw new FamilyException("You don't have permission to create a wallet in this family");
+            }
+
             $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
 
             if ($familyKey == null) {
