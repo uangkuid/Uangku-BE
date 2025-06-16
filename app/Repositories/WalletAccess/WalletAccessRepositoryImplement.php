@@ -2,6 +2,7 @@
 
 namespace App\Repositories\WalletAccess;
 
+use App\Enums\RoleWallet;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\WalletAccess;
@@ -47,5 +48,20 @@ class WalletAccessRepositoryImplement extends Eloquent implements WalletAccessRe
                 ->with('wallet:id,name,amount,type,status,created_at,updated_at')
                 ->paginate($perPage);
         }
+    }
+
+    /**
+     * Check if a user has admin access to a wallet.
+     * @param string $userId
+     * @param string $walletId
+     * @return bool
+     */
+    function isHasAdminAccess(string $userId, string $walletId): bool
+    {
+        return $this->model
+            ->where('users', $userId)
+            ->where('wallets', $walletId)
+            ->where('role', RoleWallet::Admin)
+            ->exists();
     }
 }

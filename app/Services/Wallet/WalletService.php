@@ -52,6 +52,7 @@ interface WalletService extends BaseService{
     ): array;
 
     /**
+     * Get a list of wallets for a user.
      * @param string $userId
      * @param int $perPage
      * @param string|null $familyId
@@ -62,4 +63,17 @@ interface WalletService extends BaseService{
         int $perPage = 10,
         ?string $familyId = null,
     ): AnonymousResourceCollection;
+
+    /**
+     * Check if a user has admin access to a wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @param string|null $familyId
+     * @return bool
+     */
+    function isHasAdminAccess(
+        string $walletId,
+        string $userId,
+        ?string $familyId = null
+    ): bool;
 }

@@ -142,4 +142,10 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
 Route::controller(WalletController::class)->middleware(['auth:api'])->group(function () {
     Route::get('wallet', 'index');
     Route::post('wallet', 'store');
+
+    Route::middleware('wallet-admin')->group(function () {
+        Route::put('wallet/{id}', 'update');
+        Route::post('wallet/{id}/member', 'addMember');
+        Route::post('wallet/{id}/member/{userId}/revoke', 'revokeMember');
+    });
 });

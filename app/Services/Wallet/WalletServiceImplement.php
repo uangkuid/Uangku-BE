@@ -182,4 +182,19 @@ class WalletServiceImplement extends Service implements WalletService
 
         return WalletResource::collection($paginator);
     }
+
+    /**
+     * Check if a user has admin access to a wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @param string|null $familyId
+     * @return bool
+     */
+    function isHasAdminAccess(string $walletId, string $userId, ?string $familyId = null): bool
+    {
+        return $this->access->isHasAdminAccess(
+            userId: $userId,
+            walletId: $walletId
+        );
+    }
 }
