@@ -3,6 +3,7 @@
 namespace App\Repositories\Wallet;
 
 use App\Enums\WalletType;
+use App\Exceptions\GeneralException;
 use App\Models\WalletAccess;
 use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\Wallet;
@@ -103,6 +104,40 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
                 'created_by' => $userId,
                 'type' => WalletType::Personal
             ]);
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param string $walletId
+     * @param string|null $familyId
+     * @return void
+     * @throws GeneralException
+     */
+    function updateWallet(string $name, string $walletId, ?string $familyId = null,): void
+    {
+        // Bangun query dasar
+        $query = $this->model->where('id', $walletId);
+
+        // Tambah syarat keluarga bila ada
+        if ($familyId !== null) {
+            $query->where('families', $familyId);
+            $query->where('type', WalletType::Family);
+        } else {
+            $query->where('type', WalletType::Personal);
+        }
+
+        // Array perubahan
+        $changes = ['name' => $name];
+        if ($familyId !== null) {
+            $changes['families'] = $familyId;
+        }
+
+        // Hanya 1 query UPDATE; cek baris terpengaruh
+        $affected = $query->update($changes);
+
+        if ($affected === 0) {
+            throw new GeneralException("Failed to update wallet or wallet not found.");
         }
     }
 }

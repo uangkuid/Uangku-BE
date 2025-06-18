@@ -76,4 +76,20 @@ interface WalletService extends BaseService{
         string $userId,
         ?string $familyId = null
     ): bool;
+
+    /**
+     * Update a wallet's data
+     * @param string $walletId
+     * @param string $name
+     * @param string|null $familyId
+     * @return void
+     * @throws FamilyException
+     * @throws UserException|EncryptionException
+     * @throws GeneralException
+     */
+    function updateWallet(
+        string $walletId,
+        string $name,
+        ?string $familyId = null
+    ): void;
 }

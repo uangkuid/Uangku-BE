@@ -2,8 +2,8 @@
 
 namespace App\Repositories\Wallet;
 
+use App\Exceptions\GeneralException;
 use App\Models\Wallet;
-use App\Models\WalletAccess;
 use LaravelEasyRepository\Repository;
 
 interface WalletRepository extends Repository{
@@ -37,4 +37,17 @@ interface WalletRepository extends Repository{
         string $userId,
         ?string $familyId = null,
     ): Wallet;
+
+    /**
+     * @param string $name
+     * @param string $walletId
+     * @param string|null $familyId
+     * @return void
+     * @throws GeneralException
+     */
+    function updateWallet(
+        string $name,
+        string $walletId,
+        ?string $familyId = null,
+    ): void;
 }

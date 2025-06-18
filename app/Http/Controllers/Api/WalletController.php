@@ -125,7 +125,31 @@ class WalletController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update wallet", $validator->errors()), 400);
+        }
+
+        try {
+            $this->walletService->updateWallet(
+                walletId: $id,
+                name: $request->name,
+                familyId: $request->family_id ?? null
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Wallet updated successfully.'
+            ));
+        } catch (FamilyException|UserException|GeneralException $e) {
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            return response()->json(new BaseResponse(500, "Failed to update wallet", $e->getMessage()), 500);
+        }
     }
 
     /**

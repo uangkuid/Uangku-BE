@@ -197,4 +197,53 @@ class WalletServiceImplement extends Service implements WalletService
             walletId: $walletId
         );
     }
+
+    /**
+     * Update a wallet's data
+     * @param string $walletId
+     * @param string $name
+     * @param string|null $familyId
+     * @return void
+     * @throws FamilyException
+     * @throws UserException|EncryptionException
+     * @throws GeneralException
+     */
+    function updateWallet(string $walletId, string $name, ?string $familyId = null): void
+    {
+        if ($familyId != null) {
+
+            $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+            if ($familyKey == null) {
+                throw new FamilyException("FamilyKey not found");
+            }
+
+            $name = EncryptionHelper::encryptAsymmetric(
+                data: $name,
+                publicKey: base64_decode($familyKey->public_key)
+            );
+
+            $this->mainRepository->updateWallet(
+                name: $name,
+                walletId: $walletId,
+                familyId: $familyId
+            );
+        } else {
+            $userKey = $this->userRepository->getUserKey(auth()->user()->id);
+
+            if ($userKey == null) {
+                throw new UserException("User key not found");
+            }
+
+            $name = EncryptionHelper::encryptAsymmetric(
+                data: $name,
+                publicKey: base64_decode($userKey->public_key)
+            );
+
+            $this->mainRepository->updateWallet(
+                name: $name,
+                walletId: $walletId,
+            );
+        }
+    }
 }

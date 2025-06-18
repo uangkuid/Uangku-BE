@@ -32,7 +32,7 @@ class WalletAdminMiddleware
         $id = $request->route('id');
 
         if ($id != null && $id != '') {
-            $isExist = $this->walletService->isHasAdminAccess($user->id, $id);
+            $isExist = $this->walletService->isHasAdminAccess(walletId: $id, userId: $user->id);
 
             if (!$isExist) {
                 return response()->json(new BaseResponse(403, "You do not have admin access to this wallet!"), 403);
