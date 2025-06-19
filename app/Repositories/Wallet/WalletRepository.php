@@ -50,4 +50,15 @@ interface WalletRepository extends Repository{
         string $walletId,
         ?string $familyId = null,
     ): void;
+
+    /**
+     * Update the status of a wallet.
+     * @param string $walletId
+     * @param bool $status
+     * @return void
+     */
+    function updateWalletStatus(
+        string $walletId,
+        string $status
+    ): void;
 }

@@ -246,4 +246,18 @@ class WalletServiceImplement extends Service implements WalletService
             );
         }
     }
+
+    /**
+     * Update the status of a wallet.
+     * @param string $walletId
+     * @param string $status
+     * @return void
+     */
+    function updateWalletStatus(string $walletId, string $status): void
+    {
+        $this->mainRepository->updateWalletStatus(
+            walletId: $walletId,
+            status: $status
+        );
+    }
 }

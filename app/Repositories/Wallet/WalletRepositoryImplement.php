@@ -140,4 +140,16 @@ class WalletRepositoryImplement extends Eloquent implements WalletRepository
             throw new GeneralException("Failed to update wallet or wallet not found.");
         }
     }
+
+    /**
+     * Update the status of a wallet.
+     * @param string $walletId
+     * @param bool $status
+     * @return void
+     */
+    function updateWalletStatus(string $walletId, string $status): void
+    {
+        $this->model->where('id', $walletId)
+            ->update(['status' => $status]);
+    }
 }

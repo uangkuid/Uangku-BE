@@ -92,4 +92,15 @@ interface WalletService extends BaseService{
         string $name,
         ?string $familyId = null
     ): void;
+
+    /**
+     * Update the status of a wallet.
+     * @param string $walletId
+     * @param string $status
+     * @return void
+     */
+    function updateWalletStatus(
+        string $walletId,
+        string $status
+    ): void;
 }

@@ -145,7 +145,7 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
 
     Route::middleware('wallet-admin')->group(function () {
         Route::put('wallet/{id}', 'update');
-        Route::post('wallet/{id/status', 'changeStatus');
+        Route::post('wallet/{id}/status', 'updateStatus');
         Route::post('wallet/{id}/member', 'addMember');
         Route::post('wallet/{id}/member/{userId}/revoke', 'revokeMember');
     });
