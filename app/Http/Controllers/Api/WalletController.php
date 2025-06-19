@@ -30,13 +30,13 @@ class WalletController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = $this->userService->getUserByToken($request->bearerToken());
 
         $wallet = $this->walletService->getWallet(
             userId: $user->id,
-            familyId: $request->get('family_id', null)
+            familyId: $request->get('family_id')
         );
 
         return response()->json(new PaginationResponse(
@@ -47,14 +47,6 @@ class WalletController extends Controller
             totalData: $wallet->total(),
             resource: $wallet
         ));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -105,22 +97,6 @@ class WalletController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
@@ -158,5 +134,32 @@ class WalletController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function updateStatus(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => "required|in:active,inactive",
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update wallet status", $validator->errors()), 400);
+        }
+
+        try {
+            $this->walletService->updateWalletStatus(
+                walletId: $id,
+                status: $request->status
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Wallet status updated successfully.'
+            ));
+        } catch (FamilyException|UserException|GeneralException $e) {
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            return response()->json(new BaseResponse(500, "Failed to update wallet status", $e->getMessage()), 500);
+        }
     }
 }
