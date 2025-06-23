@@ -11,6 +11,7 @@ use App\Http\Resources\PaginationResponse;
 use App\Services\User\UserService;
 use App\Services\Wallet\WalletService;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -30,7 +31,7 @@ class WalletController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): \Illuminate\Http\JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $user = $this->userService->getUserByToken($request->bearerToken());
 
@@ -136,7 +137,7 @@ class WalletController extends Controller
         //
     }
 
-    public function updateStatus(Request $request, string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'status' => "required|in:active,inactive",
@@ -161,5 +162,21 @@ class WalletController extends Controller
         } catch (Exception $e) {
             return response()->json(new BaseResponse(500, "Failed to update wallet status", $e->getMessage()), 500);
         }
+    }
+
+    public function getMember(Request $request, string $id)
+    {
+        $resource = $this->walletService->getMember(
+            id: $id
+        );
+
+        return response()->json(new PaginationResponse(
+            status: 200,
+            message: "Wallet member data",
+            page: $resource->currentPage(),
+            totalPage: $resource->lastPage(),
+            totalData: $resource->total(),
+            resource: $resource
+        ));
     }
 }

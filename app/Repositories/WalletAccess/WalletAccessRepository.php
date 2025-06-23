@@ -22,4 +22,20 @@ interface WalletAccessRepository extends Repository{
      * @return bool
      */
     function isHasAdminAccess(string $userId, string $walletId): bool;
+
+    /**
+     * Check if a user has access to a wallet.
+     * @param string $userId
+     * @param string $walletId
+     * @return bool
+     */
+    function isHasAccess(string $userId, string $walletId): bool;
+
+    /**
+     * Get a list of users who have access to a specific wallet.
+     * @param string $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    function getAccessPaging(string $walletId, int $perPage = 10): LengthAwarePaginator;
 }

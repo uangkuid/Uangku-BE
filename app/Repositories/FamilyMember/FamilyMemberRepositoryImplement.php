@@ -51,6 +51,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
             ->where('family', $familyId)
             ->with('users:id,email,avatar')
+            ->where('status', FamilyMemberStatus::Active)
             ->paginate($perPage);
     }
 

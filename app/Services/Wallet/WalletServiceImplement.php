@@ -8,6 +8,7 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Helpers\EncryptionHelper;
+use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
 use App\Models\WalletAccess;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
@@ -259,5 +260,32 @@ class WalletServiceImplement extends Service implements WalletService
             walletId: $walletId,
             status: $status
         );
+    }
+
+    /**
+     * Check if a user has access to a wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @return bool
+     */
+    function isHasAccess(string $walletId, string $userId): bool
+    {
+        return $this->access->isHasAccess(userId: $userId, walletId: $walletId);
+    }
+
+    /**
+     * Get a list of users who have access to a specific wallet.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
+    {
+        $paginator = $this->access->getAccessPaging(
+            walletId: $id,
+            perPage: $perPage
+        );
+
+        return WalletMemberResource::collection($paginator);
     }
 }

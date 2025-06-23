@@ -103,4 +103,23 @@ interface WalletService extends BaseService{
         string $walletId,
         string $status
     ): void;
+
+    /**
+     * Check if a user has access to a wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @return bool
+     */
+    function isHasAccess(
+        string $walletId,
+        string $userId
+    ): bool;
+
+    /**
+     * Get a list of users who have access to a specific wallet.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection;
 }
