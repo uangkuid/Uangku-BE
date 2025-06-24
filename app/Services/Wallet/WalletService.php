@@ -122,4 +122,13 @@ interface WalletService extends BaseService{
      * @return AnonymousResourceCollection
      */
     function getMember(string $id, int $perPage = 10): AnonymousResourceCollection;
+
+    /**
+     * Get a list of family members who have access to a specific wallet.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     * @throws GeneralException
+     */
+    function getFamilyNotJoinWallet(string $id, int $perPage = 10): AnonymousResourceCollection;
 }

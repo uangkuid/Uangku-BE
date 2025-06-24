@@ -4,6 +4,8 @@ namespace App\Repositories\FamilyMember;
 
 use App\Enums\FamilyMemberStatus;
 use App\Enums\RoleFamily;
+use App\Exceptions\GeneralException;
+use App\Models\Wallet;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
@@ -18,10 +20,14 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
     * @property Model|mixed $model;
     */
     protected FamilyMember $model;
+    protected Wallet $wallet;
 
-    public function __construct(FamilyMember $model)
-    {
+    public function __construct(
+        FamilyMember $model,
+        Wallet $wallet
+    ) {
         $this->model = $model;
+        $this->wallet = $wallet;
     }
 
     // Write something awesome :)
@@ -233,5 +239,43 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->limit(5)
             ->orderBy('created_at', 'asc')
             ->get();
+    }
+
+    /**
+     * Get a family member using wallet id
+     * @param string $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     * @throws GeneralException
+     */
+    function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator
+    {
+        // Validasi wallet existence + ambil family_id
+        $wallet = $this->wallet->select('families')->find($walletId);
+
+        if (!$wallet || !$wallet->families) {
+            throw new GeneralException('Wallet not found on this family');
+        }
+
+        return $this->model
+            ->select([
+                'family_members.id',
+                'family_members.user',
+                'family_members.family',
+                'family_members.role',
+                'family_members.status',
+                'family_members.created_at',
+                'family_members.updated_at'
+            ])
+            ->leftJoin('wallet_accesses', function ($join) use ($walletId) {
+                $join->on('wallet_accesses.users', '=', 'family_members.user')
+                    ->where('wallet_accesses.wallets', '=', $walletId)
+                    ->where('wallet_accesses.is_active', '=', true);
+            })
+            ->where('family_members.family', $wallet->families)
+            ->where('family_members.status', 'active')
+            ->whereNull('wallet_accesses.users')
+            ->with('users:id,name,email,avatar')
+            ->paginate($perPage);
     }
 }

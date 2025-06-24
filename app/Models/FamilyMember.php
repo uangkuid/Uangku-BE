@@ -17,7 +17,7 @@ class FamilyMember extends BaseModel
         'status'
     ];
 
-    public function families(): BelongsTo
+    public function family(): BelongsTo
     {
         return $this->belongsTo(Family::class, 'family');
     }

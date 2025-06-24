@@ -179,4 +179,24 @@ class WalletController extends Controller
             resource: $resource
         ));
     }
+
+    public function getFamilyMember(Request $request, string $id)
+    {
+        try {
+            $resource = $this->walletService->getFamilyNotJoinWallet(id: $id);
+
+            return response()->json(new PaginationResponse(
+                status: 200,
+                message: "Wallet member data",
+                page: $resource->currentPage(),
+                totalPage: $resource->lastPage(),
+                totalData: $resource->total(),
+                resource: $resource
+            ));
+        } catch (GeneralException $e) {
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            return response()->json(new BaseResponse(500, "Failed to get family member", $e->getMessage()), 500);
+        }
+    }
 }

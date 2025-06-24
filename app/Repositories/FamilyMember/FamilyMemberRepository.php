@@ -2,6 +2,7 @@
 
 namespace App\Repositories\FamilyMember;
 
+use App\Exceptions\GeneralException;
 use App\Models\FamilyMember;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -117,4 +118,13 @@ interface FamilyMemberRepository extends Repository{
      * @return Collection
      */
     function getFamilyMemberSummary(string $familyId): Collection;
+
+    /**
+     * Get a family member using wallet id
+     * @param string $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     * @throws GeneralException
+     */
+    function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator;
 }

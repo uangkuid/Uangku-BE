@@ -8,6 +8,7 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Helpers\EncryptionHelper;
+use App\Http\Resources\Models\FamilyMemberResource;
 use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
 use App\Models\WalletAccess;
@@ -287,5 +288,22 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         return WalletMemberResource::collection($paginator);
+    }
+
+    /**
+     * Get a list of family members who have access to a specific wallet.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     * @throws GeneralException
+     */
+    function getFamilyNotJoinWallet(string $id, int $perPage = 10): AnonymousResourceCollection
+    {
+        $paginator = $this->familyMemberRepository->getMemberNotJoinWallet(
+            walletId: $id,
+            perPage: $perPage
+        );
+
+        return FamilyMemberResource::collection($paginator);
     }
 }

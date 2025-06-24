@@ -21,4 +21,9 @@ class Family extends Model
     {
         return $this->hasMany(FamilyMember::class, 'family');
     }
+
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(Wallet::class, 'families');       // fk = families
+    }
 }
