@@ -131,4 +131,13 @@ interface WalletService extends BaseService{
      * @throws GeneralException
      */
     function getFamilyNotJoinWallet(string $id, int $perPage = 10): AnonymousResourceCollection;
+
+    /**
+     * Add a member to a wallet.
+     * @param string $id
+     * @param string $userId
+     * @return array
+     * @throws GeneralException
+     */
+    function addMember(string $id, string $userId): array;
 }

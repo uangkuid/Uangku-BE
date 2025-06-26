@@ -199,4 +199,32 @@ class WalletController extends Controller
             return response()->json(new BaseResponse(500, "Failed to get family member", $e->getMessage()), 500);
         }
     }
+
+    public function addMember(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        //if validation fails
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to add member", $validator->errors()), 400);
+        }
+
+        try {
+            $this->walletService->addMember(
+                id: $id,
+                userId: $request->user_id
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Member added successfully.'
+            ));
+        } catch (GeneralException $e) {
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            return response()->json(new BaseResponse(500, "Failed to add member", $e->getMessage()), 500);
+        }
+    }
 }

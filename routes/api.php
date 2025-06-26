@@ -145,13 +145,13 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
 
     Route::middleware('wallet')->group(function () {
         Route::get("wallet/{id}/member", 'getMember');
-        Route::get("wallet/{id}/family", 'getFamilyMember');
     });
 
     Route::middleware('wallet-admin')->group(function () {
         Route::put('wallet/{id}', 'update');
         Route::post('wallet/{id}/status', 'updateStatus');
         Route::post('wallet/{id}/member', 'addMember');
+        Route::get("wallet/{id}/family", 'getFamilyMember');
         Route::post('wallet/{id}/member/{userId}/revoke', 'revokeMember');
     });
 });

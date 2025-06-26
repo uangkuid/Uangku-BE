@@ -2,6 +2,7 @@
 
 namespace App\Services\Wallet;
 
+use App\Enums\RoleFamily;
 use App\Enums\RoleWallet;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
@@ -305,5 +306,50 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         return FamilyMemberResource::collection($paginator);
+    }
+
+    /**
+     * Add a member to a wallet.
+     * @param string $id
+     * @param string $userId
+     * @return array
+     * @throws GeneralException
+     */
+    function addMember(string $id, string $userId): array
+    {
+        $isExist = $this->access->isHasAccess(
+            userId: $userId,
+            walletId: $id
+        );
+
+        if ($isExist) {
+            throw new GeneralException("User already has access to this wallet");
+        }
+
+        $familyAccess = $this->familyMemberRepository->getDetailFromUser(
+            userId: $userId
+        );
+
+        if ($familyAccess == null) {
+            throw new GeneralException("User is not a member of any family");
+        }
+
+        if ($familyAccess->role == RoleFamily::Member) {
+            $access = $this->grantAccess(
+                userId: $userId,
+                walletId: $id,
+                accessType: RoleWallet::Member
+            );
+        } else {
+            $access = $this->grantAccess(
+                userId: $userId,
+                walletId: $id,
+                accessType: RoleWallet::Admin
+            );
+        }
+
+        return [
+            "access" => $access,
+        ];
     }
 }
