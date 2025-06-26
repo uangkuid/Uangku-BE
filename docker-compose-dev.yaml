@@ -56,6 +56,19 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
       - MINIO_DEFAULT_BUCKETS=${AWS_BUCKET}
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      PMA_HOST: mariadb
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    networks:
+      - uangku-network
+
 networks:
   uangku-network:  # <-- Ini bagian penting, jangan sampai typo
     driver: bridge
