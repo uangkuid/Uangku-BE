@@ -64,6 +64,7 @@ class WalletAccessRepositoryImplement extends Eloquent implements WalletAccessRe
             ->where('users', $userId)
             ->where('wallets', $walletId)
             ->where('role', RoleWallet::Admin)
+            ->where('is_active', true)
             ->limit(1)
             ->exists();
     }
@@ -80,6 +81,7 @@ class WalletAccessRepositoryImplement extends Eloquent implements WalletAccessRe
             ->select('id')
             ->where('users', $userId)
             ->where('wallets', $walletId)
+            ->where('is_active', true)
             ->limit(1)
             ->exists();
     }
@@ -98,5 +100,68 @@ class WalletAccessRepositoryImplement extends Eloquent implements WalletAccessRe
             ->where('is_active', true)
             ->with('user:id,email,avatar')
             ->paginate($perPage);
+    }
+
+    /**
+     * Revoke access for a user to a specific wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @return void
+     */
+    function revokeAccess(string $walletId, string $userId): void
+    {
+        $this->model
+            ->where('wallets', $walletId)
+            ->where('users', $userId)
+            ->update([
+                'is_active' => false,
+            ]);
+    }
+
+    /**
+     * Check if a user has access a wallet before.
+     * @param string $userId
+     * @param string $walletId
+     * @return bool
+     */
+    function isHasAccessBefore(string $userId, string $walletId): bool
+    {
+        return $this->model
+            ->select('id')
+            ->where('users', $userId)
+            ->where('wallets', $walletId)
+            ->where('is_active', false)
+            ->limit(1)
+            ->exists();
+    }
+
+    /**
+     * Grant access for a user to a specific wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @return void
+     */
+    function grantAccess(string $walletId, string $userId): void
+    {
+        $this->model
+            ->where('wallets', $walletId)
+            ->where('users', $userId)
+            ->update(['is_active' => true]);
+    }
+
+    /**
+     * Get access model a user on a specific wallet.
+     * @param string $walletId
+     * @param string $userId
+     * @return WalletAccess|null
+     */
+    function getDetailAccess(string $walletId, string $userId): ?WalletAccess
+    {
+        return $this->model
+            ->select('id', 'users', 'wallets', 'role', 'is_active', 'created_at', 'updated_at')
+            ->where('wallets', $walletId)
+            ->where('users', $userId)
+            ->limit(1)
+            ->first();
     }
 }

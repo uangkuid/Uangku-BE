@@ -140,4 +140,12 @@ interface WalletService extends BaseService{
      * @throws GeneralException
      */
     function addMember(string $id, string $userId): array;
+
+    /**
+     * Revoke a user's access to a wallet.
+     * @param string $id
+     * @param string $userId
+     * @return void
+     */
+    function revokeMember(string $id, string $userId): void;
 }

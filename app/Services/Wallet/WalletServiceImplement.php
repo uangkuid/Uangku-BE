@@ -161,12 +161,22 @@ class WalletServiceImplement extends Service implements WalletService
      */
     function grantAccess(string $userId, string $walletId, RoleWallet $accessType): WalletAccess
     {
-        return $this->access->create([
-            'users' => $userId,
-            'wallets' => $walletId,
-            'role' => $accessType,
-            'is_active' => true,
-        ]);
+        $isHasAccessBefore = $this->access->isHasAccessBefore(
+            userId: $userId,
+            walletId: $walletId
+        );
+
+        if ($isHasAccessBefore) {
+            $this->access->grantAccess(walletId: $walletId,userId: $userId);
+            return $this->access->getDetailAccess(walletId: $walletId, userId: $userId);
+        } else {
+            return $this->access->create([
+                'users' => $userId,
+                'wallets' => $walletId,
+                'role' => $accessType,
+                'is_active' => true,
+            ]);
+        }
     }
 
     /**
@@ -334,7 +344,7 @@ class WalletServiceImplement extends Service implements WalletService
             throw new GeneralException("User is not a member of any family");
         }
 
-        if ($familyAccess->role == RoleFamily::Member) {
+        if ($familyAccess->role == RoleFamily::Member->value) {
             $access = $this->grantAccess(
                 userId: $userId,
                 walletId: $id,
@@ -351,5 +361,29 @@ class WalletServiceImplement extends Service implements WalletService
         return [
             "access" => $access,
         ];
+    }
+
+    /**
+     * Revoke a user's access to a wallet.
+     * @param string $id
+     * @param string $userId
+     * @return void
+     * @throws GeneralException
+     */
+    function revokeMember(string $id, string $userId): void
+    {
+        $isExist = $this->access->isHasAccess(
+            userId: $userId,
+            walletId: $id
+        );
+
+        if (!$isExist) {
+            throw new GeneralException("User does not have access to this wallet");
+        }
+
+        $this->access->revokeAccess(
+            walletId: $id,
+            userId: $userId
+        );
     }
 }

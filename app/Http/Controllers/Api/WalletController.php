@@ -227,4 +227,23 @@ class WalletController extends Controller
             return response()->json(new BaseResponse(500, "Failed to add member", $e->getMessage()), 500);
         }
     }
+
+    public function revokeMember(Request $request, string $id, string $userId)
+    {
+        try {
+            $this->walletService->revokeMember(
+                id: $id,
+                userId: $userId
+            );
+
+            return response()->json(new BaseResponse(
+                200,
+                'Member revoked successfully.'
+            ));
+        } catch (GeneralException $e) {
+            return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
+        } catch (Exception $e) {
+            return response()->json(new BaseResponse(500, "Failed to revoke member", $e->getMessage()), 500);
+        }
+    }
 }
