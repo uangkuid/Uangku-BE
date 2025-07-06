@@ -20,7 +20,7 @@ return new class extends Migration
             $table->uuid('transaction_type');
             $table->uuid('families')->nullable();
             $table->string('note');
-            $table->double('amount');
+            $table->string('amount');
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');

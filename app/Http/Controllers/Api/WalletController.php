@@ -55,7 +55,6 @@ class WalletController extends Controller
      */
     public function store(Request $request)
     {
-        $current_user = $request->user();
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',

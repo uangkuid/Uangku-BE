@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\PinController;
 use App\Http\Controllers\Api\SubCategoryController;
+use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\TransactionTypeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WalletController;
@@ -154,4 +155,11 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
         Route::get("wallet/{id}/family", 'getFamilyMember');
         Route::post('wallet/{id}/member/{userId}/revoke', 'revokeMember');
     });
+});
+
+Route::controller(TransactionController::class)->middleware(['auth:api'])->group(function () {
+    Route::get('transaction', 'index');
+    Route::post('transaction', 'store');
+    Route::put('transaction/{id}', 'update');
+    Route::delete('transaction/{id}', 'destroy');
 });

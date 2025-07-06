@@ -14,13 +14,14 @@ return new class extends Migration
         Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('wallets');
-            $table->uuid('access_id');
+            $table->uuid('access');
+            $table->uuid('transaction_type');
             $table->string("amount");
-            $table->enum("type", ['Out', 'In']);
             $table->timestamps();
 
             $table->foreign('wallets')->references('id')->on('wallets');
-            $table->foreign('access_id')->references('id')->on('wallet_accesses');
+            $table->foreign('access')->references('id')->on('wallet_accesses');
+            $table->foreign('transaction_type')->references('id')->on('transaction_types');
         });
     }
 
