@@ -103,6 +103,21 @@ class UserController extends Controller
             $user = $this->userService->getProfile($request->bearerToken());
             $userConfig = $this->userConfig->getConfigByUserId($user['id']);
 
+            if ($user['family'] == null) {
+                return response()->json(new BaseResponse(
+                    status: 200,
+                    message: "Success to get user profile",
+                    resource: [
+                        'id' => $user['id'],
+                        'name' => $user['name'],
+                        'email' => $user['email'],
+                        'avatar' => $user['avatar'],
+                        'config' => $userConfig,
+                        'family' => null
+                    ]
+                ));
+            }
+
             return response()->json(new BaseResponse(
                 status: 200,
                 message: "Success to get user profile",

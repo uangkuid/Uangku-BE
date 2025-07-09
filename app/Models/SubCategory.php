@@ -16,7 +16,8 @@ class SubCategory extends Model
     protected $fillable = [
         'name',
         'categories',
-        'users'
+        'users',
+        'families'
     ];
     protected $defaultSelect = [
         'id',

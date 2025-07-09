@@ -15,11 +15,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('categories');
             $table->uuid('users')->nullable()->default(null);
+            $table->uuid('families')->nullable()->default(null);
             $table->string('name');
             $table->timestamps();
 
             $table->foreign('categories')->references('id')->on('categories');
             $table->foreign('users')->references('id')->on('users');
+            $table->foreign('families')->references('id')->on('families');
         });
     }
 

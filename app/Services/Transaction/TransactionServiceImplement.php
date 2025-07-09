@@ -5,9 +5,9 @@ namespace App\Services\Transaction;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\Transaction\TransactionRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
 use LaravelEasyRepository\Service;
-use App\Repositories\Transaction\TransactionRepository;
 
 class TransactionServiceImplement extends Service implements TransactionService
 {
@@ -45,7 +45,16 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @throws FamilyException
      * @throws GeneralException
      */
-    function createTransaction(string $userId, string $categoryId, string $walletId, string $transactionTypeId, string $amount, string $description = null, string $family = null, string $subCategoryId = null): array
+    function createTransaction(
+        string $userId,
+        string $categoryId,
+        string $walletId,
+        string $transactionTypeId,
+        string $amount,
+        string $description = null,
+        string $family = null,
+        string $subCategoryId = null
+    ): array
     {
         if ($family != null) {
             $isExist = $this->familyMemberRepository->isHasAccess(

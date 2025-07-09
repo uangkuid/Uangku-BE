@@ -77,6 +77,7 @@ erDiagram
         id uuid PK
         categories uuid FK
         users uuid FK
+        families uuid FK
         name string
         created_at timestamp
         updated_at timestamp
@@ -178,6 +179,7 @@ erDiagram
     family ||--o{ transactions: has
     family ||--o{ wallet: has
     family ||--o| family_keys: has
+    family ||--o{ sub_categories: has
     wallet }|--o{ wallet_access: has
     wallet_access ||--o{ wallet_transactions: has
     wallet_transactions ||--o| transactions: has
@@ -306,14 +308,15 @@ This table contains the categories for cash flows, including the name and icon a
 Table to store subcategories.
 This table contains the subcategories for cash flows, including the name and icon associated with each subcategory.
 
-| Field      | Type      | Index | Description                                     |
-|------------|-----------|-------|-------------------------------------------------|
-| id         | uuid      | PK    | Unique identifier for the subcategory           |
-| categories | uuid      | FK    | Foreign key referencing the categories table    |
-| users      | uuid      | FK    | Foreign key referencing the users table         |
-| name       | string    |       | Name of the subcategory                         |
-| created_at | timestamp |       | Timestamp when the subcategory was created      |
-| updated_at | timestamp |       | Timestamp when the subcategory was last updated |
+| Field      | Type      | Index | Description                                                               |
+|------------|-----------|-------|---------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the subcategory                                     |
+| categories | uuid      | FK    | Foreign key referencing the categories table                              |
+| users      | uuid      | FK    | Foreign key referencing the users table                                   |
+| families   | uuid      | FK    | Foreign key referencing the family table, null for personal subcategories |
+| name       | string    |       | Name of the subcategory                                                   |
+| created_at | timestamp |       | Timestamp when the subcategory was created                                |
+| updated_at | timestamp |       | Timestamp when the subcategory was last updated                           |
 
 ### Staff Accounts Table
 
