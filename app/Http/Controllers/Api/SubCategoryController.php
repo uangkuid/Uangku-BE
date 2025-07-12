@@ -45,6 +45,7 @@ class SubCategoryController extends Controller
                 name: $request->name,
                 id: $id,
                 token: $request->bearerToken(),
+                familyId: $request->get('family_id'),
             );
 
             return response()->json(new BaseResponse(

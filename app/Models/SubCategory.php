@@ -24,6 +24,7 @@ class SubCategory extends Model
         'name',
         'categories',
         'users',
+        'families',
         'created_at',
         'updated_at'
     ];
@@ -44,5 +45,10 @@ class SubCategory extends Model
 
     public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'users');
+    }
+
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class, 'families');
     }
 }

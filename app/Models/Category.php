@@ -35,7 +35,7 @@ class Category extends BaseModel
         return parent::newQueryWithoutScopes()->select($this->defaultSelect);
     }
 
-    public function transactionType(): BelongsTo
+    public function transactionTypes(): BelongsTo
     {
         return $this->belongsTo(TransactionType::class, 'transaction_types');
     }

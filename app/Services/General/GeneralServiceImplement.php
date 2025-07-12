@@ -8,6 +8,7 @@ use App\Http\Resources\Models\CategoryResource;
 use App\Http\Resources\Models\SubCategoryResource;
 use App\Models\SubCategory;
 use App\Repositories\Category\CategoryRepository;
+use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\FeatureStatus\FeatureStatusRepository;
 use App\Repositories\General\GeneralRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
@@ -29,13 +30,15 @@ class GeneralServiceImplement extends Service implements GeneralService
     protected SubCategoryRepository $subCategoryRepository;
     protected FeatureStatusRepository $featureStatusRepository;
     protected SystemConfigRepository $systemConfigRepository;
+    protected FamilyMemberRepository $familyMemberRepository;
 
     public function __construct(
         GeneralRepository     $mainRepository,
         CategoryRepository    $categoryRepository,
         SubCategoryRepository $subCategoryRepository,
         FeatureStatusRepository $featureStatusRepository,
-        SystemConfigRepository $systemConfigRepository
+        SystemConfigRepository $systemConfigRepository,
+        FamilyMemberRepository $familyMemberRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -43,6 +46,7 @@ class GeneralServiceImplement extends Service implements GeneralService
         $this->subCategoryRepository = $subCategoryRepository;
         $this->featureStatusRepository = $featureStatusRepository;
         $this->systemConfigRepository = $systemConfigRepository;
+        $this->familyMemberRepository = $familyMemberRepository;
     }
 
     /**
@@ -88,11 +92,12 @@ class GeneralServiceImplement extends Service implements GeneralService
      * @param string $name
      * @param string $id
      * @param string $token
+     * @param string|null $familyId
      * @return SubCategory
      * @throws GeneralException
      * @throws UserException
      */
-    function createSubCategory(string $name, string $id, string $token): SubCategory
+    function createSubCategory(string $name, string $id, string $token, ?string $familyId): SubCategory
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -109,18 +114,31 @@ class GeneralServiceImplement extends Service implements GeneralService
         $isExist = $this->subCategoryRepository->isExistWithName(
             name: $name,
             userId: $user->id,
-            id: $category->id
+            categoryId: $category->id,
+            familyId: $familyId
         );
 
         if ($isExist) {
             throw new GeneralException("Sub category {$name} already exists");
         }
 
-        return $this->subCategoryRepository->create([
-            'name' => $name,
-            'categories' => $category->id,
-            'users' => $user->id,
-        ]);
+        if ($familyId != null) {
+            $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
+                userId: $user->id,
+                familyId: $familyId,
+            );
+
+            if (!$isFamilyAccess) {
+                throw new GeneralException("You do not have access to this family");
+            }
+        }
+
+        return $this->subCategoryRepository->createSubCategory(
+            name: $name,
+            categoryId: $category->id,
+            userId: $user->id,
+            familyId: $familyId
+        );
     }
 
     /**
@@ -144,6 +162,27 @@ class GeneralServiceImplement extends Service implements GeneralService
 
         if ($subCategory == null) {
             throw new GeneralException("Sub category not found");
+        }
+
+        $isSubCategoryFamily = $subCategory->families != null;
+
+        if ($isSubCategoryFamily) {
+            $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
+                userId: $user->id,
+                familyId: $subCategory->families,
+            );
+
+            if (!$isFamilyAccess) {
+                throw new GeneralException("You do not have access to this family");
+            }
+        }
+
+        $isSubCategoryPersonal = $subCategory->families == null;
+
+        if ($isSubCategoryPersonal) {
+            if ($subCategory->users != $user->id) {
+                throw new GeneralException("You do not have access to this sub category");
+            }
         }
 
         $this->subCategoryRepository->update($id, [
@@ -173,6 +212,27 @@ class GeneralServiceImplement extends Service implements GeneralService
 
         if ($subCategory == null) {
             throw new GeneralException("Sub category not found");
+        }
+
+        $isSubCategoryFamily = $subCategory->families != null;
+
+        if ($isSubCategoryFamily) {
+            $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
+                userId: $user->id,
+                familyId: $subCategory->families,
+            );
+
+            if (!$isFamilyAccess) {
+                throw new GeneralException("You do not have access to this family");
+            }
+        }
+
+        $isSubCategoryPersonal = $subCategory->families == null;
+
+        if ($isSubCategoryPersonal) {
+            if ($subCategory->users != $user->id) {
+                throw new GeneralException("You do not have access to this sub category");
+            }
         }
 
         $this->subCategoryRepository->delete($id);

@@ -44,7 +44,7 @@ class CategoryResource extends Resource
                                     ->maxLength(255),
                                 Forms\Components\Select::make('transaction_types')
                                     ->required()
-                                    ->relationship('transactionType', 'name')
+                                    ->relationship('transactionTypes', 'name')
                             ]),
                         Forms\Components\Section::make('Image')
                             ->schema([
@@ -98,9 +98,10 @@ class CategoryResource extends Resource
                         return null;
                     })
                     ->height(32),
-                TextColumn::make('transactionType.name')
+                TextColumn::make('transactionTypes.name')
+                    ->label("Transaction Type")
                     ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('transactionType', function ($q) use ($search) {
+                        return $query->whereHas('transactionTypes', function ($q) use ($search) {
                             $q->where('name', 'like', "%{$search}%");
                         });
                     })
@@ -117,7 +118,7 @@ class CategoryResource extends Resource
             ->filters([
                 SelectFilter::make('transaction_type')
                     ->label('Transaction Type')
-                    ->relationship('transactionType', 'name')
+                    ->relationship('transactionTypes', 'name')
                     ->options([
                         'Spending' => 'Spending',
                         'Income' => 'Income',
@@ -150,7 +151,7 @@ class CategoryResource extends Resource
                                             ->copyMessage('Copied!')
                                             ->copyMessageDuration(1500),
                                         TextEntry::make('name'),
-                                        TextEntry::make('transactionType.name')
+                                        TextEntry::make('transactionTypes.name')
                                             ->badge()
                                             ->color(fn($state) => match ($state) {
                                                 'Income' => 'success',

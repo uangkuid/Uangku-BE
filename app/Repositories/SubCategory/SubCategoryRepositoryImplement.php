@@ -22,9 +22,25 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
 
     // Write something awesome :)
 
+    public function createSubCategory(string $name, string $categoryId, string $userId, ?string $familyId = null): SubCategory
+    {
+        $data = [
+            'name' => $name,
+            'categories' => $categoryId,
+            'users' => $userId,
+        ];
+
+        if ($familyId !== null) {
+            $data['families'] = $familyId;
+        }
+
+        return $this->model->create($data);
+    }
+
     /**
      * Get all subcategories by category id with pagination
      * @param string $id
+     * @param string $userId
      * @param int $perPage
      * @return LengthAwarePaginator
      */
@@ -34,7 +50,7 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
             ->with([
                 'user:id,email,avatar',
                 'category:id,name,transaction_types',
-                'category.transactionType:id,name',
+                'category.transactionTypes:id,name',
             ])
             ->where('categories', $id)
             ->where('users', $userId)
@@ -45,16 +61,22 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
      * Check if a subcategory name already exists for a given category and user
      * @param string $name
      * @param string $userId
-     * @param string $id
+     * @param string $categoryId
+     * @param string|null $familyId
      * @return bool
      */
-    function isExistWithName(string $name, string $userId, string $id): bool
+    function isExistWithName(string $name, string $userId, string $categoryId, ?string $familyId = null): bool
     {
         return $this->model
             ->select('id')
             ->where('name', $name)
             ->where('users', $userId)
-            ->where('categories', $id)
+            ->where('categories', $categoryId)
+            ->when(
+                $familyId !== null,
+                fn ($query) => $query->where('families', $familyId),
+                fn ($query) => $query->whereNull('families')
+            )
             ->exists();
     }
 

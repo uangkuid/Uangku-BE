@@ -12,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -102,6 +103,10 @@ class SubCategoriesRelationManager extends RelationManager
                     ->label("User ID")
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('families')
+                    ->label("Family ID")
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -112,7 +117,20 @@ class SubCategoriesRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-
+                SelectFilter::make('type')
+                    ->label('Type')
+                    ->options([
+                        'personal' => 'Personal Only',
+                        'family' => 'Family Only',
+                    ])
+                    ->default('all')
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? 'all') {
+                            'personal' => $query->whereNull('families'),
+                            'family' => $query->whereNotNull('families'),
+                            default => $query,
+                        };
+                    }),
             ])
             ->headerActions([
             ])
@@ -128,7 +146,13 @@ class SubCategoriesRelationManager extends RelationManager
             ->groups([
                 Group::make('user.email')
                     ->getTitleFromRecordUsing(fn(SubCategory $record): string => EncryptionHelper::decryptFromString($record->user->email, EncryptionHelper::getSystemSecretKey()))
-                    ->collapsible()
+                    ->collapsible(),
+                Group::make('families')
+                    ->label('Family')
+                    ->getTitleFromRecordUsing(function (SubCategory $record): string {
+                        return $record->families ?? 'Personal Only';
+                    })
+                    ->collapsible(),
             ]);
     }
 

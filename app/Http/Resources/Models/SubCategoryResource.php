@@ -17,17 +17,13 @@ class SubCategoryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'users' => [
-                'id' => $this->user?->id,
-                'email' => $this->user?->email,
-                'avatar' => $this->user?->avatar,
-            ],
+            'families' => $this->families,
             'categories' => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
                 'transaction_types' => [
-                    'id' => $this->category?->transactionType?->id,
-                    'name' => $this->category?->transactionType?->name,
+                    'id' => $this->category?->transactionTypes?->id,
+                    'name' => $this->category?->transactionTypes?->name,
                 ],
             ],
             'created_at' => $this->created_at,
