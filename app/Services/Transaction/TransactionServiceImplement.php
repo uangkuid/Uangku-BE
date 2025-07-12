@@ -4,9 +4,11 @@ namespace App\Services\Transaction;
 
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
+use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
 use App\Repositories\Transaction\TransactionRepository;
+use App\Repositories\User\UserRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
 use LaravelEasyRepository\Service;
 
@@ -21,18 +23,24 @@ class TransactionServiceImplement extends Service implements TransactionService
     protected FamilyMemberRepository $familyMemberRepository;
     protected WalletAccessRepository $walletAccessRepository;
     protected SubCategoryRepository $subCategoryRepository;
+    protected UserRepository $userRepository;
+    protected FamilyKeyRepository $familyKeyRepository;
 
     public function __construct(
         TransactionRepository  $mainRepository,
         FamilyMemberRepository $familyMemberRepository,
         WalletAccessRepository $walletAccessRepository,
-        SubCategoryRepository  $subCategoryRepository
+        SubCategoryRepository  $subCategoryRepository,
+        UserRepository         $userRepository,
+        FamilyKeyRepository    $familyKeyRepository
     )
     {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->walletAccessRepository = $walletAccessRepository;
         $this->subCategoryRepository = $subCategoryRepository;
+        $this->userRepository = $userRepository;
+        $this->familyKeyRepository = $familyKeyRepository;
     }
 
     /**
@@ -45,6 +53,7 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
+     * @param string|null $transactionId
      * @return array
      * @throws FamilyException
      * @throws GeneralException
@@ -57,7 +66,8 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $amount,
         string $description = null,
         string $family = null,
-        string $subCategoryId = null
+        string $subCategoryId = null,
+        string $transactionId = null
     ): array
     {
         if ($family != null) {
@@ -110,6 +120,19 @@ class TransactionServiceImplement extends Service implements TransactionService
                     throw new GeneralException("You do not have access to this sub category");
                 }
             }
+        }
+
+        /**
+         * Get Key for Family or Personal Transaction for Encryption
+         */
+        if ($family != null) {
+            $key = $this->familyKeyRepository->getFamilyKey($family);
+        } else {
+            $key = $this->userRepository->getUserKey($userId);
+        }
+
+        if ($key == null) {
+            throw new GeneralException("Key not found for this family or user");
         }
 
 

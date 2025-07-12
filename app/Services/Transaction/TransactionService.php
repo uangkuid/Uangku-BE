@@ -16,6 +16,7 @@ interface TransactionService extends BaseService{
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
+     * @param string|null $transactionId
      * @return array
      */
     function createTransaction(
@@ -26,6 +27,7 @@ interface TransactionService extends BaseService{
         string $amount,
         string $description = null,
         string $family = null,
-        string $subCategoryId = null
+        string $subCategoryId = null,
+        string $transactionId = null
     ): array;
 }

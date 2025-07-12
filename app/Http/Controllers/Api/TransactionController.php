@@ -44,9 +44,9 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'category' => 'required|uuid:4',
-            'wallet' => 'required|uuid:4',
-            'transaction_type' => 'required|uuid:4',
+            'category' => 'required|uuid',
+            'wallet' => 'required|uuid',
+            'transaction_type' => 'required|uuid',
             'amount' => 'required|numeric|min:0',
         ]);
 
@@ -70,13 +70,13 @@ class TransactionController extends Controller
             );
 
             // Create Wallet Transaction
-            $this->walletService->createWalletTransaction(
-                userId: $user->id,
-                walletId: $request->get('wallet'),
-                transactionId: $transaction->id,
-                amount: $request->get('amount'),
-                transactionTypeId: $request->get('transaction_type')
-            );
+//            $this->walletService->createWalletTransaction(
+//                userId: $user->id,
+//                walletId: $request->get('wallet'),
+//                transactionId: $transaction->id,
+//                amount: $request->get('amount'),
+//                transactionTypeId: $request->get('transaction_type')
+//            );
 
             DB::commit();
 

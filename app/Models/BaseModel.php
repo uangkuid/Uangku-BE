@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 
 class BaseModel extends Model
 {
+
     protected function serializeDate(DateTimeInterface $date): string
     {
         return Carbon::instance($date)

@@ -88,7 +88,7 @@ erDiagram
         users uuid FK
         categories uuid FK
         sub_categories uuid FK
-        cash_flows uuid FK
+        transaction_type uuid FK
         wallets uuid FK
         families uuid FK
         amount double
@@ -403,6 +403,26 @@ This table contains the access permissions for users to wallets, including their
 | wallet    | uuid    | FK    | Foreign key referencing the `wallet` table                           |
 | is_active | boolean |       | Indicates whether the access is active for the user                  |
 | role      | enum    |       | Role of the user in the wallet, can be "owner", "admin", or "member" |
+
+### Transactions Table
+
+Table to store transaction records.
+This table contains the transaction details, including the user, category, subcategory, cash flow, wallet, family
+association, amount, note, and timestamps.
+
+| Field            | Type      | Index | Description                                                                                                                                                                                                   |
+|------------------|-----------|-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id               | uuid      | PK    | Unique identifier for the transaction                                                                                                                                                                         |
+| users            | uuid      | FK    | Foreign key referencing the `users` table                                                                                                                                                                     |
+| categories       | uuid      | FK    | Foreign key referencing the `categories` table                                                                                                                                                                |
+| sub_categories   | uuid      | FK    | Foreign key referencing the `sub_categories` table                                                                                                                                                            |
+| transaction_type | uuid      | FK    | Foreign key referencing the `cash_flows` table                                                                                                                                                                |
+| wallets          | uuid      | FK    | Foreign key referencing the `wallet` table                                                                                                                                                                    |
+| families         | uuid      | FK    | Foreign key referencing the `family` table                                                                                                                                                                    |
+| amount           | string    |       | Amount of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets              |
+| note             | text      |       | Note or description of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
+| created_at       | timestamp |       | Timestamp when the transaction was created                                                                                                                                                                    |
+| updated_at       | timestamp |       | Timestamp when the transaction was last updated                                                                                                                                                               |
 
 ## Secret Keys
 
