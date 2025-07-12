@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\SubCategory\SubCategoryRepository;
 use App\Repositories\Transaction\TransactionRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
 use LaravelEasyRepository\Service;
@@ -19,16 +20,19 @@ class TransactionServiceImplement extends Service implements TransactionService
     protected TransactionRepository $mainRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected WalletAccessRepository $walletAccessRepository;
+    protected SubCategoryRepository $subCategoryRepository;
 
     public function __construct(
         TransactionRepository  $mainRepository,
         FamilyMemberRepository $familyMemberRepository,
-        WalletAccessRepository $walletAccessRepository
+        WalletAccessRepository $walletAccessRepository,
+        SubCategoryRepository  $subCategoryRepository
     )
     {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->walletAccessRepository = $walletAccessRepository;
+        $this->subCategoryRepository = $subCategoryRepository;
     }
 
     /**
@@ -74,6 +78,33 @@ class TransactionServiceImplement extends Service implements TransactionService
 
         if (!$isHasWalletAccess) {
             throw new GeneralException("You don't have access to this wallet");
+        }
+
+        $subCategory = $this->subCategoryRepository->find($subCategoryId);
+
+        if ($subCategory == null) {
+            throw new GeneralException("Sub category not found");
+        }
+
+        $isSubCategoryFamily = $subCategory->families != null;
+
+        if ($isSubCategoryFamily) {
+            $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
+                userId: $userId,
+                familyId: $subCategory->families,
+            );
+
+            if (!$isFamilyAccess) {
+                throw new GeneralException("You do not have access to this family");
+            }
+        }
+
+        $isSubCategoryPersonal = $subCategory->families == null;
+
+        if ($isSubCategoryPersonal) {
+            if ($subCategory->users != $userId) {
+                throw new GeneralException("You do not have access to this sub category");
+            }
         }
 
 
