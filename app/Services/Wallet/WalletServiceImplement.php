@@ -13,11 +13,13 @@ use App\Http\Resources\Models\FamilyMemberResource;
 use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
 use App\Models\WalletAccess;
+use App\Models\WalletTransaction;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\Wallet\WalletRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
+use App\Repositories\WalletTransaction\WalletTransactionRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\Service;
 
@@ -33,13 +35,15 @@ class WalletServiceImplement extends Service implements WalletService
     protected FamilyKeyRepository $familyKeyRepository;
     protected FamilyMemberRepository $familyMemberRepository;
     protected UserRepository $userRepository;
+    protected WalletTransactionRepository $walletTransactionRepository;
 
     public function __construct(
         WalletRepository       $mainRepository,
         WalletAccessRepository $access,
         FamilyKeyRepository    $familyKeyRepository,
         FamilyMemberRepository $familyMemberRepository,
-        UserRepository         $userRepository
+        UserRepository         $userRepository,
+        WalletTransactionRepository $walletTransactionRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -47,6 +51,7 @@ class WalletServiceImplement extends Service implements WalletService
         $this->familyKeyRepository = $familyKeyRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->userRepository = $userRepository;
+        $this->walletTransactionRepository = $walletTransactionRepository;
     }
 
     /**
@@ -384,6 +389,84 @@ class WalletServiceImplement extends Service implements WalletService
         $this->access->revokeAccess(
             walletId: $id,
             userId: $userId
+        );
+    }
+
+    /**
+     * Create a new wallet transaction.
+     * @param string $userId
+     * @param string $walletId
+     * @param string $amount
+     * @param string $transactionTypeId
+     * @param string|null $family
+     * @return WalletTransaction
+     * @throws GeneralException
+     * @throws FamilyException
+     * @throws EncryptionException
+     */
+    function createWalletTransaction(
+        string $userId,
+        string $walletId,
+        string $amount,
+        string $transactionTypeId,
+        ?string $family = null
+    ): WalletTransaction
+    {
+        if ($family != null) {
+            $isExist = $this->familyMemberRepository->isHasAccess(
+                userId: $userId,
+                familyId: $family
+            );
+
+            if (!$isExist) {
+                throw new FamilyException("You don't have access to this family");
+            }
+        }
+
+        $isHasWalletAccess = $this->access->isHasAccess(
+            userId: $userId,
+            walletId: $walletId
+        );
+
+        if (!$isHasWalletAccess) {
+            throw new GeneralException("You don't have access to this wallet");
+        }
+
+        $walletAccess = $this->access->getDetailAccess(
+            walletId: $walletId,
+            userId: $userId
+        );
+
+        if ($walletAccess == null) {
+            throw new GeneralException("You don't have access to this wallet");
+        }
+
+        /**
+         * Get Key for Family or Personal Transaction for Encryption
+         */
+        if ($family != null) {
+            $key = $this->familyKeyRepository->getFamilyKey($family);
+        } else {
+            $key = $this->userRepository->getUserKey($userId);
+        }
+
+        if ($key == null) {
+            throw new GeneralException("Key not found for this family or user");
+        }
+
+        $publicKey = $key->public_key;
+
+        if ($publicKey == null) {
+            throw new GeneralException("Public key not found for this family or user");
+        }
+
+        $encryptedAmount = EncryptionHelper::encryptAsymmetric($amount, base64_decode($publicKey));
+
+        return $this->walletTransactionRepository->createTransaction(
+            accessId: $walletAccess->id,
+            walletId: $walletId,
+            amount: $encryptedAmount,
+            transactionType: $transactionTypeId,
         );
     }
 }
