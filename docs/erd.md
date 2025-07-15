@@ -404,6 +404,22 @@ This table contains the access permissions for users to wallets, including their
 | is_active | boolean |       | Indicates whether the access is active for the user                  |
 | role      | enum    |       | Role of the user in the wallet, can be "owner", "admin", or "member" |
 
+### Wallet Transactions Table
+
+Table to store wallet transaction records.
+This table contains the transaction details for wallets, including the wallet, access permissions, amount, type, and
+timestamps.
+
+| Field      | Type      | Index | Description                                                                                                                                                                                      |
+|------------|-----------|-------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id         | uuid      | PK    | Unique identifier for the wallet transaction                                                                                                                                                     |
+| wallets    | uuid      | FK    | Foreign key referencing the `wallet` table                                                                                                                                                       |
+| accessId   | uuid      | FK    | Foreign key referencing the `wallet_access` table                                                                                                                                                |
+| amount     | double    |       | Amount of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
+| type       | enum      |       | Type of transaction, can be "credit" or "debit"                                                                                                                                                  |
+| created_at | timestamp |       | Timestamp when the wallet transaction was created                                                                                                                                                |
+| updated_at | timestamp |       | Timestamp when the wallet transaction was last updated                                                                                                                                           |
+
 ### Transactions Table
 
 Table to store transaction records.

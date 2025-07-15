@@ -2,8 +2,11 @@
 
 namespace App\Services\Transaction;
 
+use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
+use App\Helpers\EncryptionHelper;
+use App\Models\Transaction;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\SubCategory\SubCategoryRepository;
@@ -50,11 +53,13 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
+     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
      * @param string|null $transactionId
-     * @return array
+     * @return Transaction
+     * @throws EncryptionException
      * @throws FamilyException
      * @throws GeneralException
      */
@@ -64,11 +69,12 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $walletId,
         string $transactionTypeId,
         string $amount,
+        string $walletTransactionId,
         string $description = null,
         string $family = null,
         string $subCategoryId = null,
         string $transactionId = null
-    ): array
+    ): Transaction
     {
         if ($family != null) {
             $isExist = $this->familyMemberRepository->isHasAccess(
@@ -135,7 +141,30 @@ class TransactionServiceImplement extends Service implements TransactionService
             throw new GeneralException("Key not found for this family or user");
         }
 
+        $publicKey = $key->public_key;
 
-        return [];
+        if ($publicKey == null) {
+            throw new GeneralException("Public key not found for this family or user");
+        }
+
+        $encryptedAmount = EncryptionHelper::encryptAsymmetric($amount, base64_decode($publicKey));
+
+        $encryptedDescription = null;
+
+        if ($description != null) {
+            $encryptedDescription = EncryptionHelper::encryptAsymmetric($description, base64_decode($publicKey));
+        }
+
+        return $this->mainRepository->createTransaction(
+            userId: $userId,
+            categoryId: $categoryId,
+            walletId: $walletTransactionId,
+            transactionTypeId: $transactionTypeId,
+            amount: $encryptedAmount,
+            description: $encryptedDescription,
+            family: $family,
+            subCategoryId: $subCategoryId,
+            transactionId: $transactionId
+        );
     }
 }
