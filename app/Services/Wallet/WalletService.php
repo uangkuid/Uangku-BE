@@ -8,10 +8,12 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Models\WalletAccess;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 
-interface WalletService extends BaseService{
+interface WalletService extends BaseService
+{
 
     /**
      * Grant access to a user for a specific wallet.
@@ -22,8 +24,8 @@ interface WalletService extends BaseService{
      * @return WalletAccess
      */
     function grantAccess(
-        string $userId,
-        string $walletId,
+        string     $userId,
+        string     $walletId,
         RoleWallet $accessType
     ): WalletAccess;
 
@@ -46,8 +48,8 @@ interface WalletService extends BaseService{
      * @throws GeneralException
      */
     function createWallet(
-        string $name,
-        string $userId,
+        string  $name,
+        string  $userId,
         ?string $familyId = null
     ): array;
 
@@ -59,8 +61,8 @@ interface WalletService extends BaseService{
      * @return AnonymousResourceCollection
      */
     function getWallet(
-        string $userId,
-        int $perPage = 10,
+        string  $userId,
+        int     $perPage = 10,
         ?string $familyId = null,
     ): AnonymousResourceCollection;
 
@@ -72,8 +74,8 @@ interface WalletService extends BaseService{
      * @return bool
      */
     function isHasAdminAccess(
-        string $walletId,
-        string $userId,
+        string  $walletId,
+        string  $userId,
         ?string $familyId = null
     ): bool;
 
@@ -88,8 +90,8 @@ interface WalletService extends BaseService{
      * @throws GeneralException
      */
     function updateWallet(
-        string $walletId,
-        string $name,
+        string  $walletId,
+        string  $name,
         ?string $familyId = null
     ): void;
 
@@ -148,4 +150,21 @@ interface WalletService extends BaseService{
      * @return void
      */
     function revokeMember(string $id, string $userId): void;
+
+    /**
+     * Create a new wallet transaction.
+     * @param string $userId
+     * @param string $walletId
+     * @param string $amount
+     * @param string $transactionTypeId
+     * @param string|null $family
+     * @return WalletTransaction
+     */
+    function createWalletTransaction(
+        string $userId,
+        string $walletId,
+        string $amount,
+        string $transactionTypeId,
+        ?string $family = null,
+    ): WalletTransaction;
 }

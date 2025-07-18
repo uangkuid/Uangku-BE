@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Models\Transaction;
 use LaravelEasyRepository\BaseService;
 
 interface TransactionService extends BaseService{
@@ -13,11 +14,12 @@ interface TransactionService extends BaseService{
      * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
+     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
      * @param string|null $transactionId
-     * @return array
+     * @return Transaction
      */
     function createTransaction(
         string $userId,
@@ -25,9 +27,10 @@ interface TransactionService extends BaseService{
         string $walletId,
         string $transactionTypeId,
         string $amount,
+        string $walletTransactionId,
         string $description = null,
         string $family = null,
         string $subCategoryId = null,
         string $transactionId = null
-    ): array;
+    ): Transaction;
 }

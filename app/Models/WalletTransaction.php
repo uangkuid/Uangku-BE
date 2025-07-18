@@ -6,35 +6,25 @@ use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Transaction extends BaseModel
+class WalletTransaction extends BaseModel
 {
+
     use HasFactory, HasUuids;
 
-    public $incrementing = false;
-
     protected $fillable = [
-        'id',
-        'users',
-        'categories',
-        'sub_categories',
         'wallets',
+        'access',
         'transaction_type',
-        'families',
-        'note',
-        'amount',
+        'amount'
     ];
 
     protected $defaultSelect = [
         'id',
-        'users',
-        'categories',
-        'sub_categories',
         'wallets',
+        'access',
         'transaction_type',
-        'families',
-        'note',
         'amount',
         'created_at',
         'updated_at',
@@ -50,13 +40,18 @@ class Transaction extends BaseModel
         return parent::newQueryWithoutScopes()->select($this->defaultSelect);
     }
 
-    protected static function booted()
+    public function wallet(): BelongsTo
     {
-        static::creating(function ($model) {
-            // Generate UUID hanya jika belum ada ID
-            if (empty($model->id)) {
-                $model->id = Str::uuid()->toString();
-            }
-        });
+        return $this->belongsTo(Wallet::class, 'wallets');
+    }
+
+    public function access(): BelongsTo
+    {
+        return $this->belongsTo(WalletAccess::class, 'access');
+    }
+
+    public function transactionType(): BelongsTo
+    {
+        return $this->belongsTo(TransactionType::class, 'transaction_type');
     }
 }

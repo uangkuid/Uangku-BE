@@ -19,8 +19,8 @@ return new class extends Migration
             $table->uuid('wallets');
             $table->uuid('transaction_type');
             $table->uuid('families')->nullable();
-            $table->string('note');
-            $table->string('amount');
+            $table->text('note')->nullable();
+            $table->text('amount');
             $table->timestamps();
 
             $table->foreign('users')->references('id')->on('users');

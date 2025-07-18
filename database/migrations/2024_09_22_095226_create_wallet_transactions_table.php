@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('wallets');
             $table->uuid('access');
             $table->uuid('transaction_type');
-            $table->string("amount");
+            $table->text("amount");
             $table->timestamps();
 
             $table->foreign('wallets')->references('id')->on('wallets');
