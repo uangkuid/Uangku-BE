@@ -127,6 +127,15 @@ erDiagram
         updated_at timestamp
     }
 
+    wallet_snapshots {
+        id uuid PK
+        wallet uuid FK
+        wallet_transaction uuid FK
+        balance text
+        created_at timestamp
+        updated_at timestamp
+    }
+
     staff_accounts {
         id uuid PK
         email varchar
@@ -181,8 +190,10 @@ erDiagram
     family ||--o| family_keys: has
     family ||--o{ sub_categories: has
     wallet }|--o{ wallet_access: has
+    wallet }|--o{ wallet_snapshots: has
     wallet_access ||--o{ wallet_transactions: has
     wallet_transactions ||--o| transactions: has
+    wallet_snapshots ||--o| wallet_transactions: has
     wallet ||--o{ wallet_transactions: has
     staff_accounts ||--o{ staff_keys: has
     staff_accounts ||--o{ system_configs: has
@@ -419,6 +430,21 @@ timestamps.
 | type       | enum      |       | Type of transaction, can be "credit" or "debit"                                                                                                                                                  |
 | created_at | timestamp |       | Timestamp when the wallet transaction was created                                                                                                                                                |
 | updated_at | timestamp |       | Timestamp when the wallet transaction was last updated                                                                                                                                           |
+
+### Wallet Snapshots Table
+
+Table to store wallet snapshots.
+This table contains snapshots of wallet balances at specific points in time, allowing for historical tracking of wallet
+amounts.
+
+| Field              | Type      | Index | Description                                                                                  |
+|--------------------|-----------|-------|----------------------------------------------------------------------------------------------|
+| id                 | uuid      | PK    | Unique identifier for the wallet snapshot                                                    |
+| wallet             | uuid      | FK    | Foreign key referencing the `wallet` table                                                   |
+| wallet_transaction | uuid      | FK    | Foreign key referencing the `wallet_transactions` table                                      |
+| balance            | text      |       | Balance of the wallet at the time of the snapshot, encrypted using RSA asymmetric encryption |
+| created_at         | timestamp |       | Timestamp when the wallet snapshot was created                                               |
+| updated_at         | timestamp |       | Timestamp when the wallet snapshot was last updated                                          |
 
 ### Transactions Table
 
