@@ -8,6 +8,7 @@ use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
 use App\Models\WalletAccess;
+use App\Models\WalletSnapshot;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
@@ -167,4 +168,13 @@ interface WalletService extends BaseService
         string $transactionTypeId,
         ?string $family = null,
     ): WalletTransaction;
+
+    /**
+     * Get latest wallet snapshot for a specific wallet.
+     * @param string $walletId
+     * @return WalletSnapshot|null
+     */
+    function getLatestSnapshot(
+        string $walletId
+    ): ?WalletSnapshot;
 }

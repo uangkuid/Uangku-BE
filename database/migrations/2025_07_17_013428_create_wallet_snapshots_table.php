@@ -15,8 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('wallet')->index();
             $table->uuid('wallet_transaction'); // referensi ke wallet_transactions terakhir
-            $table->text('balance'); // RSA-encrypted
-            $table->unsignedBigInteger('version'); // untuk optimistic locking
+            $table->text('balance'); // RSA-encrypte
             $table->timestamps();
 
             $table->foreign('wallet')->references('id')->on('wallets');

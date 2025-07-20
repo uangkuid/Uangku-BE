@@ -2,9 +2,22 @@
 
 namespace App\Repositories\WalletSnapshot;
 
+use App\Models\WalletSnapshot;
 use LaravelEasyRepository\Repository;
 
 interface WalletSnapshotRepository extends Repository{
 
-    // Write something awesome :)
+    /**
+     * Check if a snapshot exists for a given wallet ID.
+     * @param string $walletId
+     * @return bool
+     */
+    function isHasSnapshot(string $walletId): bool;
+
+    /**
+     * Get the last snapshot for a given wallet ID.
+     * @param string $walletId
+     * @return WalletSnapshot|null
+     */
+    function getLastSnapshot(string $walletId): ?WalletSnapshot;
 }

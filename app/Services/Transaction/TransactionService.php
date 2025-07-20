@@ -2,6 +2,9 @@
 
 namespace App\Services\Transaction;
 
+use App\Exceptions\EncryptionException;
+use App\Exceptions\FamilyException;
+use App\Exceptions\GeneralException;
 use App\Models\Transaction;
 use LaravelEasyRepository\BaseService;
 
@@ -15,11 +18,15 @@ interface TransactionService extends BaseService{
      * @param string $transactionTypeId
      * @param string $amount
      * @param string $walletTransactionId
+     * @param string|null $snapshotId
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
      * @param string|null $transactionId
      * @return Transaction
+     * @throws EncryptionException
+     * @throws FamilyException
+     * @throws GeneralException
      */
     function createTransaction(
         string $userId,
@@ -28,6 +35,7 @@ interface TransactionService extends BaseService{
         string $transactionTypeId,
         string $amount,
         string $walletTransactionId,
+        string $snapshotId = null,
         string $description = null,
         string $family = null,
         string $subCategoryId = null,

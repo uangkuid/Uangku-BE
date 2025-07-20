@@ -13,6 +13,7 @@ use App\Repositories\SubCategory\SubCategoryRepository;
 use App\Repositories\Transaction\TransactionRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
+use App\Repositories\WalletSnapshot\WalletSnapshotRepository;
 use LaravelEasyRepository\Service;
 
 class TransactionServiceImplement extends Service implements TransactionService
@@ -28,6 +29,7 @@ class TransactionServiceImplement extends Service implements TransactionService
     protected SubCategoryRepository $subCategoryRepository;
     protected UserRepository $userRepository;
     protected FamilyKeyRepository $familyKeyRepository;
+    protected WalletSnapshotRepository $walletSnapshotRepository;
 
     public function __construct(
         TransactionRepository  $mainRepository,
@@ -35,7 +37,8 @@ class TransactionServiceImplement extends Service implements TransactionService
         WalletAccessRepository $walletAccessRepository,
         SubCategoryRepository  $subCategoryRepository,
         UserRepository         $userRepository,
-        FamilyKeyRepository    $familyKeyRepository
+        FamilyKeyRepository    $familyKeyRepository,
+        WalletSnapshotRepository $walletSnapshotRepository,
     )
     {
         $this->mainRepository = $mainRepository;
@@ -44,6 +47,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         $this->subCategoryRepository = $subCategoryRepository;
         $this->userRepository = $userRepository;
         $this->familyKeyRepository = $familyKeyRepository;
+        $this->walletSnapshotRepository = $walletSnapshotRepository;
     }
 
     /**
@@ -54,6 +58,7 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string $transactionTypeId
      * @param string $amount
      * @param string $walletTransactionId
+     * @param string|null $snapshotId
      * @param string|null $description
      * @param string|null $family
      * @param string|null $subCategoryId
@@ -70,6 +75,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $transactionTypeId,
         string $amount,
         string $walletTransactionId,
+        string $snapshotId = null,
         string $description = null,
         string $family = null,
         string $subCategoryId = null,
@@ -147,12 +153,10 @@ class TransactionServiceImplement extends Service implements TransactionService
             throw new GeneralException("Public key not found for this family or user");
         }
 
-        $encryptedAmount = EncryptionHelper::encryptAsymmetric($amount, base64_decode($publicKey));
+        $isHasSnapshot = $this->walletSnapshotRepository->isHasSnapshot($walletId);
 
-        $encryptedDescription = null;
-
-        if ($description != null) {
-            $encryptedDescription = EncryptionHelper::encryptAsymmetric($description, base64_decode($publicKey));
+        if ($snapshotId == null && $isHasSnapshot) {
+            throw new GeneralException("Wallet Snapshot is required for this wallet");
         }
 
         return $this->mainRepository->createTransaction(
@@ -160,8 +164,8 @@ class TransactionServiceImplement extends Service implements TransactionService
             categoryId: $categoryId,
             walletId: $walletTransactionId,
             transactionTypeId: $transactionTypeId,
-            amount: $encryptedAmount,
-            description: $encryptedDescription,
+            amount: $amount,
+            description: $description,
             family: $family,
             subCategoryId: $subCategoryId,
             transactionId: $transactionId

@@ -245,4 +245,17 @@ class WalletController extends Controller
             return response()->json(new BaseResponse(500, "Failed to revoke member", $e->getMessage()), 500);
         }
     }
+
+    public function getSnapshot(Request $request, string $id)
+    {
+        try {
+            return response()->json(new BaseResponse(
+                200,
+                "Wallet snapshot data",
+                $this->walletService->getLatestSnapshot($id)
+            ));
+        } catch (Exception) {
+            return response()->json(new BaseResponse(500, "Failed to get wallet snapshot", null), 500);
+        }
+    }
 }

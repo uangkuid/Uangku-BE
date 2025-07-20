@@ -47,7 +47,7 @@ class TransactionController extends Controller
             'category' => 'required|uuid',
             'wallet' => 'required|uuid',
             'transaction_type' => 'required|uuid',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -78,6 +78,14 @@ class TransactionController extends Controller
                 description: $request->get('description'),
                 family: $request->get('family_id'),
                 subCategoryId: $request->get('sub_category_id')
+            );
+
+            // Create Wallet Snapshot
+            $this->walletService->createWalletSnapshot(
+                userId: $user->id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+                snapshotId: $request->get('snapshot_id')
             );
 
             DB::commit();

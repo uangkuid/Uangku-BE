@@ -13,12 +13,14 @@ use App\Http\Resources\Models\FamilyMemberResource;
 use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
 use App\Models\WalletAccess;
+use App\Models\WalletSnapshot;
 use App\Models\WalletTransaction;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\Wallet\WalletRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
+use App\Repositories\WalletSnapshot\WalletSnapshotRepository;
 use App\Repositories\WalletTransaction\WalletTransactionRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\Service;
@@ -36,6 +38,7 @@ class WalletServiceImplement extends Service implements WalletService
     protected FamilyMemberRepository $familyMemberRepository;
     protected UserRepository $userRepository;
     protected WalletTransactionRepository $walletTransactionRepository;
+    protected WalletSnapshotRepository $walletSnapshotRepository;
 
     public function __construct(
         WalletRepository       $mainRepository,
@@ -43,7 +46,8 @@ class WalletServiceImplement extends Service implements WalletService
         FamilyKeyRepository    $familyKeyRepository,
         FamilyMemberRepository $familyMemberRepository,
         UserRepository         $userRepository,
-        WalletTransactionRepository $walletTransactionRepository
+        WalletTransactionRepository $walletTransactionRepository,
+        WalletSnapshotRepository $walletSnapshotRepository
     )
     {
         $this->mainRepository = $mainRepository;
@@ -52,6 +56,7 @@ class WalletServiceImplement extends Service implements WalletService
         $this->familyMemberRepository = $familyMemberRepository;
         $this->userRepository = $userRepository;
         $this->walletTransactionRepository = $walletTransactionRepository;
+        $this->walletSnapshotRepository = $walletSnapshotRepository;
     }
 
     /**
@@ -460,13 +465,23 @@ class WalletServiceImplement extends Service implements WalletService
             throw new GeneralException("Public key not found for this family or user");
         }
 
-        $encryptedAmount = EncryptionHelper::encryptAsymmetric($amount, base64_decode($publicKey));
-
         return $this->walletTransactionRepository->createTransaction(
             accessId: $walletAccess->id,
             walletId: $walletId,
-            amount: $encryptedAmount,
+            amount: $amount,
             transactionType: $transactionTypeId,
         );
+    }
+
+    /**
+     * Get latest wallet snapshot for a specific wallet.
+     * @param string $walletId
+     * @return WalletSnapshot|null
+     */
+    function getLatestSnapshot(
+        string $walletId,
+    ): ?WalletSnapshot
+    {
+        return $this->walletSnapshotRepository->getLastSnapshot($walletId);
     }
 }
