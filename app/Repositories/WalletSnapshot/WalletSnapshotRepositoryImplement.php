@@ -45,4 +45,24 @@ class WalletSnapshotRepositoryImplement extends Eloquent implements WalletSnapsh
             ->latest('created_at')
             ->first();
     }
+
+    /**
+     * Create a new wallet snapshot.
+     * @param string $wallet
+     * @param string $walletTransaction
+     * @param string $balance
+     * @return WalletSnapshot
+     */
+    function createWalletSnapshot(
+        string $wallet,
+        string $walletTransaction,
+        string $balance,
+    ): WalletSnapshot
+    {
+        return $this->model->create([
+            'wallet' => $wallet,
+            'wallet_transaction' => $walletTransaction,
+            'balance' => $balance,
+        ]);
+    }
 }

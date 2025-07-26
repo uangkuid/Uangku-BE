@@ -484,4 +484,35 @@ class WalletServiceImplement extends Service implements WalletService
     {
         return $this->walletSnapshotRepository->getLastSnapshot($walletId);
     }
+
+    /**
+     * Create a wallet snapshot.
+     * @param string $wallet
+     * @param string $walletTransaction
+     * @param string $amount
+     * @param string|null $snapshotId
+     * @return WalletSnapshot
+     * @throws GeneralException
+     */
+    function createWalletSnapshot(
+        string $wallet,
+        string $walletTransaction,
+        string $amount,
+        ?string $snapshotId = null
+    ): WalletSnapshot
+    {
+        if ($snapshotId != null) {
+            $lastSnapshot = $this->walletSnapshotRepository->getLastSnapshot($wallet);
+
+            if ($lastSnapshot != null && $lastSnapshot->id != $snapshotId) {
+                throw new GeneralException("Snapshot not found or does not match the last snapshot");
+            }
+        }
+
+        return $this->walletSnapshotRepository->createWalletSnapshot(
+            wallet: $wallet,
+            walletTransaction: $walletTransaction,
+            balance: $amount
+        );
+    }
 }

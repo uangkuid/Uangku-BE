@@ -177,4 +177,19 @@ interface WalletService extends BaseService
     function getLatestSnapshot(
         string $walletId
     ): ?WalletSnapshot;
+
+    /**
+     * Create a wallet snapshot.
+     * @param string $wallet
+     * @param string $walletTransaction
+     * @param string $amount
+     * @param string|null $snapshotId
+     * @return WalletSnapshot
+     */
+    function createWalletSnapshot(
+        string $wallet,
+        string $walletTransaction,
+        string $amount,
+        ?string $snapshotId = null
+    ): WalletSnapshot;
 }
