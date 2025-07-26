@@ -75,15 +75,17 @@ class TransactionController extends Controller
                 transactionTypeId: $request->transaction_type,
                 amount: $request->amount,
                 walletTransactionId: $walletTransaction->id,
+                snapshotId: $request->get('snapshot_id'),
                 description: $request->get('description'),
                 family: $request->get('family_id'),
-                subCategoryId: $request->get('sub_category_id')
+                subCategoryId: $request->get('sub_category_id'),
+                transactionId: $request->get('transaction_id')
             );
 
             // Create Wallet Snapshot
             $this->walletService->createWalletSnapshot(
-                userId: $user->id,
-                walletId: $request->wallet,
+                wallet: $request->wallet,
+                walletTransaction: $walletTransaction->id,
                 amount: $request->amount,
                 snapshotId: $request->get('snapshot_id')
             );
