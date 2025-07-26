@@ -121,6 +121,7 @@ erDiagram
         id uuid PK
         wallets uuid FK
         accessId uuid FK
+        updated_by uuid FK
         amount double
         type enum
         created_at timestamp
@@ -180,6 +181,7 @@ erDiagram
     users ||--o| family_member: has
     users ||--o{ transactions: has
     users ||--o{ wallet_access: has
+    users ||--o{ wallet_transactions: has
     users ||--o{ sub_categories: has
     users ||--o| user_keys: has
     users ||--o{ user_sessions: has
@@ -421,15 +423,16 @@ Table to store wallet transaction records.
 This table contains the transaction details for wallets, including the wallet, access permissions, amount, type, and
 timestamps.
 
-| Field      | Type      | Index | Description                                                                                                                                                                                      |
-|------------|-----------|-------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id         | uuid      | PK    | Unique identifier for the wallet transaction                                                                                                                                                     |
-| wallets    | uuid      | FK    | Foreign key referencing the `wallet` table                                                                                                                                                       |
-| accessId   | uuid      | FK    | Foreign key referencing the `wallet_access` table                                                                                                                                                |
-| amount     | double    |       | Amount of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
-| type       | enum      |       | Type of transaction, can be "credit" or "debit"                                                                                                                                                  |
-| created_at | timestamp |       | Timestamp when the wallet transaction was created                                                                                                                                                |
-| updated_at | timestamp |       | Timestamp when the wallet transaction was last updated                                                                                                                                           |
+| Field            | Type      | Index | Description                                                                                                                                                                                      |
+|------------------|-----------|-------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id               | uuid      | PK    | Unique identifier for the wallet transaction                                                                                                                                                     |
+| wallets          | uuid      | FK    | Foreign key referencing the `wallet` table                                                                                                                                                       |
+| accessId         | uuid      | FK    | Foreign key referencing the `wallet_access` table                                                                                                                                                |
+| updated_by       | uuid      | FK    | Foreign key referencing the `users` table, indicating who last updated the transaction                                                                                                           |
+| transaction_type | uuid      | FK    | Foreign key referencing the `transactions_type` table                                                                                                                                            |
+| amount           | string    |       | Amount of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
+| created_at       | timestamp |       | Timestamp when the wallet transaction was created                                                                                                                                                |
+| updated_at       | timestamp |       | Timestamp when the wallet transaction was last updated                                                                                                                                           |
 
 ### Wallet Snapshots Table
 

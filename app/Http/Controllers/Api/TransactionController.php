@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\GeneralException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Services\Transaction\TransactionService;
@@ -93,6 +94,9 @@ class TransactionController extends Controller
             DB::commit();
 
             return response()->json(new BaseResponse(201, "Transaction created successfully", $transaction), 201);
+        } catch (GeneralException $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(400, $e->getMessage()), 500);
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json(new BaseResponse(500, "Failed to create transaction", $e->getMessage()), 500);
@@ -108,19 +112,48 @@ class TransactionController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'wallet' => 'required|uuid',
+            'amount' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to update transaction", $validator->errors()), 400);
+        }
+
+        try {
+
+            DB::beginTransaction();
+            $user = $this->userService->getUserByToken($request->bearerToken());
+
+            // Update Transaction
+            $transaction = $this->transactionService->updateTransaction(
+                id: $id,
+                userId: $user->id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+                description: $request->get('description'),
+            );
+
+            $walletTransaction = $this->walletService->createWalletTransaction(
+                userId: $user->id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+                transactionTypeId: $transaction->transaction_type_id,
+                family: $request->get('family_id'),
+            );
+
+            DB::commit();
+
+            return response()->json(new BaseResponse(200, "Transaction updated successfully", $transaction), 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(500, "Failed to update transaction", $e->getMessage()), 500);
+        }
     }
 
     /**

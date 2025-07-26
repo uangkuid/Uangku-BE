@@ -162,10 +162,10 @@ interface WalletService extends BaseService
      * @return WalletTransaction
      */
     function createWalletTransaction(
-        string $userId,
-        string $walletId,
-        string $amount,
-        string $transactionTypeId,
+        string  $userId,
+        string  $walletId,
+        string  $amount,
+        string  $transactionTypeId,
         ?string $family = null,
     ): WalletTransaction;
 
@@ -185,11 +185,12 @@ interface WalletService extends BaseService
      * @param string $amount
      * @param string|null $snapshotId
      * @return WalletSnapshot
+     * @throws GeneralException
      */
     function createWalletSnapshot(
-        string $wallet,
-        string $walletTransaction,
-        string $amount,
+        string  $wallet,
+        string  $walletTransaction,
+        string  $amount,
         ?string $snapshotId = null
     ): WalletSnapshot;
 
@@ -201,6 +202,6 @@ interface WalletService extends BaseService
      */
     function getWalletTransaction(
         string $id,
-        int $perPage = 10
+        int    $perPage = 10
     ): AnonymousResourceCollection;
 }
