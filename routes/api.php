@@ -147,6 +147,7 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
     Route::middleware('wallet')->group(function () {
         Route::get("wallet/{id}/member", 'getMember');
         Route::get("wallet/{id}/snapshot", 'getSnapshot');
+        Route::get("wallet/{id}/transaction", 'getTransaction');
     });
 
     Route::middleware('wallet-admin')->group(function () {

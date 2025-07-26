@@ -3,6 +3,7 @@
 namespace App\Repositories\WalletTransaction;
 
 use App\Models\WalletTransaction;
+use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
 
 class WalletTransactionRepositoryImplement extends Eloquent implements WalletTransactionRepository
@@ -42,5 +43,13 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             'amount' => $amount,
             'transaction_type' => $transactionType,
         ]);
+    }
+
+    function getTransactionPaging(string $walletId, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->model
+            ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
+            ->where('wallets', $walletId)
+            ->paginate($perPage);
     }
 }

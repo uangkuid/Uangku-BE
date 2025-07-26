@@ -3,6 +3,7 @@
 namespace App\Repositories\WalletTransaction;
 
 use App\Models\WalletTransaction;
+use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
 interface WalletTransactionRepository extends Repository{
@@ -22,4 +23,8 @@ interface WalletTransactionRepository extends Repository{
         string $transactionType,
     ): WalletTransaction;
 
+    function getTransactionPaging(
+        string $walletId,
+        int $perPage = 10
+    ): LengthAwarePaginator;
 }

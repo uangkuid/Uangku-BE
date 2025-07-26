@@ -192,4 +192,15 @@ interface WalletService extends BaseService
         string $amount,
         ?string $snapshotId = null
     ): WalletSnapshot;
+
+    /**
+     * Get wallet transactions with pagination.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getWalletTransaction(
+        string $id,
+        int $perPage = 10
+    ): AnonymousResourceCollection;
 }

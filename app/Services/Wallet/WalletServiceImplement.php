@@ -12,6 +12,7 @@ use App\Helpers\EncryptionHelper;
 use App\Http\Resources\Models\FamilyMemberResource;
 use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
+use App\Http\Resources\Models\WalletTransactionResource;
 use App\Models\WalletAccess;
 use App\Models\WalletSnapshot;
 use App\Models\WalletTransaction;
@@ -514,5 +515,21 @@ class WalletServiceImplement extends Service implements WalletService
             walletTransaction: $walletTransaction,
             balance: $amount
         );
+    }
+
+    /**
+     * Get wallet transactions with pagination.
+     * @param string $id
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getWalletTransaction(string $id, int $perPage = 10): AnonymousResourceCollection
+    {
+        $paginator = $this->walletTransactionRepository->getTransactionPaging(
+            walletId: $id,
+            perPage: $perPage
+        );
+
+        return WalletTransactionResource::collection($paginator);
     }
 }
