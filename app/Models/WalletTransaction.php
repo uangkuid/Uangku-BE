@@ -17,7 +17,8 @@ class WalletTransaction extends BaseModel
         'wallets',
         'access',
         'transaction_type',
-        'amount'
+        'amount',
+        'updated_by'
     ];
 
     protected $defaultSelect = [
@@ -26,6 +27,7 @@ class WalletTransaction extends BaseModel
         'access',
         'transaction_type',
         'amount',
+        'updated_by',
         'created_at',
         'updated_at',
     ];

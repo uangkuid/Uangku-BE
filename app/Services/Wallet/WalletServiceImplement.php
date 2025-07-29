@@ -471,11 +471,12 @@ class WalletServiceImplement extends Service implements WalletService
             walletId: $walletId,
             amount: $amount,
             transactionType: $transactionTypeId,
+            userId: $userId,
         );
     }
 
     /**
-     * Get latest wallet snapshot for a specific wallet.
+     * Get the latest wallet snapshot for a specific wallet.
      * @param string $walletId
      * @return WalletSnapshot|null
      */

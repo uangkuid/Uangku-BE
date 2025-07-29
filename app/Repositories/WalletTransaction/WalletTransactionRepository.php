@@ -21,6 +21,7 @@ interface WalletTransactionRepository extends Repository{
         string $walletId,
         string $amount,
         string $transactionType,
+        string $userId,
     ): WalletTransaction;
 
     function getTransactionPaging(

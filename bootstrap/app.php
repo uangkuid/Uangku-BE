@@ -28,9 +28,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('family-admin', [
             FamilyAdminMiddleware::class
         ]);
-        $middleware->appendToGroup('personal', [
-            PersonalMiddleware::class
-        ]);
         $middleware->appendToGroup('wallet', [
             WalletMiddleware::class
         ]);

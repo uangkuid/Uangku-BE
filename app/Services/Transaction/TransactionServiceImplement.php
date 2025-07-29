@@ -64,7 +64,6 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string|null $subCategoryId
      * @param string|null $transactionId
      * @return Transaction
-     * @throws EncryptionException
      * @throws FamilyException
      * @throws GeneralException
      */
@@ -75,11 +74,11 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $transactionTypeId,
         string $amount,
         string $walletTransactionId,
-        string $snapshotId = null,
-        string $description = null,
-        string $family = null,
-        string $subCategoryId = null,
-        string $transactionId = null
+        ?string $snapshotId = null,
+        ?string $description = null,
+        ?string $family = null,
+        ?string $subCategoryId = null,
+        ?string $transactionId = null
     ): Transaction
     {
         if ($family != null) {
@@ -93,64 +92,14 @@ class TransactionServiceImplement extends Service implements TransactionService
             }
         }
 
-        $isHasWalletAccess = $this->walletAccessRepository->isHasAccess(
-            userId: $userId,
-            walletId: $walletId
-        );
-
-        if (!$isHasWalletAccess) {
-            throw new GeneralException("You don't have access to this wallet");
-        }
-
         /**
          * Validate Sub Category Access
          */
         if ($subCategoryId != null) {
-            $subCategory = $this->subCategoryRepository->find($subCategoryId);
-
-            if ($subCategory == null) {
-                throw new GeneralException("Sub category not found");
-            }
-
-            $isSubCategoryFamily = $subCategory->families != null;
-
-            if ($isSubCategoryFamily) {
-                $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
-                    userId: $userId,
-                    familyId: $subCategory->families,
-                );
-
-                if (!$isFamilyAccess) {
-                    throw new GeneralException("You do not have access to this family");
-                }
-            }
-
-            $isSubCategoryPersonal = $subCategory->families == null;
-
-            if ($isSubCategoryPersonal) {
-                if ($subCategory->users != $userId) {
-                    throw new GeneralException("You do not have access to this sub category");
-                }
-            }
-        }
-
-        /**
-         * Get Key for Family or Personal Transaction for Encryption
-         */
-        if ($family != null) {
-            $key = $this->familyKeyRepository->getFamilyKey($family);
-        } else {
-            $key = $this->userRepository->getUserKey($userId);
-        }
-
-        if ($key == null) {
-            throw new GeneralException("Key not found for this family or user");
-        }
-
-        $publicKey = $key->public_key;
-
-        if ($publicKey == null) {
-            throw new GeneralException("Public key not found for this family or user");
+            $this->validateSubCategoryAccess(
+                subCategoryId: $subCategoryId,
+                userId: $userId,
+            );
         }
 
         $isHasSnapshot = $this->walletSnapshotRepository->isHasSnapshot($walletId);
@@ -170,5 +119,75 @@ class TransactionServiceImplement extends Service implements TransactionService
             subCategoryId: $subCategoryId,
             transactionId: $transactionId
         );
+    }
+
+    /**
+     * Update an existing transaction.
+     * @param string $id
+     * @param string $userId
+     * @param string $categoryId
+     * @param string $walletId
+     * @param string $amount
+     * @param string|null $description
+     * @param string|null $subCategoryId
+     * @return Transaction
+     * @throws GeneralException
+     */
+    function updateTransaction(
+        string $id,
+        string $userId,
+        string $categoryId,
+        string $walletId,
+        string $amount,
+        ?string $description = null,
+        string $subCategoryId = null,
+    ): Transaction
+    {
+        /**
+         * Validate Sub Category Access
+         */
+        if ($subCategoryId != null) {
+            $this->validateSubCategoryAccess(
+                subCategoryId: $subCategoryId,
+                userId: $userId,
+            );
+        }
+    }
+
+    /**
+     * Validate Sub Category Access
+     * @throws GeneralException
+     */
+    private function validateSubCategoryAccess(
+        string $subCategoryId,
+        string $userId,
+    ): void
+    {
+        $subCategory = $this->subCategoryRepository->find($subCategoryId);
+
+        if ($subCategory == null) {
+            throw new GeneralException("Sub category not found");
+        }
+
+        $isSubCategoryFamily = $subCategory->families != null;
+
+        if ($isSubCategoryFamily) {
+            $isFamilyAccess = $this->familyMemberRepository->isHasAccess(
+                userId: $userId,
+                familyId: $subCategory->families,
+            );
+
+            if (!$isFamilyAccess) {
+                throw new GeneralException("You do not have access to this family");
+            }
+        }
+
+        $isSubCategoryPersonal = $subCategory->families == null;
+
+        if ($isSubCategoryPersonal) {
+            if ($subCategory->users != $userId) {
+                throw new GeneralException("You do not have access to this sub category");
+            }
+        }
     }
 }

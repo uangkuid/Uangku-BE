@@ -27,13 +27,15 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $userId
      * @return WalletTransaction
      */
     function createTransaction(
         string $accessId,
         string $walletId,
         string $amount,
-        string $transactionType
+        string $transactionType,
+        string $userId
     ): WalletTransaction
     {
 
@@ -42,6 +44,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             'wallets' => $walletId,
             'amount' => $amount,
             'transaction_type' => $transactionType,
+            'updated_by' => $userId
         ]);
     }
 

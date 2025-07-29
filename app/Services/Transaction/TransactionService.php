@@ -35,10 +35,32 @@ interface TransactionService extends BaseService{
         string $transactionTypeId,
         string $amount,
         string $walletTransactionId,
-        string $snapshotId = null,
-        string $description = null,
-        string $family = null,
+        ?string $snapshotId = null,
+        ?string $description = null,
+        ?string $family = null,
+        ?string $subCategoryId = null,
+        ?string $transactionId = null
+    ): Transaction;
+
+    /**
+     * Update an existing transaction.
+     * @param string $id
+     * @param string $userId
+     * @param string $categoryId
+     * @param string $walletId
+     * @param string $amount
+     * @param string|null $description
+     * @param string|null $subCategoryId
+     * @return Transaction
+     */
+    function updateTransaction(
+        string $id,
+        string $userId,
+        string $categoryId,
+        string $walletId,
+        string $amount,
+        string $snapshotId,
+        ?string $description = null,
         string $subCategoryId = null,
-        string $transactionId = null
     ): Transaction;
 }

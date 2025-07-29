@@ -117,6 +117,7 @@ class TransactionController extends Controller
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
+            'category' => 'required|uuid',
             'wallet' => 'required|uuid',
             'amount' => 'required',
         ]);

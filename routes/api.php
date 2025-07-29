@@ -161,7 +161,10 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
 
 Route::controller(TransactionController::class)->middleware(['auth:api'])->group(function () {
     Route::get('transaction', 'index');
-    Route::post('transaction', 'store');
-    Route::put('transaction/{id}', 'update');
-    Route::delete('transaction/{id}', 'destroy');
+
+    Route::middleware('wallet')->group(function () {
+        Route::post('transaction', 'store');
+        Route::put('transaction/{id}', 'update');
+        Route::delete('transaction/{id}', 'destroy');
+    });
 });
