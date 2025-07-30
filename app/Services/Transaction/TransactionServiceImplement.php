@@ -139,6 +139,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $categoryId,
         string $walletId,
         string $amount,
+        string $snapshotId,
         ?string $description = null,
         string $subCategoryId = null,
     ): Transaction
@@ -189,5 +190,13 @@ class TransactionServiceImplement extends Service implements TransactionService
                 throw new GeneralException("You do not have access to this sub category");
             }
         }
+    }
+
+    private function validateSnapshot(
+        string $walletId,
+        string $snapshotId,
+    )
+    {
+
     }
 }

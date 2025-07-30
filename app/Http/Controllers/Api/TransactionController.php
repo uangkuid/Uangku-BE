@@ -119,6 +119,7 @@ class TransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'category' => 'required|uuid',
             'wallet' => 'required|uuid',
+            'snapshot_id' => 'required|uuid',
             'amount' => 'required',
         ]);
 
@@ -135,9 +136,12 @@ class TransactionController extends Controller
             $transaction = $this->transactionService->updateTransaction(
                 id: $id,
                 userId: $user->id,
+                categoryId: $request->category,
                 walletId: $request->wallet,
                 amount: $request->amount,
+                snapshotId: $request->snapshot_id,
                 description: $request->get('description'),
+                subCategoryId: $request->get('sub_category_id'),
             );
 
             $walletTransaction = $this->walletService->createWalletTransaction(
