@@ -49,6 +49,8 @@ interface TransactionService extends BaseService{
      * @param string $categoryId
      * @param string $walletId
      * @param string $amount
+     * @param string $snapshotId
+     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $subCategoryId
      * @return Transaction
@@ -60,6 +62,7 @@ interface TransactionService extends BaseService{
         string $walletId,
         string $amount,
         string $snapshotId,
+        string $walletTransactionId,
         ?string $description = null,
         string $subCategoryId = null,
     ): Transaction;

@@ -28,4 +28,17 @@ interface WalletTransactionRepository extends Repository{
         string $walletId,
         int $perPage = 10
     ): LengthAwarePaginator;
+
+    /**
+     * Update an existing wallet transaction.
+     * @param string $transactionId
+     * @param string $walletId
+     * @param string $amount
+     * @return WalletTransaction
+     */
+    function updateTransaction(
+        string $transactionId,
+        string $walletId,
+        string $amount
+    ): WalletTransaction;
 }

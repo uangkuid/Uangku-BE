@@ -108,6 +108,11 @@ class TransactionServiceImplement extends Service implements TransactionService
             throw new GeneralException("Wallet Snapshot is required for this wallet");
         }
 
+        $this->validateSnapshot(
+            walletId: $walletId,
+            snapshotId: $snapshotId,
+        );
+
         return $this->mainRepository->createTransaction(
             userId: $userId,
             categoryId: $categoryId,
@@ -128,6 +133,8 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string $categoryId
      * @param string $walletId
      * @param string $amount
+     * @param string $snapshotId
+     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $subCategoryId
      * @return Transaction
@@ -140,6 +147,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $walletId,
         string $amount,
         string $snapshotId,
+        string $walletTransactionId,
         ?string $description = null,
         string $subCategoryId = null,
     ): Transaction
@@ -153,6 +161,21 @@ class TransactionServiceImplement extends Service implements TransactionService
                 userId: $userId,
             );
         }
+
+        $this->validateSnapshot(
+            walletId: $walletId,
+            snapshotId: $snapshotId,
+        );
+
+        return $this->mainRepository->updateTransaction(
+            id: $id,
+            userId: $userId,
+            categoryId: $categoryId,
+            walletId: $walletTransactionId,
+            amount: $amount,
+            description: $description,
+            subCategoryId: $subCategoryId
+        );
     }
 
     /**
@@ -192,11 +215,22 @@ class TransactionServiceImplement extends Service implements TransactionService
         }
     }
 
+    /**
+     * Validate Last Snapshot
+     * @throws GeneralException
+     */
     private function validateSnapshot(
         string $walletId,
         string $snapshotId,
-    )
+    ): void
     {
+        $lastSnapshot = $this->walletSnapshotRepository->getLastSnapshot($walletId);
+        if ($lastSnapshot == null) {
+            throw new GeneralException("Wallet Snapshot not found");
+        }
 
+        if ($lastSnapshot->id != $snapshotId) {
+            throw new GeneralException("Wallet Snapshot is not valid, please get latest snapshot");
+        }
     }
 }

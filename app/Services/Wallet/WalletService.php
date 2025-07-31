@@ -204,4 +204,17 @@ interface WalletService extends BaseService
         string $id,
         int    $perPage = 10
     ): AnonymousResourceCollection;
+
+    /**
+     * Update an existing wallet transaction.
+     * @param string $transactionId
+     * @param string $walletId
+     * @param string $amount
+     * @return WalletTransaction
+     */
+    function updateWalletTransaction(
+        string $transactionId,
+        string $walletId,
+        string $amount,
+    ): WalletTransaction;
 }

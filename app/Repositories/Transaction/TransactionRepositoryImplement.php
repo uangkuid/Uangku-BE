@@ -68,4 +68,43 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
         return $this->model->create($data);
     }
+
+    /**
+     * Update an existing transaction.
+     * @param string $id
+     * @param string $userId
+     * @param string $categoryId
+     * @param string $walletId
+     * @param string $amount
+     * @param string|null $description
+     * @param string|null $subCategoryId
+     * @return Transaction
+     */
+    public function updateTransaction(
+        string $id,
+        string $userId,
+        string $categoryId,
+        string $walletId,
+        string $amount,
+        ?string $description = null,
+        ?string $subCategoryId = null
+    ): Transaction
+    {
+        $data = [
+            'users' => $userId,
+            'categories' => $categoryId,
+            'wallets' => $walletId,
+            'amount' => $amount,
+        ];
+
+        if ($description) {
+            $data['note'] = $description;
+        }
+
+        if ($subCategoryId) {
+            $data['sub_categories'] = $subCategoryId;
+        }
+
+        return $this->model->where('id', $id)->update($data);
+    }
 }

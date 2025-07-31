@@ -418,26 +418,6 @@ class WalletServiceImplement extends Service implements WalletService
         ?string $family = null
     ): WalletTransaction
     {
-        if ($family != null) {
-            $isExist = $this->familyMemberRepository->isHasAccess(
-                userId: $userId,
-                familyId: $family
-            );
-
-            if (!$isExist) {
-                throw new FamilyException("You don't have access to this family");
-            }
-        }
-
-        $isHasWalletAccess = $this->access->isHasAccess(
-            userId: $userId,
-            walletId: $walletId
-        );
-
-        if (!$isHasWalletAccess) {
-            throw new GeneralException("You don't have access to this wallet");
-        }
-
         $walletAccess = $this->access->getDetailAccess(
             walletId: $walletId,
             userId: $userId
@@ -445,25 +425,6 @@ class WalletServiceImplement extends Service implements WalletService
 
         if ($walletAccess == null) {
             throw new GeneralException("You don't have access to this wallet");
-        }
-
-        /**
-         * Get Key for Family or Personal Transaction for Encryption
-         */
-        if ($family != null) {
-            $key = $this->familyKeyRepository->getFamilyKey($family);
-        } else {
-            $key = $this->userRepository->getUserKey($userId);
-        }
-
-        if ($key == null) {
-            throw new GeneralException("Key not found for this family or user");
-        }
-
-        $publicKey = $key->public_key;
-
-        if ($publicKey == null) {
-            throw new GeneralException("Public key not found for this family or user");
         }
 
         return $this->walletTransactionRepository->createTransaction(
@@ -532,5 +493,25 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         return WalletTransactionResource::collection($paginator);
+    }
+
+    /**
+     * Update an existing wallet transaction.
+     * @param string $transactionId
+     * @param string $walletId
+     * @param string $amount
+     * @return WalletTransaction
+     */
+    function updateWalletTransaction(
+        string $transactionId,
+        string $walletId,
+        string $amount,
+    ): WalletTransaction
+    {
+        return $this->walletTransactionRepository->updateTransaction(
+            transactionId: $transactionId,
+            walletId: $walletId,
+            amount: $amount
+        );
     }
 }

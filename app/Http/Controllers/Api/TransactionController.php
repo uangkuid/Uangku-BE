@@ -132,6 +132,13 @@ class TransactionController extends Controller
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
 
+            // Update Wallet Transaction
+            $walletTransaction = $this->walletService->updateWalletTransaction(
+                transactionId: $id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+            );
+
             // Update Transaction
             $transaction = $this->transactionService->updateTransaction(
                 id: $id,
@@ -140,16 +147,9 @@ class TransactionController extends Controller
                 walletId: $request->wallet,
                 amount: $request->amount,
                 snapshotId: $request->snapshot_id,
+                walletTransactionId: $walletTransaction->id,
                 description: $request->get('description'),
                 subCategoryId: $request->get('sub_category_id'),
-            );
-
-            $walletTransaction = $this->walletService->createWalletTransaction(
-                userId: $user->id,
-                walletId: $request->wallet,
-                amount: $request->amount,
-                transactionTypeId: $transaction->transaction_type_id,
-                family: $request->get('family_id'),
             );
 
             DB::commit();
