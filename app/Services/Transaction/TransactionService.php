@@ -50,10 +50,9 @@ interface TransactionService extends BaseService{
      * @param string $walletId
      * @param string $amount
      * @param string $snapshotId
-     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $subCategoryId
-     * @return Transaction
+     * @return void
      */
     function updateTransaction(
         string $id,
@@ -62,8 +61,16 @@ interface TransactionService extends BaseService{
         string $walletId,
         string $amount,
         string $snapshotId,
-        string $walletTransactionId,
         ?string $description = null,
         string $subCategoryId = null,
-    ): Transaction;
+    );
+
+    /**
+     * Get a transaction by its ID.
+     * @param string $id
+     * @return Transaction|null
+     */
+    function getDetailTransaction(
+        string $id
+    ): ?Transaction;
 }

@@ -78,22 +78,19 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
      * @param string $amount
      * @param string|null $description
      * @param string|null $subCategoryId
-     * @return Transaction
      */
     public function updateTransaction(
         string $id,
         string $userId,
         string $categoryId,
-        string $walletId,
         string $amount,
         ?string $description = null,
         ?string $subCategoryId = null
-    ): Transaction
+    )
     {
         $data = [
             'users' => $userId,
             'categories' => $categoryId,
-            'wallets' => $walletId,
             'amount' => $amount,
         ];
 
@@ -105,6 +102,31 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
             $data['sub_categories'] = $subCategoryId;
         }
 
-        return $this->model->where('id', $id)->update($data);
+        $this->model->where('id', $id)->update($data);
+    }
+
+    /**
+     * Get a transaction by its ID.
+     * @param string $id
+     * @return Transaction|null
+     */
+    function getDetailTransaction(string $id): ?Transaction
+    {
+        return $this->model
+            ->select([
+                'id',
+                'users',
+                'categories',
+                'wallets',
+                'transaction_type',
+                'amount',
+                'note',
+                'families',
+                'sub_categories',
+                'created_at',
+                'updated_at'
+            ])
+            ->where('id', $id)
+            ->first();
     }
 }

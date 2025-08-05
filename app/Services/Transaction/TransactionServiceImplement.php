@@ -134,10 +134,9 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string $walletId
      * @param string $amount
      * @param string $snapshotId
-     * @param string $walletTransactionId
      * @param string|null $description
      * @param string|null $subCategoryId
-     * @return Transaction
+     * @return void
      * @throws GeneralException
      */
     function updateTransaction(
@@ -147,10 +146,9 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $walletId,
         string $amount,
         string $snapshotId,
-        string $walletTransactionId,
         ?string $description = null,
         string $subCategoryId = null,
-    ): Transaction
+    ): void
     {
         /**
          * Validate Sub Category Access
@@ -167,11 +165,10 @@ class TransactionServiceImplement extends Service implements TransactionService
             snapshotId: $snapshotId,
         );
 
-        return $this->mainRepository->updateTransaction(
+        $this->mainRepository->updateTransaction(
             id: $id,
             userId: $userId,
             categoryId: $categoryId,
-            walletId: $walletTransactionId,
             amount: $amount,
             description: $description,
             subCategoryId: $subCategoryId
@@ -221,9 +218,14 @@ class TransactionServiceImplement extends Service implements TransactionService
      */
     private function validateSnapshot(
         string $walletId,
-        string $snapshotId,
+        ?string $snapshotId,
     ): void
     {
+
+        if ($snapshotId == null) {
+            return; // No snapshot validation needed
+        }
+
         $lastSnapshot = $this->walletSnapshotRepository->getLastSnapshot($walletId);
         if ($lastSnapshot == null) {
             throw new GeneralException("Wallet Snapshot not found");

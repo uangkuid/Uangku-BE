@@ -33,8 +33,9 @@ class WalletMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $id = $request->route('id');
         $user = $this->userService->getUserByToken($request->bearerToken());
+
+        $id = $request->wallet;
 
         if ($id != null && $id != '') {
             $isExist = $this->walletService->isHasAccess(walletId: $id, userId: $user->id);
@@ -45,8 +46,21 @@ class WalletMiddleware
 
             // Jika ada, lanjutkan ke request berikutnya
             return $next($request);
-        } else {
-            return response()->json(new BaseResponse(400, "Wallet ID is required!"), 400);
         }
+
+        $id = $request->route('id');
+
+        if ($id != null && $id != '') {
+            $isExist = $this->walletService->isHasAccess(walletId: $id, userId: $user->id);
+
+            if (!$isExist) {
+                return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
+            }
+
+            // Jika ada, lanjutkan ke request berikutnya
+            return $next($request);
+        }
+
+        return response()->json(new BaseResponse(400, "Wallet ID is required!"), 400);
     }
 }

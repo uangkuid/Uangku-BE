@@ -131,6 +131,9 @@ class TransactionController extends Controller
 
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
+            $transaction = $this->transactionService->getDetailTransaction($id);
+
+            //TODO: Refactor Wallet Transaction Update
 
             // Update Wallet Transaction
             $walletTransaction = $this->walletService->updateWalletTransaction(
@@ -140,14 +143,13 @@ class TransactionController extends Controller
             );
 
             // Update Transaction
-            $transaction = $this->transactionService->updateTransaction(
+            $this->transactionService->updateTransaction(
                 id: $id,
                 userId: $user->id,
                 categoryId: $request->category,
                 walletId: $request->wallet,
                 amount: $request->amount,
                 snapshotId: $request->snapshot_id,
-                walletTransactionId: $walletTransaction->id,
                 description: $request->get('description'),
                 subCategoryId: $request->get('sub_category_id'),
             );

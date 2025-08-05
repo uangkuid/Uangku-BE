@@ -37,19 +37,23 @@ interface TransactionRepository extends Repository{
      * @param string $id
      * @param string $userId
      * @param string $categoryId
-     * @param string $walletId
      * @param string $amount
      * @param string|null $description
      * @param string|null $subCategoryId
-     * @return Transaction
      */
     public function updateTransaction(
         string $id,
         string $userId,
         string $categoryId,
-        string $walletId,
         string $amount,
         ?string $description = null,
         ?string $subCategoryId = null
-    ): Transaction;
+    );
+
+    /**
+     * Get a transaction by its ID.
+     * @param string $id
+     * @return Transaction|null
+     */
+    function getDetailTransaction(string $id): ?Transaction;
 }
