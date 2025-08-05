@@ -191,6 +191,7 @@ interface WalletService extends BaseService
         string  $wallet,
         string  $walletTransaction,
         string  $amount,
+        ?string $balance = null,
         ?string $snapshotId = null
     ): WalletSnapshot;
 
@@ -207,14 +208,12 @@ interface WalletService extends BaseService
 
     /**
      * Update an existing wallet transaction.
-     * @param string $transactionId
-     * @param string $walletId
+     * @param string $id
      * @param string $amount
-     * @return WalletTransaction
+     * @return void
      */
     function updateWalletTransaction(
-        string $transactionId,
-        string $walletId,
+        string $id,
         string $amount,
-    ): WalletTransaction;
+    ): void;
 }

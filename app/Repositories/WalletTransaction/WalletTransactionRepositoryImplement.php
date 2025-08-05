@@ -63,14 +63,9 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
      * @param string $amount
      * @return WalletTransaction
      */
-    function updateTransaction(string $transactionId, string $walletId, string $amount): WalletTransaction
+    function updateTransaction(string $id, string $amount): void
     {
-        $this->model->where('id', $transactionId)
-            ->where('wallets', $walletId)
+        $this->model->where('id', $id)
             ->update(['amount' => $amount]);
-
-        return $this->model->where('id', $transactionId)
-            ->where('wallets', $walletId)
-            ->first();
     }
 }

@@ -88,6 +88,7 @@ class TransactionController extends Controller
                 wallet: $request->wallet,
                 walletTransaction: $walletTransaction->id,
                 amount: $request->amount,
+                balance: $request->get('balance'),
                 snapshotId: $request->get('snapshot_id')
             );
 
@@ -133,12 +134,13 @@ class TransactionController extends Controller
             $user = $this->userService->getUserByToken($request->bearerToken());
             $transaction = $this->transactionService->getDetailTransaction($id);
 
-            //TODO: Refactor Wallet Transaction Update
+            if (!$transaction) {
+                throw new GeneralException("Transaction not found");
+            }
 
             // Update Wallet Transaction
-            $walletTransaction = $this->walletService->updateWalletTransaction(
-                transactionId: $id,
-                walletId: $request->wallet,
+            $this->walletService->updateWalletTransaction(
+                id: $transaction->wallets,
                 amount: $request->amount,
             );
 
@@ -153,6 +155,9 @@ class TransactionController extends Controller
                 description: $request->get('description'),
                 subCategoryId: $request->get('sub_category_id'),
             );
+
+            // Get the updated transaction details
+            $transaction = $this->transactionService->getDetailTransaction($id);
 
             DB::commit();
 

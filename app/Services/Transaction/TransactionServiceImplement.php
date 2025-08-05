@@ -235,4 +235,14 @@ class TransactionServiceImplement extends Service implements TransactionService
             throw new GeneralException("Wallet Snapshot is not valid, please get latest snapshot");
         }
     }
+
+    /**
+     * Get a transaction by its ID.
+     * @param string $id
+     * @return Transaction|null
+     */
+    function getDetailTransaction(string $id): ?Transaction
+    {
+        return $this->mainRepository->getDetailTransaction($id);
+    }
 }

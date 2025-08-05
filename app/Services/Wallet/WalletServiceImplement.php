@@ -453,6 +453,7 @@ class WalletServiceImplement extends Service implements WalletService
      * @param string $wallet
      * @param string $walletTransaction
      * @param string $amount
+     * @param string|null $balance
      * @param string|null $snapshotId
      * @return WalletSnapshot
      * @throws GeneralException
@@ -461,6 +462,7 @@ class WalletServiceImplement extends Service implements WalletService
         string $wallet,
         string $walletTransaction,
         string $amount,
+        ?string $balance = null,
         ?string $snapshotId = null
     ): WalletSnapshot
     {
@@ -470,6 +472,13 @@ class WalletServiceImplement extends Service implements WalletService
             if ($lastSnapshot != null && $lastSnapshot->id != $snapshotId) {
                 throw new GeneralException("Snapshot not found or does not match the last snapshot");
             }
+
+            if ($balance == null) {
+                throw new GeneralException("Balance is required when snapshot ID is provided");
+            }
+
+            // amount with balance
+            $amount = $balance;
         }
 
         return $this->walletSnapshotRepository->createWalletSnapshot(
@@ -497,20 +506,17 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Update an existing wallet transaction.
-     * @param string $transactionId
-     * @param string $walletId
+     * @param string $id
      * @param string $amount
-     * @return WalletTransaction
+     * @return void
      */
     function updateWalletTransaction(
-        string $transactionId,
-        string $walletId,
+        string $id,
         string $amount,
-    ): WalletTransaction
+    ): void
     {
-        return $this->walletTransactionRepository->updateTransaction(
-            transactionId: $transactionId,
-            walletId: $walletId,
+        $this->walletTransactionRepository->updateTransaction(
+            id: $id,
             amount: $amount
         );
     }
