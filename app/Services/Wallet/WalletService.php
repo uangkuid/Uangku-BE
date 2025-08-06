@@ -210,10 +210,12 @@ interface WalletService extends BaseService
      * Update an existing wallet transaction.
      * @param string $id
      * @param string $amount
+     * @param string $userId
      * @return void
      */
     function updateWalletTransaction(
         string $id,
         string $amount,
+        string $userId,
     ): void;
 }

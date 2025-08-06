@@ -33,10 +33,12 @@ interface WalletTransactionRepository extends Repository{
      * Update an existing wallet transaction.
      * @param string $id
      * @param string $amount
+     * @param string $userId
      * @return void
      */
     function updateTransaction(
         string $id,
-        string $amount
+        string $amount,
+        string $userId
     ): void;
 }

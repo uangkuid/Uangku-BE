@@ -143,6 +143,7 @@ class TransactionController extends Controller
             $this->walletService->updateWalletTransaction(
                 id: $transaction->wallets,
                 amount: $request->amount,
+                userId: $user->id,
             );
 
             // Update Transaction

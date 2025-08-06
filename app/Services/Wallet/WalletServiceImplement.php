@@ -508,16 +508,18 @@ class WalletServiceImplement extends Service implements WalletService
      * Update an existing wallet transaction.
      * @param string $id
      * @param string $amount
+     * @param string $userId
      * @return void
      */
     function updateWalletTransaction(
         string $id,
         string $amount,
+        string $userId
     ): void
     {
         $this->walletTransactionRepository->updateTransaction(
             id: $id,
-            amount: $amount
+            amount: $amount,userId: $userId
         );
     }
 }
