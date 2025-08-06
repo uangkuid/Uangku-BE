@@ -122,6 +122,7 @@ class TransactionController extends Controller
             'wallet' => 'required|uuid',
             'snapshot_id' => 'required|uuid',
             'amount' => 'required',
+            'balance' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -156,7 +157,14 @@ class TransactionController extends Controller
                 subCategoryId: $request->get('sub_category_id'),
             );
 
-            //TODO: Add logic to add snapshot
+            // Add wallet snapshot
+            $this->walletService->createWalletSnapshot(
+                wallet: $request->wallet,
+                walletTransaction: $transaction->wallets,
+                amount: $request->amount,
+                balance: $request->balance,
+                snapshotId: $request->snapshot_id
+            );
 
             // Get the updated transaction details
             $transaction = $this->transactionService->getDetailTransaction($id);
