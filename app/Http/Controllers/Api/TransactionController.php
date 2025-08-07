@@ -130,7 +130,6 @@ class TransactionController extends Controller
         }
 
         try {
-
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
             $transaction = $this->transactionService->getDetailTransaction($id);
@@ -173,6 +172,9 @@ class TransactionController extends Controller
             DB::commit();
 
             return response()->json(new BaseResponse(200, "Transaction updated successfully", $transaction), 200);
+        } catch (GeneralException $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json(new BaseResponse(500, "Failed to update transaction", $e->getMessage()), 500);
@@ -182,8 +184,35 @@ class TransactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'wallet' => 'required|uuid',
+            'snapshot_id' => 'required|uuid',
+            'balance' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to delete transaction", $validator->errors()), 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $user = $this->userService->getUserByToken($request->bearerToken());
+            $transaction = $this->transactionService->getDetailTransaction($id);
+
+            if (!$transaction) {
+                throw new GeneralException("Transaction not found");
+            }
+
+
+        } catch (GeneralException $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(400, $e->getMessage()), 400);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(new BaseResponse(500, "Failed to delete transaction", $e->getMessage()), 500);
+        }
     }
 }

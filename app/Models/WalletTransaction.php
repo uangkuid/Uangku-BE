@@ -18,7 +18,9 @@ class WalletTransaction extends BaseModel
         'access',
         'transaction_type',
         'amount',
-        'updated_by'
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
     ];
 
     protected $defaultSelect = [
@@ -30,6 +32,9 @@ class WalletTransaction extends BaseModel
         'updated_by',
         'created_at',
         'updated_at',
+        'deleted_at',
+        'deleted_by',
+
     ];
 
     public function newQuery(): Builder

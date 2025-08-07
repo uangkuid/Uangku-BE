@@ -24,6 +24,7 @@ class Transaction extends BaseModel
         'families',
         'note',
         'amount',
+        'deleted_at',
     ];
 
     protected $defaultSelect = [
@@ -38,6 +39,7 @@ class Transaction extends BaseModel
         'amount',
         'created_at',
         'updated_at',
+        'deleted_at',
     ];
 
     public function newQuery(): Builder

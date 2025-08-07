@@ -218,4 +218,13 @@ interface WalletService extends BaseService
         string $amount,
         string $userId,
     ): void;
+
+    /**
+     * Get detailed information about a specific wallet transaction.
+     * @param string $id
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransaction(
+        string $id
+    ): ?WalletTransaction;
 }
