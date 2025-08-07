@@ -95,6 +95,7 @@ erDiagram
         note text
         created_at timestamp
         updated_at timestamp
+        deleted_at timestamp
     }
 
     wallet {
@@ -122,10 +123,12 @@ erDiagram
         wallets uuid FK
         accessId uuid FK
         updated_by uuid FK
+        deleted_by uuid FK
         amount double
         type enum
         created_at timestamp
         updated_at timestamp
+        deleted_at timestamp
     }
 
     wallet_snapshots {
@@ -429,10 +432,12 @@ timestamps.
 | wallets          | uuid      | FK    | Foreign key referencing the `wallet` table                                                                                                                                                       |
 | accessId         | uuid      | FK    | Foreign key referencing the `wallet_access` table                                                                                                                                                |
 | updated_by       | uuid      | FK    | Foreign key referencing the `users` table, indicating who last updated the transaction                                                                                                           |
+| deleted_by       | uuid      | FK    | Foreign key referencing the `users` table, indicating who deleted the transaction                                                                                                                |
 | transaction_type | uuid      | FK    | Foreign key referencing the `transactions_type` table                                                                                                                                            |
 | amount           | string    |       | Amount of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
 | created_at       | timestamp |       | Timestamp when the wallet transaction was created                                                                                                                                                |
 | updated_at       | timestamp |       | Timestamp when the wallet transaction was last updated                                                                                                                                           |
+| deleted_at       | timestamp |       | Timestamp when the wallet transaction was deleted, null if not deleted                                                                                                                           |
 
 ### Wallet Snapshots Table
 
@@ -468,6 +473,7 @@ association, amount, note, and timestamps.
 | note             | text      |       | Note or description of the transaction, encrypted using RSA asymmetric encryption utilizing the raw public key from the `user_keys` table for personal wallets, or the `family_keys` table for family wallets |
 | created_at       | timestamp |       | Timestamp when the transaction was created                                                                                                                                                                    |
 | updated_at       | timestamp |       | Timestamp when the transaction was last updated                                                                                                                                                               |
+| deleted_at       | timestamp |       | Timestamp when the transaction was deleted, null if not deleted                                                                                                                                               |
 
 ## Secret Keys
 

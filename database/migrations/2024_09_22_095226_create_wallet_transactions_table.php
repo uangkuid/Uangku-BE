@@ -18,7 +18,9 @@ return new class extends Migration
             $table->uuid('transaction_type');
             $table->text("amount");
             $table->uuid('updated_by');
+            $table->uuid('deleted_by')->nullable();
             $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
 
             $table->foreign('wallets')->references('id')->on('wallets');
             $table->foreign('access')->references('id')->on('wallet_accesses');
