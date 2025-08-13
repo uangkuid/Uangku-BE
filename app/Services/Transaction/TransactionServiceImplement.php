@@ -245,4 +245,22 @@ class TransactionServiceImplement extends Service implements TransactionService
     {
         return $this->mainRepository->getDetailTransaction($id);
     }
+
+    /**
+     * Delete a transaction.
+     * @param string $id
+     * @param string $walletId
+     * @param string $snapshotId
+     * @return void
+     * @throws GeneralException
+     */
+    function deleteTransaction(string $id, string $walletId, string $snapshotId,): void
+    {
+        $this->validateSnapshot(
+            walletId: $walletId,
+            snapshotId: $snapshotId,
+        );
+
+        $this->mainRepository->deleteTransaction($id);
+    }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Repositories\Transaction;
 
-use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\Transaction;
+use LaravelEasyRepository\Implementations\Eloquent;
 
 class TransactionRepositoryImplement extends Eloquent implements TransactionRepository
 {
@@ -80,10 +80,10 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
      * @param string|null $subCategoryId
      */
     public function updateTransaction(
-        string $id,
-        string $userId,
-        string $categoryId,
-        string $amount,
+        string  $id,
+        string  $userId,
+        string  $categoryId,
+        string  $amount,
         ?string $description = null,
         ?string $subCategoryId = null
     )
@@ -128,5 +128,16 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
             ])
             ->where('id', $id)
             ->first();
+    }
+
+    /**
+     * Delete a transaction.
+     * @param string $id
+     * @return void
+     */
+    function deleteTransaction(string $id): void
+    {
+        $this->model->where('id', $id)
+            ->delete();
     }
 }

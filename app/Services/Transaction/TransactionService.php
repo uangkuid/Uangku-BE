@@ -73,4 +73,17 @@ interface TransactionService extends BaseService{
     function getDetailTransaction(
         string $id
     ): ?Transaction;
+
+    /**
+     * Delete a transaction.
+     * @param string $id
+     * @param string $walletId
+     * @param string $snapshotId
+     * @return void
+     */
+    function deleteTransaction(
+        string $id,
+        string $walletId,
+        string $snapshotId,
+    ): void;
 }

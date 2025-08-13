@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->text('amount');
             $table->timestamps();
-            $table->timestamp('deleted_at')->nullable();
+            $table->softDeletes();
 
             $table->foreign('users')->references('id')->on('users');
             $table->foreign('wallets')->references('id')->on('wallet_transactions');

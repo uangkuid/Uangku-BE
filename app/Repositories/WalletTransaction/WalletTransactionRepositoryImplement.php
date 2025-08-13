@@ -75,4 +75,17 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
                 'updated_by' => $userId
             ]);
     }
+
+    /**
+     * Get detail wallet transactions
+     * @param string $id
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransaction(string $id): ?WalletTransaction
+    {
+        return $this->model
+            ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
+            ->where('id', $id)
+            ->first();
+    }
 }

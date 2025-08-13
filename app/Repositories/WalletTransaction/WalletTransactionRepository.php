@@ -14,6 +14,7 @@ interface WalletTransactionRepository extends Repository{
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $userId
      * @return WalletTransaction
      */
     function createTransaction(
@@ -24,6 +25,12 @@ interface WalletTransactionRepository extends Repository{
         string $userId,
     ): WalletTransaction;
 
+    /**
+     * Get a wallet transaction by its ID.
+     * @param string $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
     function getTransactionPaging(
         string $walletId,
         int $perPage = 10
@@ -41,4 +48,13 @@ interface WalletTransactionRepository extends Repository{
         string $amount,
         string $userId
     ): void;
+
+    /**
+     * Get detail wallet transactions
+     * @param string $id
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransaction(
+        string $id
+    ): ?WalletTransaction;
 }

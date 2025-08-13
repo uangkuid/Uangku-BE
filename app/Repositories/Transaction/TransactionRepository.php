@@ -56,4 +56,13 @@ interface TransactionRepository extends Repository{
      * @return Transaction|null
      */
     function getDetailTransaction(string $id): ?Transaction;
+
+    /**
+     * Delete a transaction.
+     * @param string $id
+     * @return void
+     */
+    function deleteTransaction(
+        string $id,
+    ): void;
 }

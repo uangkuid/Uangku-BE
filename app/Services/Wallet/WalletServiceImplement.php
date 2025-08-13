@@ -522,4 +522,14 @@ class WalletServiceImplement extends Service implements WalletService
             amount: $amount,userId: $userId
         );
     }
+
+    /**
+     * Get detailed information about a specific wallet transaction.
+     * @param string $id
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransaction(string $id): ?WalletTransaction
+    {
+        return $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
+    }
 }

@@ -201,12 +201,39 @@ class TransactionController extends Controller
 
             $user = $this->userService->getUserByToken($request->bearerToken());
             $transaction = $this->transactionService->getDetailTransaction($id);
+            $walletTransaction = $this->walletService->getDetailWalletTransaction($transaction->wallets);
 
             if (!$transaction) {
                 throw new GeneralException("Transaction not found");
             }
 
+            if (!$walletTransaction) {
+                throw new GeneralException("Wallet transaction not found");
+            }
 
+            $this->transactionService->deleteTransaction(
+                id: $id,
+                walletId: $request->wallet,
+                snapshotId: $request->snapshot_id
+            );
+
+            // TODO: Create a wallet transaction deletion method in WalletService
+            // Delete Wallet Transaction
+            $this->walletService->deleteWalletTransaction(
+                id: $walletTransaction->id,
+                userId: $user->id
+            );
+
+            // Create Wallet Snapshot
+            $this->walletService->createWalletSnapshot(
+                wallet: $request->wallet,
+                walletTransaction: $walletTransaction->id,
+                amount: $transaction->amount,
+                balance: $request->balance,
+                snapshotId: $request->snapshot_id
+            );
+
+            return response()->json(new BaseResponse(200, "Transaction deleted successfully"), 200);
         } catch (GeneralException $e) {
             DB::rollBack();
             return response()->json(new BaseResponse(400, $e->getMessage()), 400);
