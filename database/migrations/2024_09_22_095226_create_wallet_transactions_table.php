@@ -20,7 +20,7 @@ return new class extends Migration
             $table->uuid('updated_by');
             $table->uuid('deleted_by')->nullable();
             $table->timestamps();
-            $table->timestamp('deleted_at')->nullable();
+            $table->softDeletes();
 
             $table->foreign('wallets')->references('id')->on('wallets');
             $table->foreign('access')->references('id')->on('wallet_accesses');
