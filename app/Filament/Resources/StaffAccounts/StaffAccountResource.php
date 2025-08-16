@@ -1,7 +1,17 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\StaffAccounts;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Placeholder;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\StaffAccounts\Pages\ListStaffAccounts;
+use App\Filament\Resources\StaffAccounts\Pages\CreateStaffAccount;
+use App\Filament\Resources\StaffAccounts\Pages\EditStaffAccount;
 use App\Filament\Resources\StaffAccountResource\Pages;
 use App\Filament\Resources\StaffAccountResource\RelationManagers;
 use App\Models\Shop\Order;
@@ -9,7 +19,6 @@ use App\Models\StaffAccount;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -21,22 +30,22 @@ class StaffAccountResource extends Resource
 {
     protected static ?string $model = StaffAccount::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationGroup = 'Staff Management';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
+    protected static string | \UnitEnum | null $navigationGroup = 'Staff Management';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Group::make()
+        return $schema
+            ->components([
+                Group::make()
                     ->schema([
-                        Forms\Components\Section::make('Staff Information')
+                        Section::make('Staff Information')
                             ->schema([
-                                Forms\Components\TextInput::make('name')
+                                TextInput::make('name')
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
-                                Forms\Components\TextInput::make('email')
+                                TextInput::make('email')
                                     ->email()
                                     ->required()
                                     ->maxLength(255)
@@ -49,7 +58,7 @@ class StaffAccountResource extends Resource
                                     ->required()
                                     ->columnSpanFull(),
                             ]),
-                        Forms\Components\Section::make('Security Settings')
+                        Section::make('Security Settings')
                             ->schema([
                                 TextInput::make('password')
                                     ->password()
@@ -70,13 +79,13 @@ class StaffAccountResource extends Resource
                             ])
                     ])
                     ->columnSpan(['lg' => fn(?StaffAccount $record) => $record === null ? 3 : 2]),
-                Forms\Components\Section::make('General Information')
+                Section::make('General Information')
                     ->schema([
-                        Forms\Components\Placeholder::make('created_at')
+                        Placeholder::make('created_at')
                             ->label('Created at')
                             ->content(fn(StaffAccount $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
-                        Forms\Components\Placeholder::make('updated_at')
+                        Placeholder::make('updated_at')
                             ->label('Last modified at')
                             ->content(fn(StaffAccount $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
@@ -100,11 +109,11 @@ class StaffAccountResource extends Resource
                     })
                     ->formatStateUsing(fn(string $state) => ucfirst($state))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -117,12 +126,12 @@ class StaffAccountResource extends Resource
                         'member' => 'Member',
                     ])
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -137,9 +146,9 @@ class StaffAccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStaffAccounts::route('/'),
-            'create' => Pages\CreateStaffAccount::route('/create'),
-            'edit' => Pages\EditStaffAccount::route('/{record}/edit'),
+            'index' => ListStaffAccounts::route('/'),
+            'create' => CreateStaffAccount::route('/create'),
+            'edit' => EditStaffAccount::route('/{record}/edit'),
         ];
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Contracts\Support\Arrayable;
+use JsonSerializable;
+use Exception;
 use App\Helpers\EncryptionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,9 +26,9 @@ class BaseResponse extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
-     * @throws \Exception
+     * @param Request $request
+     * @return array|Arrayable|JsonSerializable
+     * @throws Exception
      */
     public function toArray($request)
     {

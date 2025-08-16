@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use App\Observers\StaffAccountObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -75,7 +76,7 @@ class StaffAccount extends Authenticatable implements JWTSubject
         'updated_at'
     ]; // customize sesuai kebutuhan
 
-    public function newQuery(): \Illuminate\Database\Eloquent\Builder
+    public function newQuery(): Builder
     {
         return parent::newQuery()->select($this->defaultSelect);
     }

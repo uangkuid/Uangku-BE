@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\CategoryResource\Pages;
+namespace App\Filament\Resources\Categories\Pages;
 
-use App\Filament\Resources\CategoryResource;
+use Filament\Actions\DeleteAction;
+use App\Filament\Resources\Categories\CategoryResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +15,7 @@ class EditCategory extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

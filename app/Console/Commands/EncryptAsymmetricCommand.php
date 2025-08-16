@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use App\Helpers\EncryptionHelper;
 
@@ -44,7 +45,7 @@ class EncryptAsymmetricCommand extends Command
             $this->info("Encrypted amount:");
             $this->line($encrypted);
             return Command::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("Encryption failed: " . $e->getMessage());
             return Command::FAILURE;
         }

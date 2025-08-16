@@ -1,20 +1,31 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\Categories;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Placeholder;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
+use App\Filament\Resources\Categories\RelationManagers\SubCategoriesRelationManager;
+use App\Filament\Resources\Categories\Pages\ListCategories;
+use App\Filament\Resources\Categories\Pages\CreateCategory;
+use App\Filament\Resources\Categories\Pages\EditCategory;
+use App\Filament\Resources\Categories\Pages\ViewCategory;
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
@@ -28,25 +39,25 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
-    protected static ?string $navigationIcon = 'tabler-category';
-    protected static ?string $navigationGroup = 'Categories';
+    protected static string | \BackedEnum | null $navigationIcon = 'tabler-category';
+    protected static string | \UnitEnum | null $navigationGroup = 'Categories';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Group::make()
+        return $schema
+            ->components([
+                Group::make()
                     ->schema([
-                        Forms\Components\Section::make('Category Information')
+                        Section::make('Category Information')
                             ->schema([
-                                Forms\Components\TextInput::make('name')
+                                TextInput::make('name')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\Select::make('transaction_types')
+                                Select::make('transaction_types')
                                     ->required()
                                     ->relationship('transactionTypes', 'name')
                             ]),
-                        Forms\Components\Section::make('Image')
+                        Section::make('Image')
                             ->schema([
                                 FileUpload::make('icon')
                                     ->hiddenLabel()
@@ -59,13 +70,13 @@ class CategoryResource extends Resource
                             ]),
                     ])
                     ->columnSpan(['lg' => fn(?Category $record) => $record === null ? 3 : 2]),
-                Forms\Components\Section::make('General Information')
+                Section::make('General Information')
                     ->schema([
-                        Forms\Components\Placeholder::make('created_at')
+                        Placeholder::make('created_at')
                             ->label('Created at')
                             ->content(fn(Category $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
-                        Forms\Components\Placeholder::make('updated_at')
+                        Placeholder::make('updated_at')
                             ->label('Last modified at')
                             ->content(fn(Category $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
@@ -124,24 +135,24 @@ class CategoryResource extends Resource
                         'Income' => 'Income',
                     ]),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
+        return $schema
+            ->components([
                 Section::make()
                     ->schema([
-                        Split::make([
+                        Flex::make([
                             Grid::make(2)
                                 ->schema([
                                     Group::make([
@@ -167,7 +178,8 @@ class CategoryResource extends Resource
                                             ->label('Last Modified At')
                                             ->since(),
                                     ]),
-                                ]),
+                                ])
+                                ->grow(true),
                             ImageEntry::make('icon')
                                 ->disk('minio')
                                 ->visibility('private')
@@ -180,24 +192,24 @@ class CategoryResource extends Resource
                                 })
                                 ->grow(false),
                         ])->from('lg'),
-                    ])
+                    ])->columnSpanFull()
             ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SubCategoriesRelationManager::class
+            SubCategoriesRelationManager::class
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
-            'view' => Pages\ViewCategory::route('/{record}'),
+            'index' => ListCategories::route('/'),
+            'create' => CreateCategory::route('/create'),
+            'edit' => EditCategory::route('/{record}/edit'),
+            'view' => ViewCategory::route('/{record}'),
         ];
     }
 }

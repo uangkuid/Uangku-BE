@@ -1,20 +1,21 @@
 <?php
 
-namespace App\Filament\Resources\FeatureStatusResource\Pages;
+namespace App\Filament\Resources\SystemConfigs\Pages;
 
-use App\Filament\Resources\FeatureStatusResource;
+use Filament\Actions\DeleteAction;
+use App\Filament\Resources\SystemConfigs\SystemConfigResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
-class EditFeatureStatus extends EditRecord
+class EditSystemConfig extends EditRecord
 {
-    protected static string $resource = FeatureStatusResource::class;
+    protected static string $resource = SystemConfigResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

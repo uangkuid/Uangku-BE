@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Filament\Resources\CategoryResource\RelationManagers;
+namespace App\Filament\Resources\Categories\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use App\Helpers\EncryptionHelper;
 use App\Models\SubCategory;
 use Exception;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -24,14 +28,14 @@ class SubCategoriesRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $pageClass === 'App\Filament\Resources\CategoryResource\Pages\ViewCategory';
+        return $pageClass === 'App\Filament\Resources\Categories\Pages\ViewCategory';
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                \Filament\Forms\Components\Group::make()
+        return $schema
+            ->components([
+                \Filament\Schemas\Components\Group::make()
                     ->schema([
                         Section::make('Sub Category Information')
                             ->schema([
@@ -134,13 +138,13 @@ class SubCategoriesRelationManager extends RelationManager
             ])
             ->headerActions([
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->groups([

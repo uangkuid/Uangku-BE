@@ -1,14 +1,21 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\SystemConfigs;
 
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\SystemConfigs\Pages\ListSystemConfigs;
+use App\Filament\Resources\SystemConfigs\Pages\CreateSystemConfig;
+use App\Filament\Resources\SystemConfigs\Pages\EditSystemConfig;
 use App\Filament\Resources\SystemConfigResource\Pages;
 use App\Filament\Resources\SystemConfigResource\RelationManagers;
 use App\Models\SystemConfig;
 use Filament\Forms;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -22,13 +29,13 @@ class SystemConfigResource extends Resource
 {
     protected static ?string $model = SystemConfig::class;
 
-    protected static ?string $navigationIcon = 'tabler-settings-cog';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static string | \BackedEnum | null $navigationIcon = 'tabler-settings-cog';
+    protected static string | \UnitEnum | null $navigationGroup = 'Settings';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('key')
                     ->required()
                     ->maxLength(255)
@@ -49,15 +56,15 @@ class SystemConfigResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
+                TextColumn::make('id')
                     ->label('ID')
                     ->searchable()
                     ->hidden(),
-                Tables\Columns\TextColumn::make('key')
+                TextColumn::make('key')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('value')
+                TextColumn::make('value')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -65,12 +72,12 @@ class SystemConfigResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -85,9 +92,9 @@ class SystemConfigResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSystemConfigs::route('/'),
-            'create' => Pages\CreateSystemConfig::route('/create'),
-            'edit' => Pages\EditSystemConfig::route('/{record}/edit'),
+            'index' => ListSystemConfigs::route('/'),
+            'create' => CreateSystemConfig::route('/create'),
+            'edit' => EditSystemConfig::route('/{record}/edit'),
         ];
     }
 

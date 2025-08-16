@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\StaffAccountResource\Pages;
+namespace App\Filament\Resources\StaffAccounts\Pages;
 
-use App\Filament\Resources\StaffAccountResource;
+use Filament\Actions\DeleteAction;
+use App\Filament\Resources\StaffAccounts\StaffAccountResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,7 +14,7 @@ class EditStaffAccount extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

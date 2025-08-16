@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\SystemConfigResource\Pages;
+namespace App\Filament\Resources\SystemConfigs\Pages;
 
-use App\Filament\Resources\SystemConfigResource;
+use Filament\Actions\CreateAction;
+use App\Filament\Resources\SystemConfigs\SystemConfigResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,7 +14,7 @@ class ListSystemConfigs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

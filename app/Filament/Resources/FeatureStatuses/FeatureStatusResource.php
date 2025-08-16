@@ -1,14 +1,21 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\FeatureStatuses;
 
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\FeatureStatuses\Pages\ListFeatureStatuses;
+use App\Filament\Resources\FeatureStatuses\Pages\CreateFeatureStatus;
+use App\Filament\Resources\FeatureStatuses\Pages\EditFeatureStatus;
 use App\Filament\Resources\FeatureStatusResource\Pages;
 use App\Filament\Resources\FeatureStatusResource\RelationManagers;
 use App\Models\FeatureStatus;
 use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
@@ -21,13 +28,13 @@ class FeatureStatusResource extends Resource
 {
     protected static ?string $model = FeatureStatus::class;
 
-    protected static ?string $navigationIcon = 'tabler-settings-check';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static string | \BackedEnum | null $navigationIcon = 'tabler-settings-check';
+    protected static string | \UnitEnum | null $navigationGroup = 'Settings';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('feature_name')
                     ->required()
                     ->maxLength(255)
@@ -49,23 +56,23 @@ class FeatureStatusResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
+                TextColumn::make('id')
                     ->label('ID')
                     ->searchable()
                     ->hidden(),
-                Tables\Columns\TextColumn::make('feature_name')
+                TextColumn::make('feature_name')
                     ->searchable(),
                 IconColumn::make('is_enabled')
                     ->label('Enabled')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('staffs.name')
+                TextColumn::make('staffs.name')
                     ->label('Updated By')
                     ->toggleable(isToggledHiddenByDefault: false),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -78,12 +85,12 @@ class FeatureStatusResource extends Resource
                         '0' => 'Disabled',
                     ])
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -98,9 +105,9 @@ class FeatureStatusResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListFeatureStatuses::route('/'),
-            'create' => Pages\CreateFeatureStatus::route('/create'),
-            'edit' => Pages\EditFeatureStatus::route('/{record}/edit'),
+            'index' => ListFeatureStatuses::route('/'),
+            'create' => CreateFeatureStatus::route('/create'),
+            'edit' => EditFeatureStatus::route('/{record}/edit'),
         ];
     }
 }

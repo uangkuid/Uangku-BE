@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\StaffAccountResource\Pages;
+namespace App\Filament\Resources\StaffAccounts\Pages;
 
-use App\Filament\Resources\StaffAccountResource;
+use Filament\Actions\CreateAction;
+use App\Filament\Resources\StaffAccounts\StaffAccountResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,7 +14,7 @@ class ListStaffAccounts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

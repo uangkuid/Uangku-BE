@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\StaffAccountResource\Pages;
+namespace App\Filament\Resources\StaffAccounts\Pages;
 
-use App\Filament\Resources\StaffAccountResource;
+use App\Filament\Resources\StaffAccounts\StaffAccountResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
