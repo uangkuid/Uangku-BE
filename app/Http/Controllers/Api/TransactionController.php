@@ -232,6 +232,8 @@ class TransactionController extends Controller
                 snapshotId: $request->snapshot_id
             );
 
+            DB::commit();
+
             return response()->json(new BaseResponse(200, "Transaction deleted successfully"), 200);
         } catch (GeneralException $e) {
             DB::rollBack();

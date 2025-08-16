@@ -548,10 +548,6 @@ class WalletServiceImplement extends Service implements WalletService
             throw new GeneralException("Transaction not found");
         }
 
-        if ($transaction->users != $userId) {
-            throw new GeneralException("You don't have permission to delete this transaction");
-        }
-
         $this->walletTransactionRepository->deleteTransaction(id: $id);
     }
 }
