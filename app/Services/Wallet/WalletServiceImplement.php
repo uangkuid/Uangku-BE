@@ -532,4 +532,14 @@ class WalletServiceImplement extends Service implements WalletService
     {
         return $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
     }
+
+    /**
+     * @param string $id
+     * @param string $userId
+     * @return void
+     */
+    function deleteWalletTransaction(string $id, string $userId): void
+    {
+        // TODO: Implement deleteWalletTransaction() method.
+    }
 }
