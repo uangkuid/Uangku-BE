@@ -534,12 +534,24 @@ class WalletServiceImplement extends Service implements WalletService
     }
 
     /**
+     * Delete a wallet transaction.
      * @param string $id
      * @param string $userId
      * @return void
+     * @throws GeneralException
      */
     function deleteWalletTransaction(string $id, string $userId): void
     {
-        // TODO: Implement deleteWalletTransaction() method.
+        $transaction = $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
+
+        if ($transaction == null) {
+            throw new GeneralException("Transaction not found");
+        }
+
+        if ($transaction->users != $userId) {
+            throw new GeneralException("You don't have permission to delete this transaction");
+        }
+
+        $this->walletTransactionRepository->deleteTransaction(id: $id);
     }
 }

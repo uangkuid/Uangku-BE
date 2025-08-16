@@ -217,7 +217,6 @@ class TransactionController extends Controller
                 snapshotId: $request->snapshot_id
             );
 
-            // TODO: Create a wallet transaction deletion method in WalletService
             // Delete Wallet Transaction
             $this->walletService->deleteWalletTransaction(
                 id: $walletTransaction->id,

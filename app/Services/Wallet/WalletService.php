@@ -229,6 +229,7 @@ interface WalletService extends BaseService
     ): ?WalletTransaction;
 
     /**
+     * Delete a wallet transaction.
      * @param string $id
      * @param string $userId
      * @return void

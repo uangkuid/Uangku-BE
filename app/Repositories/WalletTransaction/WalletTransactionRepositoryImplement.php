@@ -88,4 +88,14 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             ->where('id', $id)
             ->first();
     }
+
+    /**
+     * Delete a wallet transaction by its ID.
+     * @param string $id
+     * @return void
+     */
+    function deleteTransaction(string $id): void
+    {
+        $this->model->where('id', $id)->delete();
+    }
 }
