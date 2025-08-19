@@ -89,8 +89,6 @@ erDiagram
         categories uuid FK
         sub_categories uuid FK
         transaction_type uuid FK
-        wallets uuid FK
-        families uuid FK
         amount double
         note text
         created_at timestamp
@@ -122,6 +120,7 @@ erDiagram
         id uuid PK
         wallets uuid FK
         accessId uuid FK
+        transaction_id uuid FK
         updated_by uuid FK
         deleted_by uuid FK
         amount double
@@ -197,7 +196,7 @@ erDiagram
     wallet }|--o{ wallet_access: has
     wallet }|--o{ wallet_snapshots: has
     wallet_access ||--o{ wallet_transactions: has
-    wallet_transactions ||--o| transactions: has
+    transactions ||--o{ wallet_transactions: has
     wallet_snapshots ||--o| wallet_transactions: has
     wallet ||--o{ wallet_transactions: has
     staff_accounts ||--o{ staff_keys: has
