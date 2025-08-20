@@ -11,7 +11,6 @@ interface TransactionRepository extends Repository{
      * Create a new transaction.
      * @param string $userId
      * @param string $categoryId
-     * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
      * @param string|null $description
@@ -23,7 +22,6 @@ interface TransactionRepository extends Repository{
     function createTransaction(
         string $userId,
         string $categoryId,
-        string $walletId,
         string $transactionTypeId,
         string $amount,
         string $description = null,

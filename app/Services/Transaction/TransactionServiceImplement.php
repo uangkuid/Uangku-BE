@@ -57,7 +57,6 @@ class TransactionServiceImplement extends Service implements TransactionService
      * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
-     * @param string $walletTransactionId
      * @param string|null $snapshotId
      * @param string|null $description
      * @param string|null $family
@@ -73,7 +72,6 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $walletId,
         string $transactionTypeId,
         string $amount,
-        string $walletTransactionId,
         ?string $snapshotId = null,
         ?string $description = null,
         ?string $family = null,
@@ -116,7 +114,6 @@ class TransactionServiceImplement extends Service implements TransactionService
         return $this->mainRepository->createTransaction(
             userId: $userId,
             categoryId: $categoryId,
-            walletId: $walletTransactionId,
             transactionTypeId: $transactionTypeId,
             amount: $amount,
             description: $description,

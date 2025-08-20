@@ -27,6 +27,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $transactionId
      * @param string $userId
      * @return WalletTransaction
      */
@@ -35,6 +36,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
         string $walletId,
         string $amount,
         string $transactionType,
+        string $transactionId,
         string $userId
     ): WalletTransaction
     {
@@ -44,6 +46,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             'wallets' => $walletId,
             'amount' => $amount,
             'transaction_type' => $transactionType,
+            'transaction_id' => $transactionId,
             'updated_by' => $userId
         ]);
     }

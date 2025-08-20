@@ -14,6 +14,7 @@ interface WalletTransactionRepository extends Repository{
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $transactionId
      * @param string $userId
      * @return WalletTransaction
      */
@@ -22,6 +23,7 @@ interface WalletTransactionRepository extends Repository{
         string $walletId,
         string $amount,
         string $transactionType,
+        string $transactionId,
         string $userId,
     ): WalletTransaction;
 

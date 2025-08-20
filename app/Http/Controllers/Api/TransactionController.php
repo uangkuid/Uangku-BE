@@ -59,15 +59,6 @@ class TransactionController extends Controller
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
 
-            // Create Wallet Transaction
-            $walletTransaction = $this->walletService->createWalletTransaction(
-                userId: $user->id,
-                walletId: $request->wallet,
-                amount: $request->amount,
-                transactionTypeId: $request->transaction_type,
-                family: $request->get('family_id'),
-            );
-
             // Create Transaction
             $transaction = $this->transactionService->createTransaction(
                 userId: $user->id,
@@ -75,12 +66,21 @@ class TransactionController extends Controller
                 walletId: $request->wallet,
                 transactionTypeId: $request->transaction_type,
                 amount: $request->amount,
-                walletTransactionId: $walletTransaction->id,
                 snapshotId: $request->get('snapshot_id'),
                 description: $request->get('description'),
                 family: $request->get('family_id'),
                 subCategoryId: $request->get('sub_category_id'),
                 transactionId: $request->get('transaction_id')
+            );
+
+            // Create Wallet Transaction
+            $walletTransaction = $this->walletService->createWalletTransaction(
+                userId: $user->id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+                transactionTypeId: $request->transaction_type,
+                transactionId: $transaction->id,
+                family: $request->get('family_id'),
             );
 
             // Create Wallet Snapshot

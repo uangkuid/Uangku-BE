@@ -24,7 +24,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
      * Create a new transaction.
      * @param string $userId
      * @param string $categoryId
-     * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
      * @param string|null $description
@@ -36,7 +35,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
     function createTransaction(
         string $userId,
         string $categoryId,
-        string $walletId,
         string $transactionTypeId,
         string $amount,
         string $description = null,
@@ -48,7 +46,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
         $data = [
             'users' => $userId,
             'categories' => $categoryId,
-            'wallets' => $walletId,
             'transaction_type' => $transactionTypeId,
             'amount' => $amount,
             'note' => $description,

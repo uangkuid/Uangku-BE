@@ -166,6 +166,7 @@ interface WalletService extends BaseService
         string  $walletId,
         string  $amount,
         string  $transactionTypeId,
+        string  $transactionId,
         ?string $family = null,
     ): WalletTransaction;
 

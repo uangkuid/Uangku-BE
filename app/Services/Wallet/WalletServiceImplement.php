@@ -415,6 +415,7 @@ class WalletServiceImplement extends Service implements WalletService
         string $walletId,
         string $amount,
         string $transactionTypeId,
+        string $transactionId,
         ?string $family = null
     ): WalletTransaction
     {
@@ -432,6 +433,7 @@ class WalletServiceImplement extends Service implements WalletService
             walletId: $walletId,
             amount: $amount,
             transactionType: $transactionTypeId,
+            transactionId: $transactionId,
             userId: $userId,
         );
     }
