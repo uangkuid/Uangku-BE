@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\GeneralException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Http\Resources\PaginationResponse;
 use App\Services\Transaction\TransactionService;
 use App\Services\User\UserService;
 use App\Services\Wallet\WalletService;
@@ -34,9 +35,38 @@ class TransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to get transaction", $validator->errors()), 400);
+        }
+
+        $user = $this->userService->getUserByToken(request()->bearerToken());
+        $resource = $this->transactionService->getTransactionPaging(
+            userId: $user->id,
+            startDate: request()->get('start_date'),
+            endDate: request()->get('end_date'),
+            familyId: request()->get('family_id'),
+            search: request()->get('search'),
+            categoryId: request()->get('category_id'),
+            transactionTypeId: request()->get('transaction_type_id'),
+            walletId: request()->get('wallet_id'),
+            perPage: request()->get('per_page', 10),
+        );
+
+        return response()->json(new PaginationResponse(
+            status: 200,
+            message: "Success get transaction.",
+            page: $resource->currentPage(),
+            totalPage: $resource->lastPage(),
+            totalData: $resource->total(),
+            resource: $resource,
+        ), 200);
     }
 
     /**

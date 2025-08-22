@@ -3,6 +3,7 @@
 namespace App\Repositories\Transaction;
 
 use App\Models\Transaction;
+use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
 interface TransactionRepository extends Repository{
@@ -63,4 +64,29 @@ interface TransactionRepository extends Repository{
     function deleteTransaction(
         string $id,
     ): void;
+
+    /**
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    function getTransactionPaging(
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
+        int $perPage = 10
+    ): LengthAwarePaginator;
 }

@@ -6,6 +6,7 @@ use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Helpers\EncryptionHelper;
+use App\Http\Resources\Models\TransactionResource;
 use App\Models\Transaction;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
@@ -14,6 +15,7 @@ use App\Repositories\Transaction\TransactionRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
 use App\Repositories\WalletSnapshot\WalletSnapshotRepository;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\Service;
 
 class TransactionServiceImplement extends Service implements TransactionService
@@ -259,5 +261,35 @@ class TransactionServiceImplement extends Service implements TransactionService
         );
 
         $this->mainRepository->deleteTransaction($id);
+    }
+
+    /**
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getTransactionPaging(string $userId, string $startDate, string $endDate, ?string $familyId = null, ?string $search = null, ?string $categoryId = null, ?string $transactionTypeId = null, ?string $walletId = null, int $perPage = 10): AnonymousResourceCollection
+    {
+        $paginator = $this->mainRepository->getTransactionPaging(
+            userId: $userId,
+            startDate: $startDate,
+            endDate: $endDate,
+            familyId: $familyId,
+            search: $search,
+            categoryId: $categoryId,
+            transactionTypeId: $transactionTypeId,
+            walletId: $walletId,
+            perPage: $perPage
+        );
+
+        return TransactionResource::collection($paginator);
     }
 }

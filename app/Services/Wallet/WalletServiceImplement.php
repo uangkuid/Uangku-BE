@@ -540,7 +540,6 @@ class WalletServiceImplement extends Service implements WalletService
      * @param string $id
      * @param string $userId
      * @return void
-     * @throws GeneralException
      */
     function deleteWalletTransaction(string $id, string $userId): void
     {
