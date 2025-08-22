@@ -95,11 +95,15 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
     /**
      * Delete a wallet transaction by its ID.
      * @param string $id
+     * @param string $userId
      * @return void
      */
-    function deleteTransaction(string $id): void
+    function deleteTransaction(string $id, string $userId): void
     {
-        $this->model->where('id', $id)->delete();
+        $this->model->where('id', $id)->update([
+            'deleted_at' => now(),
+            'deleted_by' => $userId,
+        ]);
     }
 
     /**

@@ -544,13 +544,8 @@ class WalletServiceImplement extends Service implements WalletService
      */
     function deleteWalletTransaction(string $id, string $userId): void
     {
-        $transaction = $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
 
-        if ($transaction == null) {
-            throw new GeneralException("Transaction not found");
-        }
-
-        $this->walletTransactionRepository->deleteTransaction(id: $id);
+        $this->walletTransactionRepository->deleteTransaction(id: $id, userId: $userId);
     }
 
     /**

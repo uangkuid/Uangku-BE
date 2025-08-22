@@ -63,10 +63,12 @@ interface WalletTransactionRepository extends Repository{
     /**
      * Delete a wallet transaction by its ID.
      * @param string $id
+     * @param string $userId
      * @return void
      */
     function deleteTransaction(
-        string $id
+        string $id,
+        string $userId
     ): void;
 
     /**

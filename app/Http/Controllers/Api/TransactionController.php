@@ -201,7 +201,7 @@ class TransactionController extends Controller
 
             $user = $this->userService->getUserByToken($request->bearerToken());
             $transaction = $this->transactionService->getDetailTransaction($id);
-            $walletTransaction = $this->walletService->getDetailWalletTransaction($transaction->wallets);
+            $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
             if (!$transaction) {
                 throw new GeneralException("Transaction not found");
