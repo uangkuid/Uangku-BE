@@ -552,4 +552,14 @@ class WalletServiceImplement extends Service implements WalletService
 
         $this->walletTransactionRepository->deleteTransaction(id: $id);
     }
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    {
+        return $this->walletTransactionRepository->getDetailWalletTransactionByTransactionId(transactionId: $transactionId);
+    }
 }

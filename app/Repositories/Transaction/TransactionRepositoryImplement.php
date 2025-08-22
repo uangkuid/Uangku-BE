@@ -114,11 +114,9 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
                 'id',
                 'users',
                 'categories',
-                'wallets',
                 'transaction_type',
                 'amount',
                 'note',
-                'families',
                 'sub_categories',
                 'created_at',
                 'updated_at'

@@ -101,4 +101,17 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
     {
         $this->model->where('id', $id)->delete();
     }
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    {
+        return $this->model
+            ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
+            ->where('transaction_id', $transactionId)
+            ->first();
+    }
 }

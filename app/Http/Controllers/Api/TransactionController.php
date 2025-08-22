@@ -132,15 +132,15 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
-            $transaction = $this->transactionService->getDetailTransaction($id);
+            $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
-            if (!$transaction) {
-                throw new GeneralException("Transaction not found");
+            if (!$walletTransaction) {
+                throw new GeneralException("Wallet transaction not found");
             }
 
             // Update Wallet Transaction
             $this->walletService->updateWalletTransaction(
-                id: $transaction->wallets,
+                id: $walletTransaction->id,
                 amount: $request->amount,
                 userId: $user->id,
             );
@@ -160,7 +160,7 @@ class TransactionController extends Controller
             // Add wallet snapshot
             $this->walletService->createWalletSnapshot(
                 wallet: $request->wallet,
-                walletTransaction: $transaction->wallets,
+                walletTransaction: $walletTransaction->id,
                 amount: $request->amount,
                 balance: $request->balance,
                 snapshotId: $request->snapshot_id

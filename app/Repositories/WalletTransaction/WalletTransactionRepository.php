@@ -68,4 +68,13 @@ interface WalletTransactionRepository extends Repository{
     function deleteTransaction(
         string $id
     ): void;
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(
+        string $transactionId
+    ): ?WalletTransaction;
 }
