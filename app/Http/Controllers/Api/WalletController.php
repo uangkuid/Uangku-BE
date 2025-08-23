@@ -261,19 +261,20 @@ class WalletController extends Controller
 
     public function getTransaction(Request $request, string $id)
     {
-        try {
-            $resource = $this->walletService->getWalletTransaction($id);
-
-            return response()->json(new PaginationResponse(
-                status: 200,
-                message: "Wallet transaction data",
-                page: $resource->currentPage(),
-                totalPage: $resource->lastPage(),
-                totalData: $resource->total(),
-                resource: $resource
-            ));
-        } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to get wallet transaction", $e->getMessage()), 500);
-        }
+        return response()->json(new BaseResponse(404, "Not implemented", null), 404);
+//        try {
+//            $resource = $this->walletService->getWalletTransaction($id);
+//
+//            return response()->json(new PaginationResponse(
+//                status: 200,
+//                message: "Wallet transaction data",
+//                page: $resource->currentPage(),
+//                totalPage: $resource->lastPage(),
+//                totalData: $resource->total(),
+//                resource: $resource
+//            ));
+//        } catch (Exception $e) {
+//            return response()->json(new BaseResponse(500, "Failed to get wallet transaction", $e->getMessage()), 500);
+//        }
     }
 }

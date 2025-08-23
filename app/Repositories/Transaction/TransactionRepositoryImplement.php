@@ -151,7 +151,17 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
      * @param int $perPage
      * @return LengthAwarePaginator
      */
-    function getTransactionPaging(string $userId, string $startDate, string $endDate, ?string $familyId = null, ?string $search = null, ?string $categoryId = null, ?string $transactionTypeId = null, ?string $walletId = null, int $perPage = 10): LengthAwarePaginator
+    function getTransactionPaging(
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
+        int $perPage = 10
+    ): LengthAwarePaginator
     {
         return $this->model
             ->select([

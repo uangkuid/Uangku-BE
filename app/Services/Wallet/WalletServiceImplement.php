@@ -491,22 +491,6 @@ class WalletServiceImplement extends Service implements WalletService
     }
 
     /**
-     * Get wallet transactions with pagination.
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
-     */
-    function getWalletTransaction(string $id, int $perPage = 10): AnonymousResourceCollection
-    {
-        $paginator = $this->walletTransactionRepository->getTransactionPaging(
-            walletId: $id,
-            perPage: $perPage
-        );
-
-        return WalletTransactionResource::collection($paginator);
-    }
-
-    /**
      * Update an existing wallet transaction.
      * @param string $id
      * @param string $amount

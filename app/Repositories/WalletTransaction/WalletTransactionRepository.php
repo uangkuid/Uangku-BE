@@ -28,13 +28,27 @@ interface WalletTransactionRepository extends Repository{
     ): WalletTransaction;
 
     /**
-     * Get a wallet transaction by its ID.
-     * @param string $walletId
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
      * @param int $perPage
      * @return LengthAwarePaginator
      */
     function getTransactionPaging(
-        string $walletId,
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
         int $perPage = 10
     ): LengthAwarePaginator;
 

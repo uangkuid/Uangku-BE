@@ -15,6 +15,7 @@ use App\Repositories\Transaction\TransactionRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\WalletAccess\WalletAccessRepository;
 use App\Repositories\WalletSnapshot\WalletSnapshotRepository;
+use App\Repositories\WalletTransaction\WalletTransactionRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\Service;
 
@@ -32,6 +33,7 @@ class TransactionServiceImplement extends Service implements TransactionService
     protected UserRepository $userRepository;
     protected FamilyKeyRepository $familyKeyRepository;
     protected WalletSnapshotRepository $walletSnapshotRepository;
+    protected WalletTransactionRepository $walletTransactionRepository;
 
     public function __construct(
         TransactionRepository  $mainRepository,
@@ -41,6 +43,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         UserRepository         $userRepository,
         FamilyKeyRepository    $familyKeyRepository,
         WalletSnapshotRepository $walletSnapshotRepository,
+        WalletTransactionRepository $walletTransactionRepository,
     )
     {
         $this->mainRepository = $mainRepository;
@@ -50,6 +53,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         $this->userRepository = $userRepository;
         $this->familyKeyRepository = $familyKeyRepository;
         $this->walletSnapshotRepository = $walletSnapshotRepository;
+        $this->walletTransactionRepository = $walletTransactionRepository;
     }
 
     /**
@@ -278,7 +282,7 @@ class TransactionServiceImplement extends Service implements TransactionService
      */
     function getTransactionPaging(string $userId, string $startDate, string $endDate, ?string $familyId = null, ?string $search = null, ?string $categoryId = null, ?string $transactionTypeId = null, ?string $walletId = null, int $perPage = 10): AnonymousResourceCollection
     {
-        $paginator = $this->mainRepository->getTransactionPaging(
+        $paginator = $this->walletTransactionRepository->getTransactionPaging(
             userId: $userId,
             startDate: $startDate,
             endDate: $endDate,
