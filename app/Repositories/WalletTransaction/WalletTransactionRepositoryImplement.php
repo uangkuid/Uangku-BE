@@ -144,7 +144,8 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
                 'transactions.id',
                 'transactions.users',
                 'transactions.categories',
-                'transactions.transaction_type',
+                'wallet_transactions.transaction_type as transaction_type_id',
+                'transaction_types.name as transaction_type_name',
                 'transactions.amount',
                 'transactions.note',
                 'transactions.sub_categories',
@@ -161,6 +162,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             ->join('transactions', 'transactions.id', '=', 'wallet_transactions.transaction_id')
             ->leftJoin('categories', 'categories.id', '=', 'transactions.categories')
             ->leftJoin('sub_categories', 'sub_categories.id', '=', 'transactions.sub_categories')
+            ->leftJoin('transaction_types', 'transaction_types.id', '=', 'wallet_transactions.transaction_type')
             ->where('wa.users', $userId)
             ->whereBetween('transactions.created_at', [$startDate, $endDate])
             ->whereNull('transactions.deleted_at');

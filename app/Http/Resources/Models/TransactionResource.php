@@ -38,7 +38,10 @@ class TransactionResource extends JsonResource
                 "name" => $this->category_name,
                 "icon" => $icon,
             ],
-            "transaction_type" => $this->transaction_type,
+            "transaction_type" => [
+                "id" => $this->transaction_type_id,
+                "name" => $this->transaction_type_name
+            ],
             "amount" => $this->amount,
             "note" => $this->note,
             "sub_categories" => $subCategory,
