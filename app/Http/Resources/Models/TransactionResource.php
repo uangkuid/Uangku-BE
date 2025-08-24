@@ -49,8 +49,8 @@ class TransactionResource extends JsonResource
                 "id" => $this->wallet_id    ,
                 "name" => $this->wallet_name,
             ],
-            "updated_at" => $this->updated_at,
-            "created_at" => $this->created_at,
+            'created_at' => optional($this->created_at)->timezone('Asia/Jakarta')->toIso8601String(),
+            'updated_at' => optional($this->updated_at)->timezone('Asia/Jakarta')->toIso8601String(),
         ];
     }
 }
