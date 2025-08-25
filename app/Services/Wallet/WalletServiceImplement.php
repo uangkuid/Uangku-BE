@@ -415,6 +415,7 @@ class WalletServiceImplement extends Service implements WalletService
         string $walletId,
         string $amount,
         string $transactionTypeId,
+        string $transactionId,
         ?string $family = null
     ): WalletTransaction
     {
@@ -432,6 +433,7 @@ class WalletServiceImplement extends Service implements WalletService
             walletId: $walletId,
             amount: $amount,
             transactionType: $transactionTypeId,
+            transactionId: $transactionId,
             userId: $userId,
         );
     }
@@ -489,22 +491,6 @@ class WalletServiceImplement extends Service implements WalletService
     }
 
     /**
-     * Get wallet transactions with pagination.
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
-     */
-    function getWalletTransaction(string $id, int $perPage = 10): AnonymousResourceCollection
-    {
-        $paginator = $this->walletTransactionRepository->getTransactionPaging(
-            walletId: $id,
-            perPage: $perPage
-        );
-
-        return WalletTransactionResource::collection($paginator);
-    }
-
-    /**
      * Update an existing wallet transaction.
      * @param string $id
      * @param string $amount
@@ -538,16 +524,20 @@ class WalletServiceImplement extends Service implements WalletService
      * @param string $id
      * @param string $userId
      * @return void
-     * @throws GeneralException
      */
     function deleteWalletTransaction(string $id, string $userId): void
     {
-        $transaction = $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
 
-        if ($transaction == null) {
-            throw new GeneralException("Transaction not found");
-        }
+        $this->walletTransactionRepository->deleteTransaction(id: $id, userId: $userId);
+    }
 
-        $this->walletTransactionRepository->deleteTransaction(id: $id);
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    {
+        return $this->walletTransactionRepository->getDetailWalletTransactionByTransactionId(transactionId: $transactionId);
     }
 }

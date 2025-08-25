@@ -15,6 +15,7 @@ class WalletTransaction extends BaseModel
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
+        'transaction_id',
         'wallets',
         'access',
         'transaction_type',
@@ -29,6 +30,7 @@ class WalletTransaction extends BaseModel
         'wallets',
         'access',
         'transaction_type',
+        'transaction_id',
         'amount',
         'updated_by',
         'created_at',

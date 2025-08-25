@@ -4,6 +4,7 @@ namespace App\Repositories\WalletTransaction;
 
 use App\Models\WalletTransaction;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use LaravelEasyRepository\Implementations\Eloquent;
 
 class WalletTransactionRepositoryImplement extends Eloquent implements WalletTransactionRepository
@@ -27,6 +28,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $transactionId
      * @param string $userId
      * @return WalletTransaction
      */
@@ -35,6 +37,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
         string $walletId,
         string $amount,
         string $transactionType,
+        string $transactionId,
         string $userId
     ): WalletTransaction
     {
@@ -44,16 +47,9 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             'wallets' => $walletId,
             'amount' => $amount,
             'transaction_type' => $transactionType,
+            'transaction_id' => $transactionId,
             'updated_by' => $userId
         ]);
-    }
-
-    function getTransactionPaging(string $walletId, int $perPage = 10): LengthAwarePaginator
-    {
-        return $this->model
-            ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
-            ->where('wallets', $walletId)
-            ->paginate($perPage);
     }
 
     /**
@@ -92,10 +88,111 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
     /**
      * Delete a wallet transaction by its ID.
      * @param string $id
+     * @param string $userId
      * @return void
      */
-    function deleteTransaction(string $id): void
+    function deleteTransaction(string $id, string $userId): void
     {
-        $this->model->where('id', $id)->delete();
+        $this->model->where('id', $id)->update([
+            'deleted_at' => now(),
+            'deleted_by' => $userId,
+        ]);
+    }
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    {
+        return $this->model
+            ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
+            ->where('transaction_id', $transactionId)
+            ->first();
+    }
+
+    /**
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    public function getTransactionPaging(
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
+        int $perPage = 10
+    ): LengthAwarePaginator {
+        $startDate = Carbon::parse($startDate)->startOfDay();
+        $endDate = Carbon::parse($endDate)->endOfDay();
+        $query = $this->model
+            ->select([
+//                'wallet_transactions.*',
+                'transactions.id',
+                'transactions.users',
+                'transactions.categories',
+                'wallet_transactions.transaction_type as transaction_type_id',
+                'transaction_types.name as transaction_type_name',
+                'transactions.amount',
+                'transactions.note',
+                'transactions.sub_categories',
+                'transactions.created_at',
+                'transactions.updated_at',
+                'wallet_transactions.wallets as wallet_id',
+                'categories.name as category_name',
+                'categories.icon as category_icon',
+                'sub_categories.name as sub_category_name',
+                'wallets.name as wallet_name',
+            ])
+            ->join('wallet_accesses as wa', 'wa.id', '=', 'wallet_transactions.access')
+            ->join('wallets', 'wallets.id', '=', 'wallet_transactions.wallets')
+            ->join('transactions', 'transactions.id', '=', 'wallet_transactions.transaction_id')
+            ->leftJoin('categories', 'categories.id', '=', 'transactions.categories')
+            ->leftJoin('sub_categories', 'sub_categories.id', '=', 'transactions.sub_categories')
+            ->leftJoin('transaction_types', 'transaction_types.id', '=', 'wallet_transactions.transaction_type')
+            ->where('wa.users', $userId)
+            ->whereBetween('transactions.created_at', [$startDate, $endDate])
+            ->whereNull('transactions.deleted_at');
+
+        if ($familyId) {
+            $query->where('wallets.families', $familyId);
+        }
+
+        if ($walletId) {
+            $query->where('wallets.id', $walletId);
+        }
+
+        if ($categoryId) {
+            $query->where('transactions.categories', $categoryId);
+        }
+
+        if ($transactionTypeId) {
+            $query->where('transactions.transaction_type', $transactionTypeId);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('transactions.note', 'like', "%{$search}%")
+                    ->orWhere('categories.name', 'like', "%{$search}%")
+                    ->orWhere('sub_categories.name', 'like', "%{$search}%")
+                    ->orWhere('wallets.name', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('transactions.created_at', 'desc')
+            ->paginate($perPage);
     }
 }

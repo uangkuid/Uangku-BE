@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\GeneralException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
+use App\Http\Resources\PaginationResponse;
 use App\Services\Transaction\TransactionService;
 use App\Services\User\UserService;
 use App\Services\Wallet\WalletService;
@@ -34,9 +35,38 @@ class TransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(new BaseResponse(400, "Failed to get transaction", $validator->errors()), 400);
+        }
+
+        $user = $this->userService->getUserByToken(request()->bearerToken());
+        $resource = $this->transactionService->getTransactionPaging(
+            userId: $user->id,
+            startDate: request()->get('start_date'),
+            endDate: request()->get('end_date'),
+            familyId: request()->get('family_id'),
+            search: request()->get('search'),
+            categoryId: request()->get('category_id'),
+            transactionTypeId: request()->get('transaction_type_id'),
+            walletId: request()->get('wallet_id'),
+            perPage: request()->get('per_page', 10),
+        );
+
+        return response()->json(new PaginationResponse(
+            status: 200,
+            message: "Success get transaction.",
+            page: $resource->currentPage(),
+            totalPage: $resource->lastPage(),
+            totalData: $resource->total(),
+            resource: $resource,
+        ), 200);
     }
 
     /**
@@ -59,15 +89,6 @@ class TransactionController extends Controller
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
 
-            // Create Wallet Transaction
-            $walletTransaction = $this->walletService->createWalletTransaction(
-                userId: $user->id,
-                walletId: $request->wallet,
-                amount: $request->amount,
-                transactionTypeId: $request->transaction_type,
-                family: $request->get('family_id'),
-            );
-
             // Create Transaction
             $transaction = $this->transactionService->createTransaction(
                 userId: $user->id,
@@ -75,12 +96,21 @@ class TransactionController extends Controller
                 walletId: $request->wallet,
                 transactionTypeId: $request->transaction_type,
                 amount: $request->amount,
-                walletTransactionId: $walletTransaction->id,
                 snapshotId: $request->get('snapshot_id'),
                 description: $request->get('description'),
                 family: $request->get('family_id'),
                 subCategoryId: $request->get('sub_category_id'),
                 transactionId: $request->get('transaction_id')
+            );
+
+            // Create Wallet Transaction
+            $walletTransaction = $this->walletService->createWalletTransaction(
+                userId: $user->id,
+                walletId: $request->wallet,
+                amount: $request->amount,
+                transactionTypeId: $request->transaction_type,
+                transactionId: $transaction->id,
+                family: $request->get('family_id'),
             );
 
             // Create Wallet Snapshot
@@ -132,15 +162,15 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
             $user = $this->userService->getUserByToken($request->bearerToken());
-            $transaction = $this->transactionService->getDetailTransaction($id);
+            $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
-            if (!$transaction) {
-                throw new GeneralException("Transaction not found");
+            if (!$walletTransaction) {
+                throw new GeneralException("Wallet transaction not found");
             }
 
             // Update Wallet Transaction
             $this->walletService->updateWalletTransaction(
-                id: $transaction->wallets,
+                id: $walletTransaction->id,
                 amount: $request->amount,
                 userId: $user->id,
             );
@@ -160,7 +190,7 @@ class TransactionController extends Controller
             // Add wallet snapshot
             $this->walletService->createWalletSnapshot(
                 wallet: $request->wallet,
-                walletTransaction: $transaction->wallets,
+                walletTransaction: $walletTransaction->id,
                 amount: $request->amount,
                 balance: $request->balance,
                 snapshotId: $request->snapshot_id
@@ -201,7 +231,7 @@ class TransactionController extends Controller
 
             $user = $this->userService->getUserByToken($request->bearerToken());
             $transaction = $this->transactionService->getDetailTransaction($id);
-            $walletTransaction = $this->walletService->getDetailWalletTransaction($transaction->wallets);
+            $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
             if (!$transaction) {
                 throw new GeneralException("Transaction not found");

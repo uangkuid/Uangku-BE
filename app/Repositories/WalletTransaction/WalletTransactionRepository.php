@@ -14,6 +14,7 @@ interface WalletTransactionRepository extends Repository{
      * @param string $walletId
      * @param string $amount
      * @param string $transactionType
+     * @param string $transactionId
      * @param string $userId
      * @return WalletTransaction
      */
@@ -22,17 +23,32 @@ interface WalletTransactionRepository extends Repository{
         string $walletId,
         string $amount,
         string $transactionType,
+        string $transactionId,
         string $userId,
     ): WalletTransaction;
 
     /**
-     * Get a wallet transaction by its ID.
-     * @param string $walletId
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
      * @param int $perPage
      * @return LengthAwarePaginator
      */
     function getTransactionPaging(
-        string $walletId,
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
         int $perPage = 10
     ): LengthAwarePaginator;
 
@@ -61,9 +77,20 @@ interface WalletTransactionRepository extends Repository{
     /**
      * Delete a wallet transaction by its ID.
      * @param string $id
+     * @param string $userId
      * @return void
      */
     function deleteTransaction(
-        string $id
+        string $id,
+        string $userId
     ): void;
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(
+        string $transactionId
+    ): ?WalletTransaction;
 }

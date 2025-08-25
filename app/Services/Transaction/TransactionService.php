@@ -6,6 +6,7 @@ use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Models\Transaction;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 
 interface TransactionService extends BaseService{
@@ -17,7 +18,6 @@ interface TransactionService extends BaseService{
      * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
-     * @param string $walletTransactionId
      * @param string|null $snapshotId
      * @param string|null $description
      * @param string|null $family
@@ -34,7 +34,6 @@ interface TransactionService extends BaseService{
         string $walletId,
         string $transactionTypeId,
         string $amount,
-        string $walletTransactionId,
         ?string $snapshotId = null,
         ?string $description = null,
         ?string $family = null,
@@ -86,4 +85,29 @@ interface TransactionService extends BaseService{
         string $walletId,
         string $snapshotId,
     ): void;
+
+    /**
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
+     * @param int $perPage
+     * @return AnonymousResourceCollection
+     */
+    function getTransactionPaging(
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
+        int $perPage = 10
+    ): AnonymousResourceCollection;
 }

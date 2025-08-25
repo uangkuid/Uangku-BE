@@ -3,6 +3,8 @@
 namespace App\Repositories\Transaction;
 
 use App\Models\Transaction;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use LaravelEasyRepository\Implementations\Eloquent;
 
 class TransactionRepositoryImplement extends Eloquent implements TransactionRepository
@@ -24,7 +26,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
      * Create a new transaction.
      * @param string $userId
      * @param string $categoryId
-     * @param string $walletId
      * @param string $transactionTypeId
      * @param string $amount
      * @param string|null $description
@@ -36,7 +37,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
     function createTransaction(
         string $userId,
         string $categoryId,
-        string $walletId,
         string $transactionTypeId,
         string $amount,
         string $description = null,
@@ -48,7 +48,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
         $data = [
             'users' => $userId,
             'categories' => $categoryId,
-            'wallets' => $walletId,
             'transaction_type' => $transactionTypeId,
             'amount' => $amount,
             'note' => $description,
@@ -117,11 +116,9 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
                 'id',
                 'users',
                 'categories',
-                'wallets',
                 'transaction_type',
                 'amount',
                 'note',
-                'families',
                 'sub_categories',
                 'created_at',
                 'updated_at'
@@ -139,5 +136,66 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
     {
         $this->model->where('id', $id)
             ->delete();
+    }
+
+    /**
+     * Get a paginated list of transactions for a user.
+     * @param string $userId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string|null $familyId
+     * @param string|null $search
+     * @param string|null $categoryId
+     * @param string|null $transactionTypeId
+     * @param string|null $walletId
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    function getTransactionPaging(
+        string $userId,
+        string $startDate,
+        string $endDate,
+        ?string $familyId = null,
+        ?string $search = null,
+        ?string $categoryId = null,
+        ?string $transactionTypeId = null,
+        ?string $walletId = null,
+        int $perPage = 10
+    ): LengthAwarePaginator
+    {
+        return $this->model
+            ->select([
+                'id',
+                'users',
+                'categories',
+                'transaction_type',
+                'amount',
+                'note',
+                'sub_categories',
+                'created_at',
+                'updated_at'
+            ])
+            ->where('users', $userId)
+            ->when($familyId, function ($query) use ($familyId) {
+                return $query->where('families', $familyId);
+            })
+            ->when($search, function ($query) use ($search) {
+                return $query->where('note', 'like', '%' . $search . '%');
+            })
+            ->when($categoryId, function ($query) use ($categoryId) {
+                return $query->where('categories', $categoryId);
+            })
+            ->when($transactionTypeId, function ($query) use ($transactionTypeId) {
+                return $query->where('transaction_type', $transactionTypeId);
+            })
+            ->when($walletId, function ($query) use ($walletId) {
+                return $query->where('wallets', $walletId);
+            })
+            ->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay(),
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 }

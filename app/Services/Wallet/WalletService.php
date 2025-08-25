@@ -166,6 +166,7 @@ interface WalletService extends BaseService
         string  $walletId,
         string  $amount,
         string  $transactionTypeId,
+        string  $transactionId,
         ?string $family = null,
     ): WalletTransaction;
 
@@ -194,17 +195,6 @@ interface WalletService extends BaseService
         ?string $balance = null,
         ?string $snapshotId = null
     ): WalletSnapshot;
-
-    /**
-     * Get wallet transactions with pagination.
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
-     */
-    function getWalletTransaction(
-        string $id,
-        int    $perPage = 10
-    ): AnonymousResourceCollection;
 
     /**
      * Update an existing wallet transaction.
@@ -238,4 +228,13 @@ interface WalletService extends BaseService
         string $id,
         string $userId
     ): void;
+
+    /**
+     * Get detailed wallet transaction by transaction ID.
+     * @param string $transactionId
+     * @return WalletTransaction|null
+     */
+    function getDetailWalletTransactionByTransactionId(
+        string $transactionId
+    ): ?WalletTransaction;
 }
