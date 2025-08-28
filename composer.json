@@ -13,7 +13,7 @@
         "laravel/tinker": "^2.9",
         "league/flysystem-aws-s3-v3": "^3.0",
         "php-open-source-saver/jwt-auth": "^2.3",
-        "predis/predis": "^2.0",
+        "predis/predis": "^3.2",
         "resend/resend-laravel": "^0.21.0",
         "secondnetwork/blade-tabler-icons": "^3.33",
         "spatie/color": "^1.8",
