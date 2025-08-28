@@ -9509,16 +9509,16 @@
         },
         {
             "name": "filament/upgrade",
-            "version": "v4.0.1",
+            "version": "v4.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/upgrade.git",
-                "reference": "bb6ead7e168e8c6d74ed683f3f8e51c0f13c8607"
+                "reference": "5b04a3d9052a3bc1d886aee965fb3140475fdfc2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/upgrade/zipball/bb6ead7e168e8c6d74ed683f3f8e51c0f13c8607",
-                "reference": "bb6ead7e168e8c6d74ed683f3f8e51c0f13c8607",
+                "url": "https://api.github.com/repos/filamentphp/upgrade/zipball/5b04a3d9052a3bc1d886aee965fb3140475fdfc2",
+                "reference": "5b04a3d9052a3bc1d886aee965fb3140475fdfc2",
                 "shasum": ""
             },
             "require": {
@@ -9552,7 +9552,7 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-            "time": "2025-08-12T13:17:04+00:00"
+            "time": "2025-08-19T09:14:39+00:00"
         },
         {
             "name": "filp/whoops",
