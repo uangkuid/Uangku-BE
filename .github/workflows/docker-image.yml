@@ -41,5 +41,5 @@ jobs:
           tags: |
             docker.io/oratakashi/uangku-be:latest
             docker.io/oratakashi/uangku-be:${{ github.sha }}
-            ghcr.io/oratakashi/uangku-be:latest
+            ghcr.io/uangkuid/uangku-be:latest
           file: Dockerfile
