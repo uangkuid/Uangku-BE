@@ -20,4 +20,7 @@ COPY .env /app/.env
 EXPOSE 8000
 
 WORKDIR /app
+
+RUN php artisan storage:link
+
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
