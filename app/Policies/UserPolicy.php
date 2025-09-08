@@ -2,62 +2,62 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Models\StaffAccount;
 
 class UserPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Determine whether the StaffAccount can view any models.
      */
-    public function viewAny(User $user): bool
+    public function viewAny(StaffAccount $user): bool
     {
         return true;
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Determine whether the StaffAccount can view the model.
      */
-    public function view(User $user, User $model): bool
+    public function view(StaffAccount $user, StaffAccount $model): bool
     {
         return true;
     }
 
     /**
-     * Determine whether the user can create models.
+     * Determine whether the StaffAccount can create models.
      */
-    public function create(User $user): bool
+    public function create(StaffAccount $user): bool
     {
         return false;
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determine whether the StaffAccount can update the model.
      */
-    public function update(User $user, User $model): bool
+    public function update(StaffAccount $user, StaffAccount $model): bool
     {
         return false;
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Determine whether the StaffAccount can delete the model.
      */
-    public function delete(User $user, User $model): bool
+    public function delete(StaffAccount $user, StaffAccount $model): bool
     {
         return false;
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determine whether the StaffAccount can restore the model.
      */
-    public function restore(User $user, User $model): bool
+    public function restore(StaffAccount $user, StaffAccount $model): bool
     {
         return false;
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the StaffAccount can permanently delete the model.
      */
-    public function forceDelete(User $user, User $model): bool
+    public function forceDelete(StaffAccount $user, StaffAccount $model): bool
     {
         return false;
     }
