@@ -51,11 +51,6 @@ class UserTransactionStatsWidget extends BaseWidget
         // Get total transaction count
         $totalCount = Transaction::where('users', $this->record->id)->count();
 
-        // Get total transaction amount for current month
-        $totalAmount = Transaction::where('users', $this->record->id)
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->sum('amount');
-
         return [
             Stat::make('Transactions This Month', $currentMonthCount)
                 ->description($difference > 0 ? "+{$difference} from last month" : ($difference < 0 ? "{$difference} from last month" : 'Same as last month'))
@@ -66,11 +61,6 @@ class UserTransactionStatsWidget extends BaseWidget
                 ->description('All time')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color('info'),
-
-            Stat::make('Total Amount This Month', 'Rp ' . number_format($totalAmount, 0, ',', '.'))
-                ->description('Current month total')
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color('warning'),
         ];
     }
 }
