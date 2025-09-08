@@ -83,4 +83,14 @@ class Transaction extends BaseModel
     {
         return $this->belongsTo(SubCategory::class, 'sub_categories');
     }
+
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class, 'families');
+    }
+
+    public function transactionType(): BelongsTo
+    {
+        return $this->belongsTo(TransactionType::class, 'transaction_type');
+    }
 }
