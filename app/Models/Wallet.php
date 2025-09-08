@@ -29,4 +29,9 @@ class Wallet extends Model
     {
         return $this->belongsTo(Family::class, 'families');
     }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'wallets');
+    }
 }
