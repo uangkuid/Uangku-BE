@@ -26,7 +26,6 @@ class StaffsusPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->spa()
             ->default()
             ->brandLogo(asset('images/logo.svg'))
             ->brandLogoHeight('2.3rem')
