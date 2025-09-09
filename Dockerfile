@@ -24,7 +24,6 @@ WORKDIR /app
 RUN php artisan storage:link
 
 # cache and optimize
-RUN php artisan config:clear
 RUN php artisan icons:cache
 RUN php artisan filament:optimize
 RUN php artisan optimize
