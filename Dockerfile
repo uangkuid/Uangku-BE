@@ -6,7 +6,7 @@ COPY . /app
 
 RUN install-php-extensions intl
 
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --optimize-autoloader
 
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp
