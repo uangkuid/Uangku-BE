@@ -23,4 +23,10 @@ WORKDIR /app
 
 RUN php artisan storage:link
 
+RUN php artisan icons:cache
+RUN php artisan filament:optimize
+RUN php artisan optimize
+RUN php artisan config:clear
+RUN php artisan cache:clear
+
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]

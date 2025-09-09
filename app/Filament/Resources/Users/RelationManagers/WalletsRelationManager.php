@@ -38,7 +38,7 @@ class WalletsRelationManager extends RelationManager
                                     ->columnSpanFull(),
                                 Placeholder::make('wallet.amount')
                                     ->label('Amount')
-                                    ->content(fn(WalletAccess $record): ?string => number_format($record->wallet?->amount ?? 0, 0, ',', '.')),
+                                    ->content(fn(WalletAccess $record): ?string => number_format((float)($record->wallet?->amount ?? 0), 0, ',', '.')),
                                 Placeholder::make('role')
                                     ->label('Role')
                                     ->content(fn(WalletAccess $record): ?string => $record->role),
@@ -75,7 +75,7 @@ class WalletsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('wallet.amount')
                     ->label('Amount')
-                    ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
+                    ->formatStateUsing(fn($state) => number_format((float)($state ?? 0), 0, ',', '.'))
                     ->sortable(),
                 TextColumn::make('role')
                     ->badge()

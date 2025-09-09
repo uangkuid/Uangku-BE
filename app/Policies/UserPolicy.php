@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\StaffAccount;
+use App\Models\User;
 
 class UserPolicy
 {
@@ -17,7 +18,7 @@ class UserPolicy
     /**
      * Determine whether the StaffAccount can view the model.
      */
-    public function view(StaffAccount $user, StaffAccount $model): bool
+    public function view(StaffAccount $user, User $model): bool
     {
         return true;
     }
@@ -33,7 +34,7 @@ class UserPolicy
     /**
      * Determine whether the StaffAccount can update the model.
      */
-    public function update(StaffAccount $user, StaffAccount $model): bool
+    public function update(StaffAccount $user, User $model): bool
     {
         return false;
     }
@@ -41,7 +42,7 @@ class UserPolicy
     /**
      * Determine whether the StaffAccount can delete the model.
      */
-    public function delete(StaffAccount $user, StaffAccount $model): bool
+    public function delete(StaffAccount $user, User $model): bool
     {
         return false;
     }
@@ -49,7 +50,7 @@ class UserPolicy
     /**
      * Determine whether the StaffAccount can restore the model.
      */
-    public function restore(StaffAccount $user, StaffAccount $model): bool
+    public function restore(StaffAccount $user, User $model): bool
     {
         return false;
     }
@@ -57,7 +58,7 @@ class UserPolicy
     /**
      * Determine whether the StaffAccount can permanently delete the model.
      */
-    public function forceDelete(StaffAccount $user, StaffAccount $model): bool
+    public function forceDelete(StaffAccount $user, User $model): bool
     {
         return false;
     }
