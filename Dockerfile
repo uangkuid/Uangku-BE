@@ -28,8 +28,4 @@ RUN php artisan icons:cache
 RUN php artisan filament:optimize
 RUN php artisan optimize
 
-# generate app key and jwt secret
-RUN php artisan key:generate
-RUN php artisan jwt:secret
-
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]

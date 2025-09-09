@@ -226,10 +226,13 @@ class EncryptionHelper
     /**
      * Get system secret key and salt.
      * @return string
+     * @throws EncryptionException
      */
     public static function getSystemSecretKey(): string
     {
-        return env('MAIN_SECRET_KEY') . env('MAIN_SALT_KEY');
+        $secretKey = env('MAIN_SECRET_KEY') ?? throw new EncryptionException('MAIN_SECRET_KEY is not set in .env file.');
+        $saltKey = env('MAIN_SALT_KEY') ?? throw new EncryptionException('MAIN_SECRET_KEY is not set in .env file.');
+        return $secretKey . $saltKey;
     }
 
     /**
