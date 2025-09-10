@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Helpers\EncryptionHelper;
 use Filament\Actions\EditAction;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Resources\Users\Widgets\UserTransactionStatsWidget;
@@ -16,7 +17,7 @@ class ViewUser extends ViewRecord
     {
         $record = $this->getRecord();
 
-        return $record->name;
+        return EncryptionHelper::decryptFromString($record->email, EncryptionHelper::getSystemSecretKey());
     }
 
     protected function getActions(): array
