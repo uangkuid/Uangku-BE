@@ -42,7 +42,7 @@ services:
 
   minio:
     container_name: minio
-    image: bitnami/minio:2025.4.22-debian-12-r1
+    image: bitnami/minio:latest
     restart: always
     ports:
       - '9000:9000'
