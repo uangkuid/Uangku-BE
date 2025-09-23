@@ -1,0 +1,69 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Development dependencies and cache
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Storage and logs
+storage/logs/
+storage/debugbar/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/testing/
+storage/framework/views/
+*.log
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (will be added separately)
+.env*
+!.env.example
+
+# Temporary files
+tmp/
+temp/
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+
+# GitHub workflows (not needed in container)
+.github/
+
+# Build artifacts
+dist/
+build/
+
+# Vendor directory (will be installed during build)
+vendor/
+
+# Laravel specific
+bootstrap/cache/*.php
+.phpunit.result.cache
