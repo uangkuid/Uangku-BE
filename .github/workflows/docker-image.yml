@@ -1,9 +1,15 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image Multi-Architecture
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Docker image tag"
+        required: false
+        default: "latest"
 
 jobs:
   docker:
@@ -12,12 +18,50 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Write .env file from secret
         run: echo "${{ secrets.ENV_DEV }}" > .env
 
+      - name: Get Docker tags
+        id: get-tags
+        run: |
+          DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            DOCKER_TAG="latest"
+            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:latest" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:latest" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64,amd64
+
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -33,13 +77,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCRIO }}
 
-      - name: Build and Push Docker Image
+      - name: Build and push multi-architecture Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          tags: |
-            docker.io/oratakashi/uangku-be:latest
-            docker.io/oratakashi/uangku-be:${{ github.sha }}
-            ghcr.io/uangkuid/uangku-be:latest
           file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.get-tags.outputs.DOCKER_TAGS }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          labels: |
+            org.opencontainers.image.title=Uangku Backend
+            org.opencontainers.image.description=Laravel-based backend API for Uangku application
+            org.opencontainers.image.source=https://github.com/uangkuid/Uangku-BE
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      # Temp fix for cache
+      # https://github.com/docker/build-push-action/issues/252
+      # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
