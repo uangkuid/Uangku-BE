@@ -16,23 +16,36 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
 FROM dunglas/frankenphp AS production
 
 # Install required PHP extensions
-RUN install-php-extensions pcntl pdo_mysql intl
+RUN install-php-extensions \
+    pcntl \
+    pdo_mysql \
+    intl \
+    opcache \
+    zip \
+    curl
 
 WORKDIR /app
 
 # Copy vendor dependencies from previous stage
 COPY --from=vendor /app/vendor ./vendor
 
-# Copy application files
+# Copy application files (excluding files listed in .dockerignore)
 COPY . .
 
 # Copy environment file
 COPY .env .env
 
+# Create non-root user for security
+RUN addgroup --system --gid 1001 laravel \
+    && adduser --system --uid 1001 --gid 1001 laravel
+
 # Set proper permissions
-RUN chown -R www-data:www-data /app \
+RUN chown -R laravel:laravel /app \
     && chmod -R 755 /app/storage \
     && chmod -R 755 /app/bootstrap/cache
+
+# Switch to non-root user
+USER laravel
 
 # Create storage link and optimize Laravel
 RUN php artisan storage:link \
@@ -40,11 +53,17 @@ RUN php artisan storage:link \
     && php artisan route:cache \
     && php artisan view:cache
 
+# Switch back to root for final setup
+USER root
+
 # Expose port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
+
+# Switch to non-root user for runtime
+USER laravel
 
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]

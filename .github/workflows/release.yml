@@ -1,0 +1,119 @@
+name: Production Release Multi-Architecture
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag"
+        required: true
+
+env:
+  REGISTRY_GHCR: ghcr.io
+  REGISTRY_DOCKER: docker.io
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write .env file from secret
+        run: echo "${{ secrets.ENV_PROD }}" > .env
+
+      - name: Get release tag
+        id: get-tag
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            TAG=${{ github.event.release.tag_name }}
+          else
+            TAG=${{ github.event.inputs.tag }}
+          fi
+          
+          echo "RELEASE_TAG=${TAG}" >> $GITHUB_OUTPUT
+          echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${TAG}" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:stable" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:${TAG}" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:stable" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+          buildkitd-flags: --allow-insecure-entitlement network.host
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_DOCKER }}
+          username: oratakashi
+          password: ${{ secrets.DOCKER }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCRIO }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/.buildx-cache
+            ~/.composer/cache
+          key: ${{ runner.os }}-release-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-${{ steps.get-tag.outputs.RELEASE_TAG }}
+          restore-keys: |
+            ${{ runner.os }}-release-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-
+            ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-
+            ${{ runner.os }}-docker-
+
+      - name: Build and push production multi-architecture image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.get-tag.outputs.DOCKER_TAGS }}
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=registry,ref=${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:cache
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache-new,mode=max
+            type=registry,ref=${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:cache,mode=max
+          labels: |
+            org.opencontainers.image.title=Uangku Backend
+            org.opencontainers.image.description=Laravel-based backend API for Uangku application (Production Release)
+            org.opencontainers.image.source=https://github.com/uangkuid/Uangku-BE
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.get-tag.outputs.RELEASE_TAG }}
+            org.opencontainers.image.created=${{ github.run_started_at }}
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Release Summary
+        run: |
+          echo "## 🎉 Production Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Tag**: ${{ steps.get-tag.outputs.RELEASE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms**: linux/amd64, linux/arm64 (Multi-Architecture)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Images**:" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.get-tag.outputs.DOCKER_TAGS }}" | sed 's/^/  - /' >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
