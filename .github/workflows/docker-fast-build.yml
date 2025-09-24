@@ -1,6 +1,7 @@
+---
 name: Fast Docker Build (AMD64 Only)
 
-on:
+'on':
   pull_request:
     branches:
       - main
@@ -40,7 +41,8 @@ jobs:
           path: |
             /tmp/.buildx-cache
             ~/.composer/cache
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}-buildx-${{ github.sha }}
+          key: >-
+            ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}-buildx-
             ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}-
@@ -80,5 +82,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '🚀 **Fast Docker build completed!**\n\nImage available at: `ghcr.io/uangkuid/uangku-be:pr-${{ github.event.number }}`\n\n*This is an AMD64-only build for faster CI feedback.*'
+              body: '🚀 **Fast Docker build completed!**\n\n' +
+                    'Image available at: `ghcr.io/uangkuid/uangku-be:pr-${{ github.event.number }}`\n\n' +
+                    '*This is an AMD64-only build for faster CI feedback.*'
             })

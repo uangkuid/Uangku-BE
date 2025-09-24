@@ -1,6 +1,7 @@
+---
 name: Build and Push Docker Image Multi-Architecture
 
-on:
+'on':
   push:
     branches:
       - main
@@ -38,8 +39,8 @@ jobs:
         run: |
           DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
           MULTI_ARCH=${{ github.event.inputs.multi_arch || 'false' }}
-          
-          # For main branch pushes, only build AMD64 for speed unless explicitly requested
+
+          # For main branch pushes, only build AMD64 for speed unless requested
           if [[ "${{ github.event_name }}" == "push" && "$MULTI_ARCH" != "true" ]]; then
             PLATFORMS="linux/amd64"
             echo "🚀 Building single architecture (AMD64) for faster CI"
@@ -47,23 +48,29 @@ jobs:
             PLATFORMS="linux/amd64,linux/arm64"
             echo "🏗️ Building multi-architecture (AMD64 + ARM64)"
           fi
-          
+
           if [[ "${{ github.event_name }}" == "push" ]]; then
             DOCKER_TAG="latest"
             SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
             echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:latest" \
+              >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${SHORT_SHA}" \
+              >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:latest" \
+              >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:${SHORT_SHA}" \
+              >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
-            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${DOCKER_TAG}" \
+              >> $GITHUB_OUTPUT
+            echo "${{ env.REGISTRY_GHCR }}/uangkuid/uangku-be:${DOCKER_TAG}" \
+              >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
@@ -100,7 +107,9 @@ jobs:
             /tmp/.buildx-cache
             ~/.composer/cache
             /var/lib/docker/tmp
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-${{ github.sha }}
+          key: >-
+            ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock',
+            '**/Dockerfile') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-
             ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock') }}-
@@ -138,12 +147,16 @@ jobs:
       - name: Build Summary
         run: |
           echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platforms**: ${{ steps.get-tags.outputs.PLATFORMS }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tags**: $(echo '${{ steps.get-tags.outputs.DOCKER_TAGS }}' | tr '\n' ', ')" >> $GITHUB_STEP_SUMMARY
+          PLATFORMS="${{ steps.get-tags.outputs.PLATFORMS }}"
+          echo "- **Platforms**: ${PLATFORMS}" >> $GITHUB_STEP_SUMMARY
+          TAGS=$(echo '${{ steps.get-tags.outputs.DOCKER_TAGS }}' | tr '\n' ', ')
+          echo "- **Tags**: ${TAGS}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Build Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ steps.get-tags.outputs.PLATFORMS }}" == "linux/amd64" ]]; then
-            echo "- **Performance**: ⚡ Fast build (AMD64 only)" >> $GITHUB_STEP_SUMMARY
+          if [[ "${PLATFORMS}" == "linux/amd64" ]]; then
+            echo "- **Performance**: ⚡ Fast build (AMD64 only)" \
+              >> $GITHUB_STEP_SUMMARY
           else
-            echo "- **Performance**: 🏗️ Multi-architecture build" >> $GITHUB_STEP_SUMMARY
+            echo "- **Performance**: 🏗️ Multi-architecture build" \
+              >> $GITHUB_STEP_SUMMARY
           fi

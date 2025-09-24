@@ -1,6 +1,7 @@
+---
 name: Production Release Multi-Architecture
 
-on:
+'on':
   release:
     types: [published]
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
           else
             TAG=${{ github.event.inputs.tag }}
           fi
-          
+
           echo "RELEASE_TAG=${TAG}" >> $GITHUB_OUTPUT
           echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
           echo "${{ env.REGISTRY_DOCKER }}/oratakashi/uangku-be:${TAG}" >> $GITHUB_OUTPUT
@@ -73,7 +74,9 @@ jobs:
           path: |
             /tmp/.buildx-cache
             ~/.composer/cache
-          key: ${{ runner.os }}-release-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-${{ steps.get-tag.outputs.RELEASE_TAG }}
+          key: >-
+            ${{ runner.os }}-release-${{ hashFiles('**/composer.lock',
+            '**/Dockerfile') }}-${{ steps.get-tag.outputs.RELEASE_TAG }}
           restore-keys: |
             ${{ runner.os }}-release-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-
             ${{ runner.os }}-docker-${{ hashFiles('**/composer.lock', '**/Dockerfile') }}-
