@@ -44,3 +44,44 @@ php artisan vendor:publish --tag=filament-config
 ```
 php artisan vendor:publish --provider="Barryvdh\Debugbar\ServiceProvider"
 ```
+
+## Docker & CI/CD
+
+### Docker Images
+
+The project uses automated Docker builds with the following tags:
+
+- **Production (latest)**: Built from git tags, multi-architecture (AMD64 + ARM64)
+  - `oratakashi/uangku-be:latest`
+  - `ghcr.io/uangkuid/uangku-be:latest`
+
+- **Development (dev)**: Built from main branch, AMD64 only
+  - `oratakashi/uangku-be:dev`
+  - `ghcr.io/uangkuid/uangku-be:dev`
+
+### Running with Docker Compose
+
+#### Development Environment
+```bash
+docker-compose -f docker-compose-dev.yaml up
+```
+
+#### Production Environment
+```bash
+docker-compose up
+```
+
+### Release Process
+
+To create a new release:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will automatically:
+- Build multi-architecture Docker images (AMD64 + ARM64)
+- Tag the images as `latest` and `v1.0.0`
+- Push to both Docker Hub and GitHub Container Registry
+
+For more details, see [CI-CD-CHANGES.md](CI-CD-CHANGES.md) and [WORKFLOW-DECISION-TREE.md](WORKFLOW-DECISION-TREE.md).
