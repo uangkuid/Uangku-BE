@@ -1,9 +1,11 @@
-name: Build and Push Docker Image Multi-Architecture
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       tag:
@@ -24,24 +26,38 @@ jobs:
       - name: Write .env file from secret
         run: echo "${{ secrets.ENV_DEV }}" > .env
 
-      - name: Get Docker tags
+      - name: Get Docker tags and platforms
         id: get-tags
         run: |
-          DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            DOCKER_TAG="latest"
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          # Determine if this is a tag push
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            # Tag push - use latest and tag name
+            TAG_NAME=${GITHUB_REF#refs/tags/}
             echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
             echo "docker.io/oratakashi/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "ghcr.io/uangkuid/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
+            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Branch push - use dev tag with SHA
+            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:dev" >> $GITHUB_OUTPUT
+            echo "docker.io/oratakashi/uangku-be:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:dev" >> $GITHUB_OUTPUT
+            echo "ghcr.io/uangkuid/uangku-be:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "PLATFORMS=linux/amd64" >> $GITHUB_OUTPUT
           else
+            # Manual workflow dispatch
+            DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
             echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
             echo "docker.io/oratakashi/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
             echo "ghcr.io/uangkuid/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
+            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up QEMU
@@ -73,12 +89,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCRIO }}
 
-      - name: Build and push multi-architecture Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.get-tags.outputs.PLATFORMS }}
           push: true
           tags: ${{ steps.get-tags.outputs.DOCKER_TAGS }}
           cache-from: type=local,src=/tmp/.buildx-cache
