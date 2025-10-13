@@ -4,6 +4,7 @@ services:
   api:
     container_name: api
     image: oratakashi/uangku-be:dev
+    platform: linux/amd64
     entrypoint: php artisan octane:frankenphp
     ports:
       - "80:8000"

@@ -52,10 +52,12 @@ The workflow now uses different configurations based on the trigger type:
 
 #### `docker-compose-dev.yaml`
 - **Changed**: Image tag from `latest` to `dev`
+- **Added**: Platform specification to force AMD64 architecture (since `dev` images are AMD64-only)
 - This ensures the development environment uses the latest development build
   ```yaml
   api:
     image: oratakashi/uangku-be:dev
+    platform: linux/amd64
   ```
 
 #### `docker-compose.yaml` (Production)
