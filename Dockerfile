@@ -1,23 +1,17 @@
 # Stage 1: Install dependencies
-FROM composer/composer:latest AS vendor
+FROM composer:2 AS vendor
 
 WORKDIR /app
 COPY . /app
 
-RUN apk add --no-cache \
-    php83-intl \
-    php83-pcntl \
-    php83-pdo_mysql \
-    && ln -s /usr/bin/php83 /usr/bin/php || true
+RUN install-php-extensions intl
+
+RUN composer install --optimize-autoloader
 
 # Stage 2: FrankenPHP with app code and vendor
-FROM dunglas/frankenphp:latest-php8.3-alpine
+FROM dunglas/frankenphp
 
-RUN apk add --no-cache \
-    php83-intl \
-    php83-pcntl \
-    php83-pdo_mysql \
-    && ln -s /usr/bin/php83 /usr/bin/php || true
+RUN install-php-extensions pcntl pdo_mysql intl
 
 COPY --from=vendor /app /app
 
