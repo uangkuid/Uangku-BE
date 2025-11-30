@@ -3,13 +3,12 @@ FROM php:8.3-alpine AS vendor
 
 WORKDIR /app
 
-# Install dependencies and composer with signature verification
-RUN apk add --no-cache \
-    icu-dev \
-    curl \
-    git \
-    unzip \
-    && docker-php-ext-install intl \
+# Install PHP extensions using install-php-extensions (precompiled when available)
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.7.2/install-php-extensions /usr/local/bin/
+RUN install-php-extensions intl
+
+# Install composer
+RUN apk add --no-cache curl git unzip \
     && EXPECTED_HASH="$(curl -sSf https://composer.github.io/installer.sig)" \
     && curl -sSf https://getcomposer.org/installer -o composer-setup.php \
     && ACTUAL_HASH="$(php -r "echo hash_file('sha384', 'composer-setup.php');")" \
@@ -27,11 +26,9 @@ COPY . /app
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp:latest-php8.3-alpine
 
-# Install ICU runtime and build deps temporarily for compiling intl extension
-RUN apk add --no-cache icu-libs \
-    && apk add --no-cache --virtual .build-deps icu-dev \
-    && docker-php-ext-install intl pcntl pdo_mysql \
-    && apk del .build-deps
+# Install PHP extensions using install-php-extensions (precompiled when available)
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.7.2/install-php-extensions /usr/local/bin/
+RUN install-php-extensions intl pcntl pdo_mysql
 
 COPY --from=vendor /app /app
 
