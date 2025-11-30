@@ -10,6 +10,8 @@ RUN apk add --no-cache \
     php83-pdo_mysql \
     && ln -s /usr/bin/php83 /usr/bin/php || true
 
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp:latest-php8.3-alpine
 
