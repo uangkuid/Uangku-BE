@@ -2,13 +2,19 @@
 FROM composer/composer:latest AS vendor
 
 WORKDIR /app
-COPY . /app
 
 RUN apk add --no-cache \
     php83-intl \
     php83-pcntl \
     php83-pdo_mysql \
     && ln -s /usr/bin/php83 /usr/bin/php || true
+
+# Copy composer files first for better layer caching
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Copy remaining source code
+COPY . /app
 
 # Stage 2: FrankenPHP with app code and vendor
 FROM dunglas/frankenphp:latest-php8.3-alpine
