@@ -13,67 +13,36 @@ on:
         required: false
         default: "latest"
 
+env:
+  DOCKERHUB_IMAGE: docker.io/oratakashi/uangku-be
+  GHCR_IMAGE: ghcr.io/uangkuid/uangku-be
+
 jobs:
-  docker:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: armbian
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Write .env file from secret
         run: echo "${{ secrets.ENV_DEV }}" > .env
 
-      - name: Get Docker tags and platforms
-        id: get-tags
-        run: |
-          # Determine if this is a tag push
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            # Tag push - use latest and tag name
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:${TAG_NAME}" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:latest" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:${TAG_NAME}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            # Branch push - use dev tag with SHA
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:dev" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:dev" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "PLATFORMS=linux/amd64" >> $GITHUB_OUTPUT
-          else
-            # Manual workflow dispatch
-            DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
-            echo "DOCKER_TAGS<<EOF" >> $GITHUB_OUTPUT
-            echo "docker.io/oratakashi/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
-            echo "ghcr.io/uangkuid/uangku-be:${DOCKER_TAG}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -89,26 +58,140 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCRIO }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          context: .
-          file: Dockerfile
-          platforms: ${{ steps.get-tags.outputs.PLATFORMS }}
-          push: true
-          tags: ${{ steps.get-tags.outputs.DOCKER_TAGS }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          images: |
+            ${{ env.DOCKERHUB_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
           labels: |
             org.opencontainers.image.title=Uangku Backend
             org.opencontainers.image.description=Laravel-based backend API for Uangku application
-            org.opencontainers.image.source=https://github.com/uangkuid/Uangku-BE
-            org.opencontainers.image.revision=${{ github.sha }}
 
-      # Temp fix for cache
-      # https://github.com/docker/build-push-action/issues/252
-      # https://github.com/moby/buildkit/issues/1896
-      - name: Move cache
+      - name: Build and push by digest (Docker Hub)
+        id: build-dockerhub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Build and push by digest (GHCR)
+        id: build-ghcr
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digests
         run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
+          dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
+          ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
+          touch "/tmp/digests/dockerhub/${dockerhub_digest#sha256:}"
+          touch "/tmp/digests/ghcr/${ghcr_digest#sha256:}"
+
+      - name: Upload Docker Hub digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-dockerhub-${{ matrix.runner }}
+          path: /tmp/digests/dockerhub/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload GHCR digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-ghcr-${{ matrix.runner }}
+          path: /tmp/digests/ghcr/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download Docker Hub digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests/dockerhub
+          pattern: digests-dockerhub-*
+          merge-multiple: true
+
+      - name: Download GHCR digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests/ghcr
+          pattern: digests-ghcr-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: oratakashi
+          password: ${{ secrets.DOCKER }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCRIO }}
+
+      - name: Get Docker tags
+        id: get-tags
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            # Tag push - use latest and tag name
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:latest -t ${{ env.DOCKERHUB_IMAGE }}:${TAG_NAME}" >> $GITHUB_OUTPUT
+            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${TAG_NAME}" >> $GITHUB_OUTPUT
+            echo "PRIMARY_TAG=latest" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Branch push (dev) - use dev tag with SHA
+            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:dev -t ${{ env.DOCKERHUB_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:dev -t ${{ env.GHCR_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "PRIMARY_TAG=dev" >> $GITHUB_OUTPUT
+          else
+            # Manual workflow dispatch
+            DOCKER_TAG=${{ github.event.inputs.tag || 'latest' }}
+            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:${DOCKER_TAG}" >> $GITHUB_OUTPUT
+            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:${DOCKER_TAG}" >> $GITHUB_OUTPUT
+            echo "PRIMARY_TAG=${DOCKER_TAG}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create manifest list and push (Docker Hub)
+        working-directory: /tmp/digests/dockerhub
+        run: |
+          docker buildx imagetools create ${{ steps.get-tags.outputs.DOCKERHUB_TAGS }} \
+            $(printf '${{ env.DOCKERHUB_IMAGE }}@sha256:%s ' *)
+
+      - name: Create manifest list and push (GHCR)
+        working-directory: /tmp/digests/ghcr
+        run: |
+          docker buildx imagetools create ${{ steps.get-tags.outputs.GHCR_TAGS }} \
+            $(printf '${{ env.GHCR_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect Docker Hub image
+        run: |
+          docker buildx imagetools inspect ${{ env.DOCKERHUB_IMAGE }}:${{ steps.get-tags.outputs.PRIMARY_TAG }}
+
+      - name: Inspect GHCR image
+        run: |
+          docker buildx imagetools inspect ${{ env.GHCR_IMAGE }}:${{ steps.get-tags.outputs.PRIMARY_TAG }}
