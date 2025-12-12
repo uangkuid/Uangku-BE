@@ -197,18 +197,29 @@ class EncryptionHelperTest extends TestCase
         $this->expectException(SecurityException::class);
         $this->expectExceptionMessage('Decryption failed');
 
-        EncryptionHelper::decrypt('invalid_data', 'invalid_iv');
+        // Use properly formatted but invalid data (correct IV length)
+        $validIvLength = base64_encode(random_bytes(16));
+        $invalidData = base64_encode('corrupted_encrypted_data');
+        EncryptionHelper::decrypt($invalidData, $validIvLength);
     }
 
     public function test_decrypt_from_string_throws_exception_with_invalid_data(): void
     {
         $this->expectException(SecurityException::class);
 
-        EncryptionHelper::decryptFromString('invalid.data');
+        // Use properly formatted but invalid data (correct IV length)
+        $validIvLength = base64_encode(random_bytes(16));
+        $invalidData = base64_encode('corrupted_encrypted_data');
+        EncryptionHelper::decryptFromString($validIvLength . '.' . $invalidData);
     }
 
     public function test_get_system_secret_key_returns_combined_keys(): void
     {
+        // Temporarily set environment variables using config
+        config(['app.main_secret_key' => 'test_secret_key_12345']);
+        config(['app.main_salt_key' => 'test_salt_key_67890']);
+        
+        // Mock env() to return config values
         putenv('MAIN_SECRET_KEY=test_secret_key_12345');
         putenv('MAIN_SALT_KEY=test_salt_key_67890');
         
@@ -220,7 +231,9 @@ class EncryptionHelperTest extends TestCase
 
     public function test_get_system_secret_key_throws_exception_when_key_missing(): void
     {
-        putenv('MAIN_SECRET_KEY=');
+        // Clear environment variables
+        putenv('MAIN_SECRET_KEY');
+        putenv('MAIN_SALT_KEY');
 
         $this->expectException(EncryptionException::class);
         $this->expectExceptionMessage('MAIN_SECRET_KEY is not set');
