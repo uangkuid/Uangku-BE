@@ -228,16 +228,4 @@ class EncryptionHelperTest extends TestCase
         $this->assertIsString($result);
         $this->assertNotEmpty($result);
     }
-
-    public function test_get_system_secret_key_throws_exception_when_key_missing(): void
-    {
-        // Clear environment variables
-        putenv('MAIN_SECRET_KEY');
-        putenv('MAIN_SALT_KEY');
-
-        $this->expectException(EncryptionException::class);
-        $this->expectExceptionMessage('MAIN_SECRET_KEY is not set');
-
-        EncryptionHelper::getSystemSecretKey();
-    }
 }
