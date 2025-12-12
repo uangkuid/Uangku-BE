@@ -20,6 +20,12 @@ yarn-error.log
 /.idea
 /.vscode
 
+# Test coverage reports
+/coverage
+/.coverage
+/phpunit-coverage.xml
+/clover.xml
+
 **/caddy
 frankenphp
 frankenphp-worker.php
