@@ -85,3 +85,161 @@ This will automatically:
 - Push to both Docker Hub and GitHub Container Registry
 
 For more details, see [CI-CD-CHANGES.md](CI-CD-CHANGES.md) and [WORKFLOW-DECISION-TREE.md](WORKFLOW-DECISION-TREE.md).
+
+## Testing
+
+This project includes comprehensive unit and feature tests for all API endpoints and helper functions.
+
+### Running Tests
+
+#### Run All Tests
+```bash
+php artisan test
+```
+
+Or using PHPUnit directly:
+```bash
+./vendor/bin/phpunit
+```
+
+#### Run Specific Test Suites
+
+Run only unit tests:
+```bash
+php artisan test --testsuite=Unit
+```
+
+Run only feature tests:
+```bash
+php artisan test --testsuite=Feature
+```
+
+#### Run Specific Test Files
+
+Run a specific test file:
+```bash
+php artisan test tests/Unit/Helpers/EncryptionHelperTest.php
+```
+
+Run a specific test method:
+```bash
+php artisan test --filter test_encrypt_returns_array_with_iv_and_data
+```
+
+#### Run Tests with Coverage
+
+Generate code coverage report (requires Xdebug or PCOV):
+```bash
+php artisan test --coverage
+```
+
+Generate HTML coverage report:
+```bash
+./vendor/bin/phpunit --coverage-html coverage
+```
+
+### Test Organization
+
+Tests are organized into two main directories:
+
+- **`tests/Unit/`** - Unit tests for helper functions and isolated components
+  - `tests/Unit/Helpers/` - Tests for encryption, token generation, and other helper functions
+
+- **`tests/Feature/`** - Integration tests for API endpoints
+  - `tests/Feature/Api/` - Tests for all API controllers
+
+### Writing New Tests
+
+#### Unit Test Example
+
+```php
+<?php
+
+namespace Tests\Unit\Helpers;
+
+use PHPUnit\Framework\TestCase;
+use App\Helpers\EncryptionHelper;
+
+class EncryptionHelperTest extends TestCase
+{
+    public function test_encryption_works(): void
+    {
+        $data = 'test data';
+        $result = EncryptionHelper::encrypt($data);
+        
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('iv', $result);
+        $this->assertArrayHasKey('data', $result);
+    }
+}
+```
+
+#### Feature Test Example
+
+```php
+<?php
+
+namespace Tests\Feature\Api;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class ExampleControllerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_endpoint_returns_success(): void
+    {
+        $response = $this->getJson('/api/endpoint');
+        
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'code',
+                'message',
+                'data'
+            ]);
+    }
+}
+```
+
+### Test Coverage
+
+The test suite covers:
+
+- ✅ All helper functions (EncryptionHelper, TokenHelper)
+- ✅ All API endpoints across 11 controllers:
+  - AuthController (authentication, registration, password management)
+  - GeneralController (system configuration, feature flags)
+  - OtpController (OTP generation and verification)
+  - PinController (PIN management)
+  - UserController (user profile management)
+  - CategoryController (category management)
+  - SubCategoryController (subcategory management)
+  - TransactionTypeController (transaction type management)
+  - FamilyController (family group management)
+  - WalletController (wallet management)
+  - TransactionController (transaction management)
+
+### Testing Best Practices
+
+1. **Use RefreshDatabase trait** for feature tests that interact with the database
+2. **Mock external services** to avoid dependencies on external systems
+3. **Test edge cases** including validation failures and error conditions
+4. **Keep tests isolated** - each test should be independent
+5. **Use descriptive test names** that explain what is being tested
+6. **Test both success and failure scenarios**
+
+### Environment Configuration
+
+Make sure your `.env.testing` file is configured properly for running tests:
+
+```env
+APP_ENV=testing
+DB_CONNECTION=sqlite
+DB_DATABASE=:memory:
+CACHE_DRIVER=array
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=array
+```
+
+Alternatively, the test configuration is already set in `phpunit.xml`.
