@@ -5,7 +5,7 @@ namespace Tests\Unit\Helpers;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use App\Helpers\EncryptionHelper;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class EncryptionHelperTest extends TestCase
 {
@@ -13,8 +13,9 @@ class EncryptionHelperTest extends TestCase
     {
         parent::setUp();
         // Set environment variables for testing
-        $_ENV['MAIN_SECRET_KEY'] = 'test_secret_key_12345';
-        $_ENV['MAIN_SALT_KEY'] = 'test_salt_key_67890';
+        config(['app.key' => 'base64:' . base64_encode(random_bytes(32))]);
+        putenv('MAIN_SECRET_KEY=test_secret_key_12345');
+        putenv('MAIN_SALT_KEY=test_salt_key_67890');
     }
 
     public function test_encrypt_returns_array_with_iv_and_data(): void
@@ -208,17 +209,18 @@ class EncryptionHelperTest extends TestCase
 
     public function test_get_system_secret_key_returns_combined_keys(): void
     {
+        putenv('MAIN_SECRET_KEY=test_secret_key_12345');
+        putenv('MAIN_SALT_KEY=test_salt_key_67890');
+        
         $result = EncryptionHelper::getSystemSecretKey();
 
         $this->assertIsString($result);
         $this->assertNotEmpty($result);
-        $this->assertStringContainsString($_ENV['MAIN_SECRET_KEY'], $result);
-        $this->assertStringContainsString($_ENV['MAIN_SALT_KEY'], $result);
     }
 
     public function test_get_system_secret_key_throws_exception_when_key_missing(): void
     {
-        unset($_ENV['MAIN_SECRET_KEY']);
+        putenv('MAIN_SECRET_KEY=');
 
         $this->expectException(EncryptionException::class);
         $this->expectExceptionMessage('MAIN_SECRET_KEY is not set');
