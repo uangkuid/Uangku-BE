@@ -53,10 +53,10 @@ jobs:
         echo "JWT_SECRET=test_jwt_secret_key_for_testing" >> .env
 
     - name: Run Unit Tests
-      run: php artisan test --testsuite=Unit --parallel
+      run: php artisan test --testsuite=Unit
 
     - name: Run Feature Tests
-      run: php artisan test --testsuite=Feature --parallel
+      run: php artisan test --testsuite=Feature
 
     - name: Generate Coverage Report
       if: matrix.php-version == '8.3'
