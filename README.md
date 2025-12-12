@@ -92,6 +92,28 @@ This project includes comprehensive unit and feature tests for all API endpoints
 
 ### Running Tests
 
+#### Quick Start with Test Runner Script
+
+We provide a convenient test runner script that handles environment setup:
+
+```bash
+# Run all tests
+./run-tests.sh
+
+# Run specific test suite
+./run-tests.sh --suite Unit
+./run-tests.sh --suite Feature
+
+# Run tests matching a pattern
+./run-tests.sh --filter EncryptionHelper
+
+# Run with coverage
+./run-tests.sh --coverage
+
+# Show help
+./run-tests.sh --help
+```
+
 #### Run All Tests
 ```bash
 php artisan test
