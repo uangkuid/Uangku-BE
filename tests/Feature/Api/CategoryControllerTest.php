@@ -15,7 +15,7 @@ class CategoryControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'code',
+                'status',
                 'message',
                 'data'
             ]);

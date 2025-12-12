@@ -15,7 +15,7 @@ class GeneralControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'code',
+                'status',
                 'message',
                 'data'
             ]);
@@ -27,7 +27,7 @@ class GeneralControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'code',
+                'status',
                 'message',
                 'data'
             ]);
@@ -39,7 +39,7 @@ class GeneralControllerTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
-                'code' => 404,
+                'status' => 404,
                 'message' => 'Data not found'
             ]);
     }
