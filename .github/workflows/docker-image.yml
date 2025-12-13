@@ -70,6 +70,9 @@ jobs:
     - name: Run Unit Tests
       run: php artisan test --testsuite=Unit
 
+    - name: Run Feature Tests
+      run: php artisan test --testsuite=Feature
+
   build:
     needs: test
     strategy:
