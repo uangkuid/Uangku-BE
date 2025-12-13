@@ -18,7 +18,58 @@ env:
   GHCR_IMAGE: ghcr.io/uangkuid/uangku-be
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    name: Unit Tests
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, filter, gd, json, openssl
+        coverage: none
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Dependencies
+      run: composer install --no-interaction --prefer-dist --no-progress
+
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Create SQLite database
+      run: touch database/database.sqlite
+
+    - name: Run migrations
+      run: php artisan migrate --force
+
+    - name: Set testing environment variables
+      run: |
+        echo "MAIN_SECRET_KEY=test_secret_key_12345" >> .env
+        echo "MAIN_SALT_KEY=test_salt_key_67890" >> .env
+        echo "JWT_SECRET=test_jwt_secret_key_for_testing_32chars" >> .env
+
+    - name: Run Unit Tests
+      run: php artisan test --testsuite=Unit
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
