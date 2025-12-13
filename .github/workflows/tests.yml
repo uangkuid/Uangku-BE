@@ -1,8 +1,6 @@
 name: Run Tests
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
@@ -20,7 +18,7 @@ jobs:
       with:
         php-version: '8.4'
         extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, filter, gd, json, openssl
-        coverage: pcov
+        coverage: none
 
     - name: Get Composer Cache Directory
       id: composer-cache
@@ -59,13 +57,3 @@ jobs:
 
     - name: Run Feature Tests
       run: php artisan test --testsuite=Feature
-
-    - name: Generate Coverage Report
-      run: php artisan test --coverage-clover coverage.xml
-
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage.xml
-        fail_ci_if_error: false
-        verbose: true
