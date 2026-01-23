@@ -5,6 +5,7 @@ services:
     container_name: api
     image: oratakashi/uangku-be:dev
     entrypoint: php artisan octane:frankenphp
+    restart: always
     ports:
       - "80:8000"
     depends_on:
