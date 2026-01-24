@@ -81,14 +81,10 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
-          # ARM64 build only for tags and manual dispatch (not for branch pushes)
           - platform: linux/arm64
             runner: armbian
-            only_for: tags_and_dispatch
 #            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
-    # Skip ARM64 builds for branch pushes (dev builds)
-    if: ${{ matrix.only_for != 'tags_and_dispatch' || github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write

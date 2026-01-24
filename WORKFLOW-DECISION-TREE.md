@@ -20,8 +20,8 @@ GitHub Event
 └─────────┘   └─────────┘    └─────────────┘
     |               |                |
     v               v                v
-Multi-arch      AMD64 only      Multi-arch
-(amd64+arm64)   (faster)        (amd64+arm64)
+Multi-arch      Multi-arch      Multi-arch
+(amd64+arm64)   (amd64+arm64)   (amd64+arm64)
     |               |                |
     v               v                v
 Tags:           Tags:            Tags:
@@ -46,7 +46,7 @@ git push origin v1.0.0
 git push origin main
 ```
 **Result:**
-- ✅ AMD64-only build (faster)
+- ✅ Multi-architecture build (AMD64 + ARM64)
 - ✅ Tagged as: `dev`
 - ✅ Used by `docker-compose-dev.yaml`
 
