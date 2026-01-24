@@ -157,7 +157,7 @@ jobs:
       - name: Upload Docker Hub digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-dockerhub-${{ matrix.runner }}
+          name: digests-dockerhub-${{ strategy.job-index }}
           path: /tmp/digests/dockerhub/*
           if-no-files-found: error
           retention-days: 1
@@ -165,7 +165,7 @@ jobs:
       - name: Upload GHCR digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-ghcr-${{ matrix.runner }}
+          name: digests-ghcr-${{ strategy.job-index }}
           path: /tmp/digests/ghcr/*
           if-no-files-found: error
           retention-days: 1
