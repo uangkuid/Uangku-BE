@@ -26,7 +26,7 @@ Multi-arch      AMD64 only      Multi-arch
     v               v                v
 Tags:           Tags:            Tags:
 - latest        - dev            - {input}
-- {tag-name}    - dev-{sha}
+- {tag-name}
 ```
 
 ## Examples:
@@ -47,7 +47,7 @@ git push origin main
 ```
 **Result:**
 - ✅ AMD64-only build (faster)
-- ✅ Tagged as: `dev` and `dev-abc1234`
+- ✅ Tagged as: `dev`
 - ✅ Used by `docker-compose-dev.yaml`
 
 ### Scenario 3: Manual workflow run

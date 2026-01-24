@@ -81,10 +81,14 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
+          # ARM64 build only for tags and manual dispatch (not for branch pushes)
           - platform: linux/arm64
             runner: armbian
+            only_for: tags_and_dispatch
 #            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
+    # Skip ARM64 builds for branch pushes (dev builds)
+    if: ${{ matrix.only_for != 'tags_and_dispatch' || github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write
@@ -220,10 +224,9 @@ jobs:
             echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "PRIMARY_TAG=latest" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "push" ]]; then
-            # Branch push (dev) - use dev tag with SHA
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:dev -t ${{ env.DOCKERHUB_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:dev -t ${{ env.GHCR_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            # Branch push (dev) - use dev tag only (no SHA suffix)
+            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:dev" >> $GITHUB_OUTPUT
+            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:dev" >> $GITHUB_OUTPUT
             echo "PRIMARY_TAG=dev" >> $GITHUB_OUTPUT
           else
             # Manual workflow dispatch

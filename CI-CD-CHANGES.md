@@ -37,12 +37,9 @@ The workflow now uses different configurations based on the trigger type:
 - Platforms: `linux/amd64` (AMD64 only, faster builds)
 - Docker tags:
   - `dev`
-  - `dev-{short-sha}` (7 characters)
 - Example: Pushing to main will build and push:
   - `oratakashi/uangku-be:dev`
-  - `oratakashi/uangku-be:dev-abc1234`
   - `ghcr.io/uangkuid/uangku-be:dev`
-  - `ghcr.io/uangkuid/uangku-be:dev-abc1234`
 
 **For Manual Workflow Dispatch:**
 - Platforms: `linux/amd64,linux/arm64` (multi-architecture)
