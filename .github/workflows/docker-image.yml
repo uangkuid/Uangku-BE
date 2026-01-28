@@ -126,33 +126,37 @@ jobs:
             org.opencontainers.image.title=Uangku Backend
             org.opencontainers.image.description=Laravel-based backend API for Uangku application
 
-      - name: Build and push by digest (Docker Hub)
-        id: build-dockerhub
+      - name: Build and push by digest (Multi-registry)
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-
-      - name: Build and push by digest (GHCR)
-        id: build-ghcr
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          outputs: |
+            type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+            type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digests
         run: |
           mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
-          dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
-          ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
-          touch "/tmp/digests/dockerhub/${dockerhub_digest#sha256:}"
-          touch "/tmp/digests/ghcr/${ghcr_digest#sha256:}"
+          digest="${{ steps.build.outputs.digest }}"
+          echo "Built image with digest: ${digest}"
+          # The same digest applies to both registries since it's the same build
+          touch "/tmp/digests/dockerhub/${digest#sha256:}"
+          touch "/tmp/digests/ghcr/${digest#sha256:}"
+          
+      - name: Verify GHCR push
+        run: |
+          digest="${{ steps.build.outputs.digest }}"
+          echo "Verifying image exists in GHCR: ghcr.io/uangkuid/uangku-be@${digest}"
+          # Give GHCR a moment to process the push
+          sleep 5
+          docker buildx imagetools inspect "ghcr.io/uangkuid/uangku-be@${digest}" || {
+            echo "ERROR: Image not found in GHCR after push!"
+            exit 1
+          }
 
       - name: Upload Docker Hub digest
         uses: actions/upload-artifact@v4
