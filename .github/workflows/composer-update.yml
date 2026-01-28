@@ -1,0 +1,74 @@
+name: Update Composer Dependencies
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-composer:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, filter, gd, json, openssl
+          coverage: none
+      
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      
+      - name: Run composer update
+        run: composer update --no-interaction --prefer-dist --no-progress
+      
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code composer.lock || echo "changed=true" >> $GITHUB_OUTPUT
+      
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update composer dependencies'
+          title: 'chore: Update Composer Dependencies'
+          body: |
+            ## Composer Dependencies Update
+            
+            This PR updates the composer dependencies to their latest versions.
+            
+            ### Changes
+            - Updated `composer.lock` file with latest compatible versions
+            
+            ### How to Test
+            1. Review the changes in `composer.lock`
+            2. Check for any breaking changes in the updated packages
+            3. Run tests to ensure everything still works
+            
+            ---
+            *This PR was automatically created by the Composer Update workflow.*
+          branch: composer-update-${{ github.run_number }}
+          base: main
+          delete-branch: true
+      
+      - name: No changes detected
+        if: steps.git-check.outputs.changed != 'true'
+        run: echo "No changes detected in composer.lock. All dependencies are up to date."
