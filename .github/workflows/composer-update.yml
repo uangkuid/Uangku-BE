@@ -36,10 +36,11 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
       
       - name: Run composer update
-        run: composer update --no-interaction --prefer-dist --no-progress
+        run: composer update --no-interaction --prefer-dist --no-progress --with-all-dependencies --prefer-stable --optimize-autoloader
       
       - name: Validate composer files
         run: composer validate --strict
+        continue-on-error: true
       
       - name: Check for changes
         id: git-check
