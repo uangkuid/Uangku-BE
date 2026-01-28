@@ -1,7 +1,7 @@
 # CI/CD Multi-Architecture Configuration Changes
 
 ## Summary
-This document describes the changes made to the CI/CD pipeline to support multi-architecture builds only for tagged releases, while using AMD64-only builds for development pushes.
+This document describes the changes made to the CI/CD pipeline to support multi-architecture builds (AMD64 + ARM64) for all deployments.
 
 ## Changes Made
 
@@ -20,7 +20,7 @@ This document describes the changes made to the CI/CD pipeline to support multi-
 
 #### Build Strategy
 
-The workflow now uses different configurations based on the trigger type:
+The workflow builds multi-architecture images (AMD64 + ARM64) for all trigger types:
 
 **For Tag Pushes:**
 - Platforms: `linux/amd64,linux/arm64` (multi-architecture)
@@ -34,15 +34,12 @@ The workflow now uses different configurations based on the trigger type:
   - `ghcr.io/uangkuid/uangku-be:v1.0.0`
 
 **For Branch Pushes (main):**
-- Platforms: `linux/amd64` (AMD64 only, faster builds)
+- Platforms: `linux/amd64,linux/arm64` (multi-architecture)
 - Docker tags:
   - `dev`
-  - `dev-{short-sha}` (7 characters)
 - Example: Pushing to main will build and push:
   - `oratakashi/uangku-be:dev`
-  - `oratakashi/uangku-be:dev-abc1234`
   - `ghcr.io/uangkuid/uangku-be:dev`
-  - `ghcr.io/uangkuid/uangku-be:dev-abc1234`
 
 **For Manual Workflow Dispatch:**
 - Platforms: `linux/amd64,linux/arm64` (multi-architecture)
@@ -52,12 +49,10 @@ The workflow now uses different configurations based on the trigger type:
 
 #### `docker-compose-dev.yaml`
 - **Changed**: Image tag from `latest` to `dev`
-- **Added**: Platform specification to force AMD64 architecture (since `dev` images are AMD64-only)
 - This ensures the development environment uses the latest development build
   ```yaml
   api:
     image: oratakashi/uangku-be:dev
-    platform: linux/amd64
   ```
 
 #### `docker-compose.yaml` (Production)
@@ -66,7 +61,7 @@ The workflow now uses different configurations based on the trigger type:
 ## Usage
 
 ### For Development Workflow
-1. Push to `main` branch → Builds AMD64-only image with `dev` tag
+1. Push to `main` branch → Builds multi-architecture image (AMD64 + ARM64) with `dev` tag
 2. Use `docker-compose-dev.yaml` to run the latest dev build:
    ```bash
    docker-compose -f docker-compose-dev.yaml up
@@ -87,7 +82,7 @@ The workflow now uses different configurations based on the trigger type:
 
 ## Benefits
 
-1. **Faster Development Builds**: AMD64-only builds are faster for development iterations
-2. **Multi-Architecture for Production**: ARM64 support for production deployments (e.g., AWS Graviton, Apple Silicon)
+1. **Multi-Architecture Support**: All builds support both AMD64 and ARM64 for maximum compatibility
+2. **Production-Ready Dev Builds**: Development images use the same architecture as production
 3. **Clear Separation**: `dev` tag for development, `latest` tag for production
 4. **Version Tracking**: Git tags are preserved as Docker image tags for easier version management

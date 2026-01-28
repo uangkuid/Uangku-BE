@@ -18,7 +18,63 @@ env:
   GHCR_IMAGE: ghcr.io/uangkuid/uangku-be
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    name: Unit Tests
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, filter, gd, json, openssl
+        coverage: none
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Dependencies
+      run: composer install --no-interaction --prefer-dist --no-progress
+
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Create SQLite database
+      run: touch database/database.sqlite
+
+    - name: Run migrations
+      run: php artisan migrate --force
+
+    - name: Set testing environment variables
+      run: |
+        echo "MAIN_SECRET_KEY=test_secret_key_12345" >> .env
+        echo "MAIN_SALT_KEY=test_salt_key_67890" >> .env
+        echo "JWT_SECRET=test_jwt_secret_key_for_testing_32chars" >> .env
+
+    - name: Run Unit Tests
+      run: php artisan test --testsuite=Unit
+
+    - name: Run Feature Tests
+      run: php artisan test --testsuite=Feature
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +83,7 @@ jobs:
             runner: ubuntu-latest
           - platform: linux/arm64
             runner: armbian
+#            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -100,7 +157,7 @@ jobs:
       - name: Upload Docker Hub digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-dockerhub-${{ matrix.runner }}
+          name: digests-dockerhub-${{ strategy.job-index }}
           path: /tmp/digests/dockerhub/*
           if-no-files-found: error
           retention-days: 1
@@ -108,7 +165,7 @@ jobs:
       - name: Upload GHCR digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-ghcr-${{ matrix.runner }}
+          name: digests-ghcr-${{ strategy.job-index }}
           path: /tmp/digests/ghcr/*
           if-no-files-found: error
           retention-days: 1
@@ -163,10 +220,9 @@ jobs:
             echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "PRIMARY_TAG=latest" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "push" ]]; then
-            # Branch push (dev) - use dev tag with SHA
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:dev -t ${{ env.DOCKERHUB_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:dev -t ${{ env.GHCR_IMAGE }}:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            # Branch push (dev) - use dev tag only (no SHA suffix)
+            echo "DOCKERHUB_TAGS=-t ${{ env.DOCKERHUB_IMAGE }}:dev" >> $GITHUB_OUTPUT
+            echo "GHCR_TAGS=-t ${{ env.GHCR_IMAGE }}:dev" >> $GITHUB_OUTPUT
             echo "PRIMARY_TAG=dev" >> $GITHUB_OUTPUT
           else
             # Manual workflow dispatch
