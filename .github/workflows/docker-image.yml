@@ -135,6 +135,27 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+
+      - name: Verify Docker Hub push
+        run: |
+          digest="${{ steps.build-dockerhub.outputs.digest }}"
+          echo "Verifying Docker Hub image: ${{ env.DOCKERHUB_IMAGE }}@${digest}"
+          # Retry verification up to 3 times with delays
+          for i in 1 2 3; do
+            echo "Verification attempt $i..."
+            if docker buildx imagetools inspect "${{ env.DOCKERHUB_IMAGE }}@${digest}"; then
+              echo "✓ Docker Hub image verified successfully"
+              break
+            fi
+            if [ $i -lt 3 ]; then
+              echo "Image not yet available, waiting $((i * 5)) seconds..."
+              sleep $((i * 5))
+            else
+              echo "ERROR: Docker Hub image not found after multiple attempts!"
+              exit 1
+            fi
+          done
 
       - name: Build and push by digest (GHCR)
         id: build-ghcr
@@ -145,12 +166,36 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify GHCR push
+        run: |
+          digest="${{ steps.build-ghcr.outputs.digest }}"
+          echo "Verifying GHCR image: ${{ env.GHCR_IMAGE }}@${digest}"
+          # Retry verification up to 3 times with delays
+          for i in 1 2 3; do
+            echo "Verification attempt $i..."
+            if docker buildx imagetools inspect "${{ env.GHCR_IMAGE }}@${digest}"; then
+              echo "✓ GHCR image verified successfully"
+              break
+            fi
+            if [ $i -lt 3 ]; then
+              echo "Image not yet available, waiting $((i * 5)) seconds..."
+              sleep $((i * 5))
+            else
+              echo "ERROR: GHCR image not found after multiple attempts!"
+              exit 1
+            fi
+          done
 
       - name: Export digests
         run: |
           mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
           dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
           ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
+          echo "Docker Hub digest: ${dockerhub_digest}"
+          echo "GHCR digest: ${ghcr_digest}"
           touch "/tmp/digests/dockerhub/${dockerhub_digest#sha256:}"
           touch "/tmp/digests/ghcr/${ghcr_digest#sha256:}"
 
