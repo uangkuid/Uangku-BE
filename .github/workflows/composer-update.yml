@@ -20,7 +20,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.2'
           extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, filter, gd, json, openssl
           coverage: none
       
@@ -32,16 +32,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
       
       - name: Run composer update
         run: composer update --no-interaction --prefer-dist --no-progress
       
+      - name: Validate composer files
+        run: composer validate --strict
+      
       - name: Check for changes
         id: git-check
         run: |
-          git diff --exit-code composer.lock || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --exit-code composer.json composer.lock || echo "changed=true" >> $GITHUB_OUTPUT
       
       - name: Create Pull Request
         if: steps.git-check.outputs.changed == 'true'
@@ -57,6 +60,7 @@ jobs:
             
             ### Changes
             - Updated `composer.lock` file with latest compatible versions
+            - Changes may also include updates to `composer.json` if package constraints were modified
             
             ### How to Test
             1. Review the changes in `composer.lock`
@@ -71,4 +75,4 @@ jobs:
       
       - name: No changes detected
         if: steps.git-check.outputs.changed != 'true'
-        run: echo "No changes detected in composer.lock. All dependencies are up to date."
+        run: echo "No changes detected in composer files. All dependencies are up to date."
