@@ -126,64 +126,79 @@ jobs:
             org.opencontainers.image.title=Uangku Backend
             org.opencontainers.image.description=Laravel-based backend API for Uangku application
 
-      - name: Build and push by digest (Multi-registry)
-        id: build
+      - name: Build and push by digest (Docker Hub)
+        id: build-dockerhub
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: |
-            type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-            type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.DOCKERHUB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Docker Hub push
+        run: |
+          digest="${{ steps.build-dockerhub.outputs.digest }}"
+          echo "Verifying Docker Hub image: docker.io/oratakashi/uangku-be@${digest}"
+          # Retry verification up to 3 times with delays
+          for i in 1 2 3; do
+            echo "Verification attempt $i..."
+            if docker buildx imagetools inspect "docker.io/oratakashi/uangku-be@${digest}"; then
+              echo "✓ Docker Hub image verified successfully"
+              break
+            fi
+            if [ $i -lt 3 ]; then
+              echo "Image not yet available, waiting $((i * 5)) seconds..."
+              sleep $((i * 5))
+            else
+              echo "ERROR: Docker Hub image not found after multiple attempts!"
+              exit 1
+            fi
+          done
+
+      - name: Build and push by digest (GHCR)
+        id: build-ghcr
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify GHCR push
+        run: |
+          digest="${{ steps.build-ghcr.outputs.digest }}"
+          echo "Verifying GHCR image: ghcr.io/uangkuid/uangku-be@${digest}"
+          # Retry verification up to 3 times with delays
+          for i in 1 2 3; do
+            echo "Verification attempt $i..."
+            if docker buildx imagetools inspect "ghcr.io/uangkuid/uangku-be@${digest}"; then
+              echo "✓ GHCR image verified successfully"
+              break
+            fi
+            if [ $i -lt 3 ]; then
+              echo "Image not yet available, waiting $((i * 5)) seconds..."
+              sleep $((i * 5))
+            else
+              echo "ERROR: GHCR image not found after multiple attempts!"
+              exit 1
+            fi
+          done
 
       - name: Export digests
         run: |
           mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
-          digest="${{ steps.build.outputs.digest }}"
-          echo "Built image with digest: ${digest}"
-          # The same digest applies to both registries since it's the same build
-          touch "/tmp/digests/dockerhub/${digest#sha256:}"
-          touch "/tmp/digests/ghcr/${digest#sha256:}"
-          
-      - name: Verify GHCR push
-        run: |
-          digest="${{ steps.build.outputs.digest }}"
-          echo "Verifying image exists in GHCR: ghcr.io/uangkuid/uangku-be@${digest}"
-          # Retry verification up to 3 times with increasing delays
-          for i in 1 2 3; do
-            echo "Verification attempt $i..."
-            if docker buildx imagetools inspect "ghcr.io/uangkuid/uangku-be@${digest}"; then
-              echo "✓ Image verified successfully in GHCR"
-              exit 0
-            fi
-            if [ $i -lt 3 ]; then
-              echo "Image not yet available, waiting $((i * 5)) seconds..."
-              sleep $((i * 5))
-            fi
-          done
-          echo "ERROR: Image not found in GHCR after multiple attempts!"
-          exit 1
-          
-      - name: Verify Docker Hub push
-        run: |
-          digest="${{ steps.build.outputs.digest }}"
-          echo "Verifying image exists in Docker Hub: docker.io/oratakashi/uangku-be@${digest}"
-          # Retry verification up to 3 times with increasing delays
-          for i in 1 2 3; do
-            echo "Verification attempt $i..."
-            if docker buildx imagetools inspect "docker.io/oratakashi/uangku-be@${digest}"; then
-              echo "✓ Image verified successfully in Docker Hub"
-              exit 0
-            fi
-            if [ $i -lt 3 ]; then
-              echo "Image not yet available, waiting $((i * 5)) seconds..."
-              sleep $((i * 5))
-            fi
-          done
-          echo "ERROR: Image not found in Docker Hub after multiple attempts!"
-          exit 1
+          dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
+          ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
+          echo "Docker Hub digest: ${dockerhub_digest}"
+          echo "GHCR digest: ${ghcr_digest}"
+          touch "/tmp/digests/dockerhub/${dockerhub_digest#sha256:}"
+          touch "/tmp/digests/ghcr/${ghcr_digest#sha256:}"
 
       - name: Upload Docker Hub digest
         uses: actions/upload-artifact@v4
