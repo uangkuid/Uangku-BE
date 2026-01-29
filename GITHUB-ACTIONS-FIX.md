@@ -12,7 +12,13 @@ Self-hosted runners persist their filesystem between workflow runs, unlike GitHu
 - **Merge step**: Tried to use all 11 digests, including SHA256s that no longer exist in the registry
 
 ### Solution
-Added `rm -rf /tmp/digests` before creating new digest files in the "Export digests" step. This ensures only current digests are uploaded as artifacts, preventing the merge step from referencing non-existent images.
+Implemented a two-part fix:
+
+1. **Unique Directory Per Run**: Use `/tmp/digests-{run_id}-{run_attempt}` instead of a static `/tmp/digests` path. This ensures each workflow run uses its own directory, preventing conflicts and eliminating stale files.
+
+2. **Concurrency Control**: Added workflow-level concurrency control with `group: docker-build-${{ github.ref }}` to prevent multiple workflow runs from executing simultaneously on the self-hosted runner, avoiding race conditions.
+
+This approach is safer and more robust than simply deleting `/tmp/digests`, which could accidentally delete files from concurrent workflow runs.
 
 ---
 
@@ -74,7 +80,8 @@ Kept separate build steps for each registry instead of using multi-output becaus
    - GHCR build: `cache-from: type=gha` + `cache-to: type=gha,mode=max`
 4. Updated digest export to log values for debugging
 5. Used `${{ env.DOCKERHUB_IMAGE }}` and `${{ env.GHCR_IMAGE }}` consistently
-6. **[2026-01-29]** Added cleanup step to remove stale digest files before exporting new ones (line 195)
+6. **[2026-01-29]** Added unique digest directory per workflow run to prevent stale files (lines 196-208)
+7. **[2026-01-29]** Added concurrency control to prevent race conditions (lines 16-18)
 
 ## Testing
 The fix can be tested by:
@@ -87,10 +94,11 @@ The fix can be tested by:
 2. Each platform builds and pushes to Docker Hub, then verifies
 3. Each platform builds and pushes to GHCR, then verifies  
 4. If verification fails, the build job fails immediately with a clear error
-5. **Digest directory is cleaned before each export** to prevent stale files on self-hosted runners
-6. Digests are exported as artifacts (exactly 1 per platform)
-7. Merge job downloads digests and creates multi-arch manifests
-8. Both Docker Hub and GHCR manifests should succeed
+5. **Each workflow run uses unique digest directories** to isolate from concurrent runs
+6. **Concurrency control ensures** only one workflow run executes at a time per branch/tag
+7. Digests are exported as artifacts (exactly 1 per platform)
+8. Merge job downloads digests and creates multi-arch manifests
+9. Both Docker Hub and GHCR manifests should succeed
 
 ## Benefits
 - **Reliability**: Catches push failures immediately instead of failing later in merge
