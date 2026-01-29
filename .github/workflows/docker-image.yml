@@ -13,6 +13,11 @@ on:
         required: false
         default: "latest"
 
+# Prevent concurrent workflow runs to avoid race conditions on self-hosted runners
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   DOCKERHUB_IMAGE: docker.io/oratakashi/uangku-be
   GHCR_IMAGE: ghcr.io/uangkuid/uangku-be
@@ -191,21 +196,22 @@ jobs:
 
       - name: Export digests
         run: |
-          # Clean up any existing digest files to avoid stale data on self-hosted runners
-          rm -rf /tmp/digests
-          mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
+          # Use unique directory per workflow run to avoid conflicts on self-hosted runners
+          digest_dir="/tmp/digests-${{ github.run_id }}-${{ github.run_attempt }}"
+          mkdir -p "${digest_dir}/dockerhub" "${digest_dir}/ghcr"
           dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
           ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
           echo "Docker Hub digest: ${dockerhub_digest}"
           echo "GHCR digest: ${ghcr_digest}"
-          touch "/tmp/digests/dockerhub/${dockerhub_digest#sha256:}"
-          touch "/tmp/digests/ghcr/${ghcr_digest#sha256:}"
+          touch "${digest_dir}/dockerhub/${dockerhub_digest#sha256:}"
+          touch "${digest_dir}/ghcr/${ghcr_digest#sha256:}"
+          echo "DIGEST_DIR=${digest_dir}" >> $GITHUB_ENV
 
       - name: Upload Docker Hub digest
         uses: actions/upload-artifact@v4
         with:
           name: digests-dockerhub-${{ strategy.job-index }}
-          path: /tmp/digests/dockerhub/*
+          path: ${{ env.DIGEST_DIR }}/dockerhub/*
           if-no-files-found: error
           retention-days: 1
 
@@ -213,7 +219,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: digests-ghcr-${{ strategy.job-index }}
-          path: /tmp/digests/ghcr/*
+          path: ${{ env.DIGEST_DIR }}/ghcr/*
           if-no-files-found: error
           retention-days: 1
 
