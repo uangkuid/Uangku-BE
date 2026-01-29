@@ -191,6 +191,8 @@ jobs:
 
       - name: Export digests
         run: |
+          # Clean up any existing digest files to avoid stale data on self-hosted runners
+          rm -rf /tmp/digests
           mkdir -p /tmp/digests/dockerhub /tmp/digests/ghcr
           dockerhub_digest="${{ steps.build-dockerhub.outputs.digest }}"
           ghcr_digest="${{ steps.build-ghcr.outputs.digest }}"
