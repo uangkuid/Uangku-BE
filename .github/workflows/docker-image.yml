@@ -223,6 +223,15 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Cleanup digest directory
+        if: always()
+        run: |
+          # Clean up the unique digest directory after upload
+          if [ -n "${{ env.DIGEST_DIR }}" ] && [ -d "${{ env.DIGEST_DIR }}" ]; then
+            rm -rf "${{ env.DIGEST_DIR }}"
+            echo "Cleaned up digest directory: ${{ env.DIGEST_DIR }}"
+          fi
+
   merge:
     runs-on: ubuntu-latest
     needs:

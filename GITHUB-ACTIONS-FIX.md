@@ -80,8 +80,9 @@ Kept separate build steps for each registry instead of using multi-output becaus
    - GHCR build: `cache-from: type=gha` + `cache-to: type=gha,mode=max`
 4. Updated digest export to log values for debugging
 5. Used `${{ env.DOCKERHUB_IMAGE }}` and `${{ env.GHCR_IMAGE }}` consistently
-6. **[2026-01-29]** Added unique digest directory per workflow run to prevent stale files (lines 196-208)
-7. **[2026-01-29]** Added concurrency control to prevent race conditions (lines 16-18)
+6. **[2026-01-29]** Added unique digest directory per workflow run to prevent stale files (lines 197-208)
+7. **[2026-01-29]** Added cleanup step to remove digest directory after upload (lines 226-233)
+8. **[2026-01-29]** Added concurrency control to prevent race conditions (lines 16-19)
 
 ## Testing
 The fix can be tested by:
@@ -106,7 +107,7 @@ The fix can be tested by:
 - **Debugging**: Clear error messages and digest logging make troubleshooting easier
 - **Maintainability**: Uses environment variables consistently
 - **Resilience**: Retry logic handles transient registry issues
-- **Self-hosted runner compatibility**: Cleans up stale files to prevent issues on persistent runners
+- **Self-hosted runner compatibility**: Prevents stale file conflicts on persistent runners by using unique directories per run
 
 ## Related Documentation
 - [Docker Multi-Platform Builds](https://docs.docker.com/build/ci/github-actions/multi-platform/)
