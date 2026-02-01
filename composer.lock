@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "323b2ce88c7d59e56a1d93af04e8e93b",
+    "content-hash": "48cfe3fe4ebf0a22c1d9b96907fef230",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -6082,24 +6082,24 @@
         },
         {
             "name": "spatie/color",
-            "version": "1.8.0",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/color.git",
-                "reference": "142af7fec069a420babea80a5412eb2f646dcd8c"
+                "reference": "6f24f3cd4504c4e7f55353062b88e29e9eccc1b5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/color/zipball/142af7fec069a420babea80a5412eb2f646dcd8c",
-                "reference": "142af7fec069a420babea80a5412eb2f646dcd8c",
+                "url": "https://api.github.com/repos/spatie/color/zipball/6f24f3cd4504c4e7f55353062b88e29e9eccc1b5",
+                "reference": "6f24f3cd4504c4e7f55353062b88e29e9eccc1b5",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.3|^8.0"
+                "php": "^8.2"
             },
             "require-dev": {
-                "pestphp/pest": "^1.22",
-                "phpunit/phpunit": "^6.5||^9.0"
+                "pestphp/pest": "^3.7",
+                "phpunit/phpunit": "^11.5"
             },
             "type": "library",
             "autoload": {
@@ -6129,7 +6129,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/color/issues",
-                "source": "https://github.com/spatie/color/tree/1.8.0"
+                "source": "https://github.com/spatie/color/tree/v2.0.0"
             },
             "funding": [
                 {
@@ -6137,7 +6137,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-02-10T09:22:41+00:00"
+            "time": "2026-01-31T11:02:56+00:00"
         },
         {
             "name": "spatie/invade",
