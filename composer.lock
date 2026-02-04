@@ -9478,16 +9478,16 @@
     "packages-dev": [
         {
             "name": "barryvdh/laravel-debugbar",
-            "version": "v4.0.4",
+            "version": "v4.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fruitcake/laravel-debugbar.git",
-                "reference": "ea43bac863ecfb8f9f0d407b130a561f19901349"
+                "reference": "1da86437d28f36baf3bb9841d77e74cb639372a9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fruitcake/laravel-debugbar/zipball/ea43bac863ecfb8f9f0d407b130a561f19901349",
-                "reference": "ea43bac863ecfb8f9f0d407b130a561f19901349",
+                "url": "https://api.github.com/repos/fruitcake/laravel-debugbar/zipball/1da86437d28f36baf3bb9841d77e74cb639372a9",
+                "reference": "1da86437d28f36baf3bb9841d77e74cb639372a9",
                 "shasum": ""
             },
             "require": {
@@ -9561,7 +9561,7 @@
             ],
             "support": {
                 "issues": "https://github.com/fruitcake/laravel-debugbar/issues",
-                "source": "https://github.com/fruitcake/laravel-debugbar/tree/v4.0.4"
+                "source": "https://github.com/fruitcake/laravel-debugbar/tree/v4.0.5"
             },
             "funding": [
                 {
@@ -9573,7 +9573,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-29T12:03:23+00:00"
+            "time": "2026-01-29T19:18:02+00:00"
         },
         {
             "name": "fakerphp/faker",
