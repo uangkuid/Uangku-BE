@@ -5969,16 +5969,16 @@
         },
         {
             "name": "secondnetwork/blade-tabler-icons",
-            "version": "v3.40.1",
+            "version": "v3.41.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/secondnetwork/blade-tabler-icons.git",
-                "reference": "e834c9d26859596cab74a4cea56aaa39872e7adf"
+                "reference": "cd1f24b5680b74ca6a10451377f6b331b5e953bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/secondnetwork/blade-tabler-icons/zipball/e834c9d26859596cab74a4cea56aaa39872e7adf",
-                "reference": "e834c9d26859596cab74a4cea56aaa39872e7adf",
+                "url": "https://api.github.com/repos/secondnetwork/blade-tabler-icons/zipball/cd1f24b5680b74ca6a10451377f6b331b5e953bd",
+                "reference": "cd1f24b5680b74ca6a10451377f6b331b5e953bd",
                 "shasum": ""
             },
             "require": {
@@ -6021,9 +6021,9 @@
             ],
             "support": {
                 "issues": "https://github.com/secondnetwork/blade-tabler-icons/issues",
-                "source": "https://github.com/secondnetwork/blade-tabler-icons/tree/v3.40.1"
+                "source": "https://github.com/secondnetwork/blade-tabler-icons/tree/v3.41.0"
             },
-            "time": "2026-03-22T11:30:19+00:00"
+            "time": "2026-03-30T10:09:04+00:00"
         },
         {
             "name": "spatie/color",
