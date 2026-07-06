@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,6 +33,13 @@ class StaffsusPanelProvider extends PanelProvider
             ->id('staffsus')
             ->path('staffsus')
             ->login()
+            ->passwordReset()
+            ->profile(isSimple: false)
+            ->authPasswordBroker('staff')
+            ->multiFactorAuthentication([
+                AppAuthentication::make()->recoverable(),
+                EmailAuthentication::make(),
+            ], isRequired: false)
 //            ->colors([
 //                'primary' => Color::Sky,
 //            ])

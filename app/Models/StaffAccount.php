@@ -3,6 +3,12 @@
 namespace App\Models;
 
 use App\Observers\StaffAccountObserver;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\Email\Concerns\InteractsWithEmailAuthentication;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -17,9 +23,9 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
 #[ObservedBy([StaffAccountObserver::class])]
-class StaffAccount extends Authenticatable implements FilamentUser, JWTSubject
+class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasEmailAuthentication, JWTSubject
 {
-    use HasFactory, HasRoles, HasUuids, Notifiable;
+    use HasFactory, HasRoles, HasUuids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, InteractsWithEmailAuthentication, Notifiable;
 
     /**
      * Guard yang dipakai spatie/permission untuk role & permission staff.
@@ -91,6 +97,9 @@ class StaffAccount extends Authenticatable implements FilamentUser, JWTSubject
         'password',
         'role',
         'avatar',
+        'app_authentication_secret',
+        'app_authentication_recovery_codes',
+        'has_email_authentication',
         'created_at',
         'updated_at',
     ]; // customize sesuai kebutuhan

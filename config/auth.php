@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\StaffAccount;
+use App\Models\User;
+
 return [
 
     /*
@@ -43,7 +46,7 @@ return [
         'api' => [
             'driver' => 'jwt',
             'provider' => 'users',
-        ]
+        ],
     ],
 
     /*
@@ -66,13 +69,13 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => env('AUTH_MODEL', User::class),
         ],
 
         'staff' => [
             'driver' => 'cached_eloquent',
-            'model' => env('STAFF_AUTH_MODEL', App\Models\StaffAccount::class)
-        ]
+            'model' => env('STAFF_AUTH_MODEL', StaffAccount::class),
+        ],
 
         // 'users' => [
         //     'driver' => 'database',
@@ -102,6 +105,13 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'staff' => [
+            'provider' => 'staff',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
