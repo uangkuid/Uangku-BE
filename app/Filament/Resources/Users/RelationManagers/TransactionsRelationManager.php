@@ -2,18 +2,24 @@
 
 namespace App\Filament\Resources\Users\RelationManagers;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\ViewAction;
 use App\Models\Transaction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Zero-knowledge: amount/note/nama wallet terenkripsi RSA dengan public key user,
+ * server tidak bisa mendekripsi. Hanya metadata plaintext yang ditampilkan.
+ */
 class TransactionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'transactions';
@@ -27,46 +33,46 @@ class TransactionsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                \Filament\Schemas\Components\Group::make()
+                Group::make()
                     ->schema([
                         Section::make('Transaction Information')
                             ->schema([
                                 Placeholder::make('amount')
                                     ->label('Amount')
-                                    ->content(fn(Transaction $record): ?string => number_format($record->amount ?? 0, 0, ',', '.')),
+                                    ->content('🔒 Terenkripsi (zero-knowledge)'),
                                 Placeholder::make('note')
                                     ->label('Note')
-                                    ->content(fn(Transaction $record): ?string => $record->note)
+                                    ->content('🔒 Terenkripsi (zero-knowledge)')
                                     ->columnSpanFull(),
                                 Placeholder::make('category.name')
                                     ->label('Category')
-                                    ->content(fn(Transaction $record): ?string => $record->category?->name),
+                                    ->content(fn (Transaction $record): ?string => $record->category?->name),
                                 Placeholder::make('subCategory.name')
                                     ->label('Sub Category')
-                                    ->content(fn(Transaction $record): ?string => $record->subCategory?->name),
-                                Placeholder::make('wallet.name')
-                                    ->label('Wallet')
-                                    ->content(fn(Transaction $record): ?string => $record->wallet?->name),
+                                    ->content(fn (Transaction $record): ?string => $record->subCategory?->name),
+                                Placeholder::make('wallet_id')
+                                    ->label('Wallet ID')
+                                    ->content(fn (Transaction $record): ?string => $record->walletTransaction?->wallets),
                             ]),
                     ])
-                    ->columnSpan(['lg' => fn(?Transaction $record) => $record === null ? 3 : 2]),
+                    ->columnSpan(['lg' => fn (?Transaction $record) => $record === null ? 3 : 2]),
                 Section::make('General Information')
                     ->schema([
                         Placeholder::make('created_at')
                             ->label('Created at')
-                            ->content(fn(Transaction $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
+                            ->content(fn (Transaction $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                         Placeholder::make('updated_at')
                             ->label('Last modified at')
-                            ->content(fn(Transaction $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
+                            ->content(fn (Transaction $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
 
                         Placeholder::make('deleted_at')
                             ->label('Deleted at')
-                            ->content(fn(Transaction $record): ?string => $record->deleted_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s'))
-                            ->visible(fn(Transaction $record): bool => $record->deleted_at !== null),
+                            ->content(fn (Transaction $record): ?string => $record->deleted_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s'))
+                            ->visible(fn (Transaction $record): bool => $record->deleted_at !== null),
                     ])
                     ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?Transaction $record) => $record === null),
+                    ->hidden(fn (?Transaction $record) => $record === null),
             ])
             ->columns(3);
     }
@@ -74,14 +80,19 @@ class TransactionsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('note')
             ->columns([
                 TextColumn::make('amount')
-                    ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
-                    ->sortable(),
+                    ->label('Amount')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn () => '🔒 terenkripsi')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('note')
-                    ->limit(50)
-                    ->searchable(),
+                    ->label('Note')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn () => '🔒 terenkripsi')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category.name')
                     ->label('Category')
                     ->searchable()
@@ -91,10 +102,9 @@ class TransactionsRelationManager extends RelationManager
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                TextColumn::make('wallet.name')
-                    ->label('Wallet')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('walletTransaction.wallets')
+                    ->label('Wallet ID')
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -108,14 +118,11 @@ class TransactionsRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('categories')
                     ->label('Category')
                     ->relationship('category', 'name'),
-                Tables\Filters\SelectFilter::make('wallets')
-                    ->label('Wallet')
-                    ->relationship('wallet', 'name'),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('created_from')
+                        DatePicker::make('created_from')
                             ->label('Created from'),
-                        \Filament\Forms\Components\DatePicker::make('created_until')
+                        DatePicker::make('created_until')
                             ->label('Created until'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
