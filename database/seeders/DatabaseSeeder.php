@@ -13,10 +13,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-//        User::factory()->create([
-//            'name' => 'Test User',
-//            'email' => 'test@example.com',
-//        ]);
+        //        User::factory()->create([
+        //            'name' => 'Test User',
+        //            'email' => 'test@example.com',
+        //        ]);
         $this->call([
             UserSeeder::class,
             TransactionTypeSeeder::class,
@@ -24,7 +24,8 @@ class DatabaseSeeder extends Seeder
             SubCategorySeeder::class,
             WalletSeeder::class,
             WalletAccessSeeder::class,
-            StaffAccountSeeder::class
+            StaffAccountSeeder::class,
+            ShieldRoleSeeder::class,
         ]);
     }
 }
