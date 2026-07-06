@@ -39,7 +39,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL') . '/storage',
+            'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -58,13 +58,14 @@ return [
 
         'minio' => [
             'driver' => 's3',
-            'key'    => env('MINIO_ACCESS_KEY'),
+            'key' => env('MINIO_ACCESS_KEY'),
             'secret' => env('MINIO_SECRET_KEY'),
             'endpoint' => env('MINIO_ENDPOINT'),
             'region' => 'id-jakarta-1',
             'bucket' => env('MINIO_BUCKET'),
             'use_path_style_endpoint' => true,
-        ]
+            'throw' => false,
+        ],
 
     ],
 
