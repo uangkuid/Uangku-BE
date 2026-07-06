@@ -24,9 +24,10 @@ class ShieldRoleSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $matrix = [
-            // CS: lihat user.
+            // CS: lihat & kelola lifecycle user.
             'support' => [
                 'ViewAny:User', 'View:User',
+                'User:Suspend', 'User:Ban', 'User:VerifyEmail', 'User:ResetPin', 'User:ForceLogout',
             ],
             // Finance/Ops: lihat user.
             'finance' => [

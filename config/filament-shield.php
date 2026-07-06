@@ -232,7 +232,13 @@ return [
     |
     */
 
-    'custom_permissions' => [],
+    'custom_permissions' => [
+        'User:Suspend',
+        'User:Ban',
+        'User:VerifyEmail',
+        'User:ResetPin',
+        'User:ForceLogout',
+    ],
 
     /*
     |--------------------------------------------------------------------------
