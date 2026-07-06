@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.3",
         "ext-openssl": "*",
+        "bezhansalleh/filament-shield": "^4.2",
         "filament/filament": "^5.1",
         "laravel/framework": "^13.0",
         "laravel/octane": "^2.9",
@@ -17,6 +18,7 @@
         "resend/resend-laravel": "^1.1.0",
         "secondnetwork/blade-tabler-icons": "^3.33",
         "spatie/color": "^2.1",
+        "spatie/laravel-permission": "^7.4",
         "yaza/laravel-repository-service": "^7.0"
     },
     "require-dev": {
