@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Enums\UserStatus;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
@@ -75,6 +76,15 @@ class UserResource extends Resource
                                             'Unverified' => 'danger',
                                             default => 'gray',
                                         }),
+                                    TextEntry::make('status')
+                                        ->label('Account Status')
+                                        ->badge()
+                                        ->getStateUsing(fn ($record) => ($record->status ?? UserStatus::Active)->label())
+                                        ->color(fn ($record) => ($record->status ?? UserStatus::Active)->color()),
+                                    TextEntry::make('suspended_reason')
+                                        ->label('Suspension Reason')
+                                        ->placeholder('—')
+                                        ->visible(fn ($record) => filled($record->suspended_reason)),
                                 ]),
                                 Group::make([
                                     TextEntry::make('created_at')

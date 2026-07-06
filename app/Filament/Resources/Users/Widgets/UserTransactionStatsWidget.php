@@ -6,16 +6,16 @@ use App\Models\Transaction;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class UserTransactionStatsWidget extends BaseWidget
 {
     public ?Model $record = null;
-    
+
     protected function getStats(): array
     {
-        if (!$this->record instanceof User) {
+        if (! $this->record instanceof User) {
             return [];
         }
 
@@ -31,7 +31,7 @@ class UserTransactionStatsWidget extends BaseWidget
         // Get previous month for comparison
         $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
         $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
-        
+
         $previousMonthCount = Transaction::where('users', $this->record->id)
             ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->count();
