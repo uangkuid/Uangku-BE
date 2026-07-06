@@ -43,6 +43,7 @@ class ShieldRoleSeeder extends Seeder
             'engineering' => [
                 'ViewAny:SystemConfig', 'View:SystemConfig', 'Create:SystemConfig', 'Update:SystemConfig', 'Delete:SystemConfig', 'DeleteAny:SystemConfig',
                 'ViewAny:FeatureStatus', 'View:FeatureStatus', 'Create:FeatureStatus', 'Update:FeatureStatus', 'Delete:FeatureStatus', 'DeleteAny:FeatureStatus',
+                'ViewAny:AuditLog', 'View:AuditLog',
                 'View:UserRegistrationsChart',
             ],
         ];
