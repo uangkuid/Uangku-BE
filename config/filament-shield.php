@@ -238,6 +238,7 @@ return [
         'User:VerifyEmail',
         'User:ResetPin',
         'User:ForceLogout',
+        'Wallet:Freeze',
     ],
 
     /*
