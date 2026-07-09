@@ -2,64 +2,71 @@
 
 namespace App\Policies;
 
-use App\Models\StaffAccount;
-use App\Models\User;
+use Illuminate\Foundation\Auth\User as AuthUser;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class UserPolicy
 {
-    /**
-     * Determine whether the StaffAccount can view any models.
-     */
-    public function viewAny(StaffAccount $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true;
+        return $authUser->can('ViewAny:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can view the model.
-     */
-    public function view(StaffAccount $user, User $model): bool
+    public function view(AuthUser $authUser): bool
     {
-        return true;
+        return $authUser->can('View:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can create models.
-     */
-    public function create(StaffAccount $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Create:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can update the model.
-     */
-    public function update(StaffAccount $user, User $model): bool
+    public function update(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Update:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can delete the model.
-     */
-    public function delete(StaffAccount $user, User $model): bool
+    public function delete(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Delete:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can restore the model.
-     */
-    public function restore(StaffAccount $user, User $model): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('DeleteAny:User');
     }
 
-    /**
-     * Determine whether the StaffAccount can permanently delete the model.
-     */
-    public function forceDelete(StaffAccount $user, User $model): bool
+    public function restore(AuthUser $authUser): bool
     {
-        return false;
+        return $authUser->can('Restore:User');
     }
+
+    public function forceDelete(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDelete:User');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:User');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:User');
+    }
+
+    public function replicate(AuthUser $authUser): bool
+    {
+        return $authUser->can('Replicate:User');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:User');
+    }
+
 }

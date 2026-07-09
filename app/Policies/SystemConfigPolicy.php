@@ -1,67 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\SystemConfig;
-use App\Models\StaffAccount;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class SystemConfigPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(StaffAccount $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true;
-//        return $user->role === 'admin';
+        return $authUser->can('ViewAny:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(StaffAccount $user, SystemConfig $systemConfig): bool
+    public function view(AuthUser $authUser, SystemConfig $systemConfig): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('View:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(StaffAccount $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Create:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(StaffAccount $user, SystemConfig $systemConfig): bool
+    public function update(AuthUser $authUser, SystemConfig $systemConfig): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Update:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(StaffAccount $user, SystemConfig $systemConfig): bool
+    public function delete(AuthUser $authUser, SystemConfig $systemConfig): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Delete:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(StaffAccount $user, SystemConfig $systemConfig): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('DeleteAny:SystemConfig');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(StaffAccount $user, SystemConfig $systemConfig): bool
+    public function restore(AuthUser $authUser, SystemConfig $systemConfig): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Restore:SystemConfig');
     }
+
+    public function forceDelete(AuthUser $authUser, SystemConfig $systemConfig): bool
+    {
+        return $authUser->can('ForceDelete:SystemConfig');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:SystemConfig');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:SystemConfig');
+    }
+
+    public function replicate(AuthUser $authUser, SystemConfig $systemConfig): bool
+    {
+        return $authUser->can('Replicate:SystemConfig');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:SystemConfig');
+    }
+
 }
