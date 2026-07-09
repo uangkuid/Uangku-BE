@@ -9,10 +9,10 @@ use LaravelEasyRepository\Implementations\Eloquent;
 
 class TransactionRepositoryImplement extends Eloquent implements TransactionRepository
 {
-
     /**
      * Model class to be used in this repository for the common methods inside Eloquent
      * Don't remove or change $this->model variable name
+     *
      * @property Model|mixed $model;
      */
     protected Transaction $model;
@@ -24,27 +24,17 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
     /**
      * Create a new transaction.
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $transactionTypeId
-     * @param string $amount
-     * @param string|null $description
-     * @param string|null $family
-     * @param string|null $subCategoryId
-     * @param string|null $transactionId
-     * @return Transaction
      */
-    function createTransaction(
+    public function createTransaction(
         string $userId,
         string $categoryId,
         string $transactionTypeId,
         string $amount,
-        string $description = null,
-        string $family = null,
-        string $subCategoryId = null,
-        string $transactionId = null
-    ): Transaction
-    {
+        ?string $description = null,
+        ?string $family = null,
+        ?string $subCategoryId = null,
+        ?string $transactionId = null
+    ): Transaction {
         $data = [
             'users' => $userId,
             'categories' => $categoryId,
@@ -52,10 +42,6 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
             'amount' => $amount,
             'note' => $description,
         ];
-
-        if ($family) {
-            $data['families'] = $family;
-        }
 
         if ($subCategoryId) {
             $data['sub_categories'] = $subCategoryId;
@@ -70,23 +56,17 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
     /**
      * Update an existing transaction.
-     * @param string $id
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $walletId
-     * @param string $amount
-     * @param string|null $description
-     * @param string|null $subCategoryId
+     *
+     * @param  string  $walletId
      */
     public function updateTransaction(
-        string  $id,
-        string  $userId,
-        string  $categoryId,
-        string  $amount,
+        string $id,
+        string $userId,
+        string $categoryId,
+        string $amount,
         ?string $description = null,
         ?string $subCategoryId = null
-    )
-    {
+    ) {
         $data = [
             'users' => $userId,
             'categories' => $categoryId,
@@ -106,10 +86,8 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
     /**
      * Get a transaction by its ID.
-     * @param string $id
-     * @return Transaction|null
      */
-    function getDetailTransaction(string $id): ?Transaction
+    public function getDetailTransaction(string $id): ?Transaction
     {
         return $this->model
             ->select([
@@ -121,7 +99,7 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
                 'note',
                 'sub_categories',
                 'created_at',
-                'updated_at'
+                'updated_at',
             ])
             ->where('id', $id)
             ->first();
@@ -129,10 +107,8 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
     /**
      * Delete a transaction.
-     * @param string $id
-     * @return void
      */
-    function deleteTransaction(string $id): void
+    public function deleteTransaction(string $id): void
     {
         $this->model->where('id', $id)
             ->delete();
@@ -140,18 +116,8 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
 
     /**
      * Get a paginated list of transactions for a user.
-     * @param string $userId
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $familyId
-     * @param string|null $search
-     * @param string|null $categoryId
-     * @param string|null $transactionTypeId
-     * @param string|null $walletId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getTransactionPaging(
+    public function getTransactionPaging(
         string $userId,
         string $startDate,
         string $endDate,
@@ -161,8 +127,7 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
         ?string $transactionTypeId = null,
         ?string $walletId = null,
         int $perPage = 10
-    ): LengthAwarePaginator
-    {
+    ): LengthAwarePaginator {
         return $this->model
             ->select([
                 'id',
@@ -173,14 +138,14 @@ class TransactionRepositoryImplement extends Eloquent implements TransactionRepo
                 'note',
                 'sub_categories',
                 'created_at',
-                'updated_at'
+                'updated_at',
             ])
             ->where('users', $userId)
             ->when($familyId, function ($query) use ($familyId) {
                 return $query->where('families', $familyId);
             })
             ->when($search, function ($query) use ($search) {
-                return $query->where('note', 'like', '%' . $search . '%');
+                return $query->where('note', 'like', '%'.$search.'%');
             })
             ->when($categoryId, function ($query) use ($categoryId) {
                 return $query->where('categories', $categoryId);

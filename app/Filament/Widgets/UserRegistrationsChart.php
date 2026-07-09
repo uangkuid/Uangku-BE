@@ -21,9 +21,9 @@ class UserRegistrationsChart extends ChartWidget
 
         // Get daily user registrations for current month
         $data = User::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('COUNT(*) as count')
-            )
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count')
+        )
             ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date')

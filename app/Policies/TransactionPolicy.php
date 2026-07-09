@@ -1,66 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
-use App\Models\StaffAccount;
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Transaction;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TransactionPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(StaffAccount $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true; // Staff can view transactions
+        return $authUser->can('ViewAny:Transaction');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(StaffAccount $user, Transaction $transaction): bool
+    public function view(AuthUser $authUser, Transaction $transaction): bool
     {
-        return true; // Staff can view individual transactions
+        return $authUser->can('View:Transaction');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(StaffAccount $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return false; // Staff cannot create transactions - read only
+        return $authUser->can('Create:Transaction');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(StaffAccount $user, Transaction $transaction): bool
+    public function update(AuthUser $authUser, Transaction $transaction): bool
     {
-        return false; // Staff cannot update transactions - read only
+        return $authUser->can('Update:Transaction');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(StaffAccount $user, Transaction $transaction): bool
+    public function delete(AuthUser $authUser, Transaction $transaction): bool
     {
-        return false; // Staff cannot delete transactions - read only
+        return $authUser->can('Delete:Transaction');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(StaffAccount $user, Transaction $transaction): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return false; // Staff cannot restore transactions - read only
+        return $authUser->can('DeleteAny:Transaction');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(StaffAccount $user, Transaction $transaction): bool
+    public function restore(AuthUser $authUser, Transaction $transaction): bool
     {
-        return false; // Staff cannot force delete transactions - read only
+        return $authUser->can('Restore:Transaction');
     }
+
+    public function forceDelete(AuthUser $authUser, Transaction $transaction): bool
+    {
+        return $authUser->can('ForceDelete:Transaction');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:Transaction');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:Transaction');
+    }
+
+    public function replicate(AuthUser $authUser, Transaction $transaction): bool
+    {
+        return $authUser->can('Replicate:Transaction');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:Transaction');
+    }
+
 }

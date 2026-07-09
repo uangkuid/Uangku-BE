@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -21,9 +21,7 @@ class Transaction extends BaseModel
         'users',
         'categories',
         'sub_categories',
-        'wallets',
         'transaction_type',
-        'families',
         'note',
         'amount',
         'deleted_at',
@@ -34,9 +32,7 @@ class Transaction extends BaseModel
         'users',
         'categories',
         'sub_categories',
-        'wallets',
         'transaction_type',
-        'families',
         'note',
         'amount',
         'created_at',
@@ -69,11 +65,6 @@ class Transaction extends BaseModel
         return $this->belongsTo(User::class, 'users');
     }
 
-    public function wallet(): BelongsTo
-    {
-        return $this->belongsTo(Wallet::class, 'wallets');
-    }
-
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'categories');
@@ -84,9 +75,13 @@ class Transaction extends BaseModel
         return $this->belongsTo(SubCategory::class, 'sub_categories');
     }
 
-    public function family(): BelongsTo
+    /**
+     * transactions has no direct wallet/family FK; the link lives on wallet_transactions
+     * (wallet_transactions.transaction_id -> transactions.id, wallet_transactions.wallets -> wallets.id).
+     */
+    public function walletTransaction(): HasOne
     {
-        return $this->belongsTo(Family::class, 'families');
+        return $this->hasOne(WalletTransaction::class, 'transaction_id');
     }
 
     public function transactionType(): BelongsTo

@@ -24,14 +24,24 @@ class ShieldRoleSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $matrix = [
-            // CS: lihat & kelola lifecycle user.
+            // CS: lihat & kelola lifecycle user, investigasi transaksi/wallet/family (metadata-only).
             'support' => [
                 'ViewAny:User', 'View:User',
                 'User:Suspend', 'User:Ban', 'User:VerifyEmail', 'User:ResetPin', 'User:ForceLogout',
+                'ViewAny:Transaction', 'View:Transaction',
+                'ViewAny:Wallet', 'View:Wallet',
+                'ViewAny:Family', 'View:Family',
+                'View:UserRegistrationsChart', 'View:OperationsStatsOverview',
+                'View:TransactionsPerDayChart', 'View:TransactionTypeDistributionChart',
             ],
-            // Finance/Ops: lihat user.
+            // Finance/Ops: lihat user, transaksi/wallet/family (metadata-only) + freeze wallet penyalahgunaan.
             'finance' => [
                 'ViewAny:User', 'View:User',
+                'ViewAny:Transaction', 'View:Transaction',
+                'ViewAny:Wallet', 'View:Wallet', 'Wallet:Freeze',
+                'ViewAny:Family', 'View:Family',
+                'View:UserRegistrationsChart', 'View:OperationsStatsOverview',
+                'View:TransactionsPerDayChart', 'View:TransactionTypeDistributionChart',
             ],
             // Marketing/Product: kelola feature flag & kategori, lihat metrik.
             'marketing' => [
