@@ -3,12 +3,12 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Helpers\EncryptionHelper;
+use App\Helpers\StorageHelper;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
 
 class UsersTable
 {
@@ -25,11 +25,13 @@ class UsersTable
                     ->visibility('private') // Mengatur visibilitas gambar menjadi privat
                     ->getStateUsing(function ($record) {
                         if ($record->avatar) {
-                            return Storage::disk('minio')->temporaryUrl(
+                            return StorageHelper::temporaryUrl(
+                                'minio',
                                 "avatar/{$record->id}/{$record->avatar}",
                                 now()->addMinutes(60)
                             );
                         }
+
                         return null;
                     })
                     ->imageSize(40)
@@ -37,14 +39,15 @@ class UsersTable
                     ->toggleable(),
                 TextColumn::make('email')
                     ->label('Email')
-                    ->formatStateUsing(fn($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
+                    ->formatStateUsing(fn ($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         // Cek apakah input merupakan email valid
-                        if (!filter_var($search, FILTER_VALIDATE_EMAIL)) {
+                        if (! filter_var($search, FILTER_VALIDATE_EMAIL)) {
                             return $query; // Skip filter, biar nggak error dan tetap bisa search lainnya
                         }
+
                         return $query->whereHas('user', function ($q) use ($search) {
-                            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+                            $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
                             $q->where('email', EncryptionHelper::encryptAsString(
                                 data: $search,
                                 key: EncryptionHelper::getSystemSecretKey(),
@@ -70,12 +73,12 @@ class UsersTable
                 //
             ])
             ->recordActions([
-//                EditAction::make(),
+                //                EditAction::make(),
             ])
             ->toolbarActions([
-//                BulkActionGroup::make([
-//                    DeleteBulkAction::make(),
-//                ]),
+                //                BulkActionGroup::make([
+                //                    DeleteBulkAction::make(),
+                //                ]),
             ]);
     }
 }
