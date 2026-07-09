@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', [
             EnsureUserIsActive::class,
         ]);
+        $middleware->trustProxies(at: '*');
+
         $middleware->appendToGroup('family', [
             FamilyMiddleware::class,
         ]);
