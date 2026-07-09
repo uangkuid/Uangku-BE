@@ -3,18 +3,19 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable, HasUuids;
+    use HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -25,18 +26,26 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
-        'email_verified_at'
+        'email_verified_at',
+        'status',
+        'suspended_at',
+        'suspended_reason',
     ];
 
+    // Kolom baru WAJIB ada di sini, jika tidak newQuery() akan men-drop-nya.
     protected $defaultSelect = [
         'id',
         'name',
         'email',
         'password',
         'email_verified_at',
+        'status',
+        'suspended_at',
+        'suspended_reason',
         'avatar',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'deleted_at',
     ];
 
     public function newQuery(): Builder
@@ -72,6 +81,8 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => UserStatus::class,
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -93,17 +104,19 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            "data" => [
-                "user_id" => $this->id
-            ]
+            'data' => [
+                'user_id' => $this->id,
+            ],
         ];
     }
 
-    public function familyAccess(): HasMany {
+    public function familyAccess(): HasMany
+    {
         return $this->hasMany(FamilyMember::class, 'users');
     }
 
-    public function userKey(): HasMany {
+    public function userKey(): HasMany
+    {
         return $this->hasMany(UserKey::class, 'users');
     }
 

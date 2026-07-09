@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
-use App\Helpers\EncryptionHelper;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Resources\Users\Widgets\UserTransactionStatsWidget;
+use App\Helpers\EncryptionHelper;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewUser extends ViewRecord

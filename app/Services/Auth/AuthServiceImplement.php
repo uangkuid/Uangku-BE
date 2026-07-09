@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Enums\OtpType;
+use App\Enums\UserStatus;
 use App\Exceptions\AuthException;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
@@ -21,7 +22,6 @@ use Random\RandomException;
 
 class AuthServiceImplement extends Service implements AuthService
 {
-
     /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
@@ -29,29 +29,22 @@ class AuthServiceImplement extends Service implements AuthService
     protected UserRepository $mainRepository;
 
     protected RedisRepository $redisRepository;
+
     protected S3Repository $s3Repository;
 
     public function __construct(
         UserRepository $mainRepository,
         RedisRepository $redisRepository,
         S3Repository $s3Repository
-    )
-    {
+    ) {
         $this->mainRepository = $mainRepository;
         $this->redisRepository = $redisRepository;
         $this->s3Repository = $s3Repository;
     }
 
-
     /**
      * Register a new user.
-     * @param string $name
-     * @param string $email
-     * @param string $password
-     * @param string $otp
-     * @param string $uuid
-     * @param bool $isSeeder
-     * @return array
+     *
      * @throws AuthException
      * @throws Exception
      */
@@ -61,49 +54,48 @@ class AuthServiceImplement extends Service implements AuthService
         string $password,
         string $otp,
         string $uuid,
-        bool   $isSeeder = false
-    ): array
-    {
+        bool $isSeeder = false
+    ): array {
         /**
          * Prepare data before create account
          */
-        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
         $encryptedEmail = EncryptionHelper::encryptAsString(
             data: $email,
             key: EncryptionHelper::getSystemSecretKey(),
             iv: $staticIv,
         );
         $asymmetricKey = EncryptionHelper::generateAsymmetricKey();
-        $rawPublicKey = base64_decode($asymmetricKey["public"]);
+        $rawPublicKey = base64_decode($asymmetricKey['public']);
         $secretKey = EncryptionHelper::generateUsersSecretKey();
         $otpKey = OtpType::Register;
 
         /**
          * Skip checking OTP if seeder
          */
-        if (!$isSeeder) {
+        if (! $isSeeder) {
             $otpData = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
 
-            Log::info("OTP Data: ", [
-                "otpData" => $otpData,
-                "email" => $email,
+            Log::info('OTP Data: ', [
+                'otpData' => $otpData,
+                'email' => $email,
             ]);
 
             /**
              * Check if email address not exist in redis throw error
              */
             if ($otpData == null) {
-                throw new AuthException("Pre-register expired please try again!");
+                throw new AuthException('Pre-register expired please try again!');
             }
 
             $otpData = json_decode($otpData, true);
 
             if ($otpData['otp'] != $otp) {
-                throw new AuthException("Invalid OTP!");
+                throw new AuthException('Invalid OTP!');
             }
 
             if ($otpData['uuid'] != $uuid) {
-                throw new AuthException("Illegal OTP access!");
+                throw new AuthException('Illegal OTP access!');
             }
 
             $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
@@ -116,9 +108,9 @@ class AuthServiceImplement extends Service implements AuthService
 
         $isExist = $this->mainRepository->isEmailExist($encryptedEmail);
 
-        //Throw error when email already taken
+        // Throw error when email already taken
         if ($isExist) {
-            throw new AuthException("Email already taken!");
+            throw new AuthException('Email already taken!');
         }
 
         $user = $this->mainRepository->create([
@@ -132,24 +124,19 @@ class AuthServiceImplement extends Service implements AuthService
         $refreshToken = TokenHelper::generateRefreshToken($user);
 
         return [
-            "user" => $user,
-            "public_key" => $asymmetricKey['public'],
-            "private_key" => $asymmetricKey['private'],
-            "raw_public_key" => $rawPublicKey,
-            "secret_key" => $secretKey,
-            "token" => $accessToken,
-            "refresh_token" => $refreshToken,
+            'user' => $user,
+            'public_key' => $asymmetricKey['public'],
+            'private_key' => $asymmetricKey['private'],
+            'raw_public_key' => $rawPublicKey,
+            'secret_key' => $secretKey,
+            'token' => $accessToken,
+            'refresh_token' => $refreshToken,
         ];
     }
 
     /**
      * Save the user's public and private keys.
-     * @param string $userId
-     * @param string $publicKey
-     * @param string $privateKey
-     * @param string $secretKey
-     * @param string $password
-     * @return UserKey
+     *
      * @throws Exception
      */
     public function saveUserKey(string $userId, string $publicKey, string $privateKey, string $secretKey, string $password): UserKey
@@ -168,16 +155,15 @@ class AuthServiceImplement extends Service implements AuthService
 
     /**
      * Get the user's public and private keys.
-     * @param string $userId
-     * @return UserKey
+     *
      * @throws AuthException
      */
-    function getUserKey(string $userId): UserKey
+    public function getUserKey(string $userId): UserKey
     {
         $userKey = $this->mainRepository->getUserKey($userId);
 
         if ($userKey == null) {
-            throw new AuthException("User key not found!");
+            throw new AuthException('User key not found!');
         }
 
         return $userKey;
@@ -185,14 +171,15 @@ class AuthServiceImplement extends Service implements AuthService
 
     /**
      * Pre-register a new user. active for 5 minutes when expired user will delete automatically
-     * @param string $email
+     *
      * @return void
+     *
      * @throws AuthException
      * @throws Exception
      */
     public function preRegister(string $email)
     {
-        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
         $isExist = $this->mainRepository->isEmailExist(EncryptionHelper::encryptAsString(
             data: $email,
             key: EncryptionHelper::getSystemSecretKey(),
@@ -202,36 +189,33 @@ class AuthServiceImplement extends Service implements AuthService
         $otpKey = OtpType::Register;
 
         if ($isExist) {
-            throw new AuthException("Email already taken!");
+            throw new AuthException('Email already taken!');
         }
 
         $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
 
         if ($isExist != null) {
-            throw new AuthException("Email already taken!");
+            throw new AuthException('Email already taken!');
         }
 
         $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
-            "email" => $email,
-            "created_at" => now(),
+            'email' => $email,
+            'created_at' => now(),
         ]), (5 * 60)); // Store for 5 minutes
     }
 
     /**
      * Login a user.
-     * @param string $email
-     * @param string $password
-     * @param string $secretKey
-     * @return array
+     *
      * @throws AuthException
      * @throws Exception
      */
-    function login(string $email, string $password, string $secretKey): array
+    public function login(string $email, string $password, string $secretKey): array
     {
         /**
          * Prepare data before auth
          */
-        $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+        $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
 
         $encryptedEmail = EncryptionHelper::encryptAsString(
             data: $email,
@@ -239,68 +223,73 @@ class AuthServiceImplement extends Service implements AuthService
             iv: $staticIv,
         );
 
-        //get credentials from request
+        // get credentials from request
         $credentials = [
             'email' => $encryptedEmail,
             'password' => $password,
         ];
 
-        //if auth failed
-        if (!$token = auth()->guard('api')->attempt($credentials)) {
-            throw new AuthException("Wrong email or password!");
+        // if auth failed
+        if (! $token = auth()->guard('api')->attempt($credentials)) {
+            throw new AuthException('Wrong email or password!');
         }
 
         $user = auth()->guard('api')->user();
+
+        /**
+         * Blokir akun yang di-suspend / ban.
+         */
+        if ($user->status instanceof UserStatus && $user->status->isBlocked()) {
+            throw new AuthException('Akun Anda telah dinonaktifkan. Silakan hubungi dukungan.');
+        }
+
         /**
          * Validate secret key
          */
         $userKey = $this->mainRepository->getUserKey($user->id);
 
-        if ($userKey->hashed_key == null || !EncryptionHelper::validateSecretKey($secretKey, $userKey->hashed_key)) {
-            throw new AuthException("Invalid secret key!");
+        if ($userKey->hashed_key == null || ! EncryptionHelper::validateSecretKey($secretKey, $userKey->hashed_key)) {
+            throw new AuthException('Invalid secret key!');
         }
 
         $refresh_token = TokenHelper::generateRefreshToken($user);
 
-        if ($user->avatar != null && $user->avatar != "") {
+        if ($user->avatar != null && $user->avatar != '') {
             $avatar = $this->s3Repository->getData("avatar/{$user->id}", $user->avatar);
         } else {
             $avatar = null;
         }
 
         return [
-            "user" => $user,
-            "token" => $token,
-            "refresh_token" => $refresh_token,
-            "avatar" => $avatar,
+            'user' => $user,
+            'token' => $token,
+            'refresh_token' => $refresh_token,
+            'avatar' => $avatar,
         ];
     }
 
     /**
      * Logout a user. and revoke the token
-     * @param string $token
-     * @param string $refreshToken
-     * @return bool
+     *
      * @throws AuthException
      */
-    function logout(string $token, string $refreshToken): bool
+    public function logout(string $token, string $refreshToken): bool
     {
         return JWTAuth::setToken($token)->invalidate() && JWTAuth::setToken($refreshToken)->invalidate();
     }
 
     /**
      * Pre change password. active for 5 minutes when expired session will delete automatically
-     * @param $token
-     * @return void
+     *
      * @throws AuthException
      * @throws Exception|SecurityException
      */
-    function preChangePassword($token): void
+    public function preChangePassword($token): void
     {
         $user = JWTAuth::setToken($token)->toUser();
 
         if ($user == null) {
-            throw new AuthException("Invalid token");
+            throw new AuthException('Invalid token');
         }
 
         $otpKey = OtpType::ChangePassword;
@@ -311,21 +300,15 @@ class AuthServiceImplement extends Service implements AuthService
         );
 
         $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
-            "email" => $email,
-            "created_at" => now(),
+            'email' => $email,
+            'created_at' => now(),
         ]), (5 * 60)); // Store for 5 minutes
     }
 
     /**
-     * @param string $token
-     * @param string $oldPassword
-     * @param string $newPassword
-     * @param string $otp
-     * @param string $uuid
-     * @return User
      * @throws AuthException|SecurityException
      */
-    function changePassword(string $token, string $oldPassword, string $newPassword, string $otp, string $uuid): User
+    public function changePassword(string $token, string $oldPassword, string $newPassword, string $otp, string $uuid): User
     {
         $otpKey = OtpType::ChangePassword;
         $user = JWTAuth::setToken($token)->toUser();
@@ -340,7 +323,7 @@ class AuthServiceImplement extends Service implements AuthService
          * Check if email address not exist in redis throw error
          */
         if ($isExist == null) {
-            throw new AuthException("Change password session expired please try again!");
+            throw new AuthException('Change password session expired please try again!');
         }
 
         $credentials = [
@@ -351,18 +334,18 @@ class AuthServiceImplement extends Service implements AuthService
         /**
          * Check if old password is correct
          */
-        if (!auth()->guard('api')->attempt($credentials)) {
-            throw new AuthException("Wrong email or password!");
+        if (! auth()->guard('api')->attempt($credentials)) {
+            throw new AuthException('Wrong email or password!');
         }
 
         $otpData = json_decode($this->redisRepository->getRedis("{$otpKey->value}:{$email}"), true);
 
         if ($otpData['otp'] != $otp) {
-            throw new AuthException("Invalid OTP!");
+            throw new AuthException('Invalid OTP!');
         }
 
         if ($otpData['uuid'] != $uuid) {
-            throw new AuthException("Illegal OTP access!");
+            throw new AuthException('Illegal OTP access!');
         }
 
         $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
@@ -377,30 +360,29 @@ class AuthServiceImplement extends Service implements AuthService
 
     /**
      * Forgot password. active for 5 minutes when expired session will delete automatically
-     * @param string $email
-     * @return void
+     *
      * @throws AuthException
      * @throws EncryptionException|RandomException
      */
-    function forgotPassword(string $email): void
+    public function forgotPassword(string $email): void
     {
         $encryptedEmail = EncryptionHelper::encryptAsString(
             data: $email,
             key: EncryptionHelper::getSystemSecretKey(),
-            iv: env("MAIN_STATIC_IV"),
+            iv: env('MAIN_STATIC_IV'),
         );
 
         $isExist = $this->mainRepository->isEmailExist($encryptedEmail);
 
-        if (!$isExist) {
-            throw new AuthException("Email not found!");
+        if (! $isExist) {
+            throw new AuthException('Email not found!');
         }
 
         $otpKey = OtpType::ForgotPassword;
 
         $this->redisRepository->storeRedis("{$otpKey->value}:{$email}", json_encode([
-            "email" => $email,
-            "created_at" => now(),
+            'email' => $email,
+            'created_at' => now(),
         ]), (5 * 60)); // Store for 5 minutes
     }
 
@@ -409,31 +391,31 @@ class AuthServiceImplement extends Service implements AuthService
      * @throws RandomException
      * @throws AuthException
      */
-    function resetPassword(string $email, string $newPassword, string $otp, string $uuid): User
+    public function resetPassword(string $email, string $newPassword, string $otp, string $uuid): User
     {
         $otpKey = OtpType::ForgotPassword;
         $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
         $encryptedEmail = EncryptionHelper::encryptAsString(
             data: $email,
             key: EncryptionHelper::getSystemSecretKey(),
-            iv: env("MAIN_STATIC_IV"),
+            iv: env('MAIN_STATIC_IV'),
         );
 
         /**
          * Check if email address not exist in redis throw error
          */
         if ($isExist == null) {
-            throw new AuthException("Reset password session expired please try again!");
+            throw new AuthException('Reset password session expired please try again!');
         }
 
         $otpData = json_decode($isExist, true);
 
         if ($otpData['otp'] != $otp) {
-            throw new AuthException("Invalid OTP!");
+            throw new AuthException('Invalid OTP!');
         }
 
         if ($otpData['uuid'] != $uuid) {
-            throw new AuthException("Illegal OTP access!");
+            throw new AuthException('Illegal OTP access!');
         }
 
         $this->redisRepository->deleteRedis("{$otpKey->value}:{$email}");
@@ -441,7 +423,7 @@ class AuthServiceImplement extends Service implements AuthService
         $user = $this->mainRepository->getUserByEmail($encryptedEmail);
 
         if ($user == null) {
-            throw new AuthException("User not found!");
+            throw new AuthException('User not found!');
         }
 
         $user->password = bcrypt($newPassword);

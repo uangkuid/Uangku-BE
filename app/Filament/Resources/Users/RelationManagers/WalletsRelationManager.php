@@ -2,17 +2,16 @@
 
 namespace App\Filament\Resources\Users\RelationManagers;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\ViewAction;
 use App\Models\WalletAccess;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class WalletsRelationManager extends RelationManager
@@ -28,38 +27,41 @@ class WalletsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                \Filament\Schemas\Components\Group::make()
+                Group::make()
                     ->schema([
                         Section::make('Wallet Information')
                             ->schema([
-                                Placeholder::make('wallet.name')
-                                    ->label('Wallet Name')
-                                    ->content(fn(WalletAccess $record): ?string => $record->wallet?->name)
+                                Placeholder::make('wallet.id')
+                                    ->label('Wallet ID')
+                                    ->content(fn (WalletAccess $record): ?string => $record->wallet?->id)
                                     ->columnSpanFull(),
+                                Placeholder::make('wallet.type')
+                                    ->label('Type')
+                                    ->content(fn (WalletAccess $record): ?string => $record->wallet?->type),
                                 Placeholder::make('wallet.amount')
                                     ->label('Amount')
-                                    ->content(fn(WalletAccess $record): ?string => number_format((float)($record->wallet?->amount ?? 0), 0, ',', '.')),
+                                    ->content('🔒 Terenkripsi (zero-knowledge)'),
                                 Placeholder::make('role')
                                     ->label('Role')
-                                    ->content(fn(WalletAccess $record): ?string => $record->role),
+                                    ->content(fn (WalletAccess $record): ?string => $record->role),
                                 Placeholder::make('is_active')
                                     ->label('Status')
-                                    ->content(fn(WalletAccess $record): string => $record->is_active ? 'Active' : 'Inactive'),
+                                    ->content(fn (WalletAccess $record): string => $record->is_active ? 'Active' : 'Inactive'),
                             ]),
                     ])
-                    ->columnSpan(['lg' => fn(?WalletAccess $record) => $record === null ? 3 : 2]),
+                    ->columnSpan(['lg' => fn (?WalletAccess $record) => $record === null ? 3 : 2]),
                 Section::make('General Information')
                     ->schema([
                         Placeholder::make('created_at')
                             ->label('Created at')
-                            ->content(fn(WalletAccess $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
+                            ->content(fn (WalletAccess $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                         Placeholder::make('updated_at')
                             ->label('Last modified at')
-                            ->content(fn(WalletAccess $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
+                            ->content(fn (WalletAccess $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
                     ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?WalletAccess $record) => $record === null),
+                    ->hidden(fn (?WalletAccess $record) => $record === null),
             ])
             ->columns(3);
     }
@@ -67,19 +69,23 @@ class WalletsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('wallet.name')
+            ->recordTitleAttribute('wallet.id')
             ->columns([
-                TextColumn::make('wallet.name')
-                    ->label('Wallet Name')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('wallet.id')
+                    ->label('Wallet ID')
+                    ->searchable(),
+                TextColumn::make('wallet.type')
+                    ->label('Type')
+                    ->badge(),
                 TextColumn::make('wallet.amount')
                     ->label('Amount')
-                    ->formatStateUsing(fn($state) => number_format((float)($state ?? 0), 0, ',', '.'))
-                    ->sortable(),
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn () => '🔒 terenkripsi')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('role')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'Admin' => 'success',
                         'Member' => 'info',
                         default => 'gray',
@@ -87,8 +93,8 @@ class WalletsRelationManager extends RelationManager
                 TextColumn::make('is_active')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn(bool $state): string => $state ? 'Active' : 'Inactive')
-                    ->color(fn(bool $state): string => $state ? 'success' : 'danger'),
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Active' : 'Inactive')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'danger'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

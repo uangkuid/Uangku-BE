@@ -1,66 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
-use App\Models\StaffAccount;
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Wallet;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class WalletPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(StaffAccount $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true; // Staff can view wallets
+        return $authUser->can('ViewAny:Wallet');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(StaffAccount $user, Wallet $wallet): bool
+    public function view(AuthUser $authUser, Wallet $wallet): bool
     {
-        return true; // Staff can view individual wallets
+        return $authUser->can('View:Wallet');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(StaffAccount $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return false; // Staff cannot create wallets - read only
+        return $authUser->can('Create:Wallet');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(StaffAccount $user, Wallet $wallet): bool
+    public function update(AuthUser $authUser, Wallet $wallet): bool
     {
-        return false; // Staff cannot update wallets - read only
+        return $authUser->can('Update:Wallet');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(StaffAccount $user, Wallet $wallet): bool
+    public function delete(AuthUser $authUser, Wallet $wallet): bool
     {
-        return false; // Staff cannot delete wallets - read only
+        return $authUser->can('Delete:Wallet');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(StaffAccount $user, Wallet $wallet): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return false; // Staff cannot restore wallets - read only
+        return $authUser->can('DeleteAny:Wallet');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(StaffAccount $user, Wallet $wallet): bool
+    public function restore(AuthUser $authUser, Wallet $wallet): bool
     {
-        return false; // Staff cannot force delete wallets - read only
+        return $authUser->can('Restore:Wallet');
     }
+
+    public function forceDelete(AuthUser $authUser, Wallet $wallet): bool
+    {
+        return $authUser->can('ForceDelete:Wallet');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:Wallet');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:Wallet');
+    }
+
+    public function replicate(AuthUser $authUser, Wallet $wallet): bool
+    {
+        return $authUser->can('Replicate:Wallet');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:Wallet');
+    }
+
 }

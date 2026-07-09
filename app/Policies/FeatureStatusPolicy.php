@@ -1,67 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\FeatureStatus;
-use App\Models\StaffAccount;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class FeatureStatusPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(StaffAccount $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return true;
-//        return $user->role === 'admin';
+        return $authUser->can('ViewAny:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(StaffAccount $user, FeatureStatus $featureStatus): bool
+    public function view(AuthUser $authUser, FeatureStatus $featureStatus): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('View:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(StaffAccount $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Create:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(StaffAccount $user, FeatureStatus $featureStatus): bool
+    public function update(AuthUser $authUser, FeatureStatus $featureStatus): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Update:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(StaffAccount $user, FeatureStatus $featureStatus): bool
+    public function delete(AuthUser $authUser, FeatureStatus $featureStatus): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Delete:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(StaffAccount $user, FeatureStatus $featureStatus): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('DeleteAny:FeatureStatus');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(StaffAccount $user, FeatureStatus $featureStatus): bool
+    public function restore(AuthUser $authUser, FeatureStatus $featureStatus): bool
     {
-        return $user->role === 'admin';
+        return $authUser->can('Restore:FeatureStatus');
     }
+
+    public function forceDelete(AuthUser $authUser, FeatureStatus $featureStatus): bool
+    {
+        return $authUser->can('ForceDelete:FeatureStatus');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:FeatureStatus');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:FeatureStatus');
+    }
+
+    public function replicate(AuthUser $authUser, FeatureStatus $featureStatus): bool
+    {
+        return $authUser->can('Replicate:FeatureStatus');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:FeatureStatus');
+    }
+
 }
