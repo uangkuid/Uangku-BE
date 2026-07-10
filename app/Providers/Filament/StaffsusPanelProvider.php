@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditStaffProfile;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
@@ -34,7 +35,7 @@ class StaffsusPanelProvider extends PanelProvider
             ->path('staffsus')
             ->login()
             ->passwordReset()
-            ->profile(isSimple: false)
+            ->profile(EditStaffProfile::class, isSimple: false)
             ->authPasswordBroker('staff')
             ->multiFactorAuthentication([
                 AppAuthentication::make()->recoverable(),
