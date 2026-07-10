@@ -31,6 +31,11 @@ class AuditLogResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'action';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.security');
+    }
+
     // Log tidak boleh dibuat/diubah/dihapus dari panel.
     public static function canCreate(): bool
     {
@@ -55,18 +60,18 @@ class AuditLogResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Audit Entry')->schema([
-                TextEntry::make('created_at')->label('Waktu')->dateTime(),
-                TextEntry::make('staff.name')->label('Staff')->placeholder('—'),
-                TextEntry::make('action')->badge(),
-                TextEntry::make('description')->placeholder('—')->columnSpanFull(),
-                TextEntry::make('target_type')->label('Target Type')->placeholder('—'),
-                TextEntry::make('target_id')->label('Target ID')->placeholder('—'),
-                TextEntry::make('ip_address')->label('IP')->placeholder('—'),
-                TextEntry::make('user_agent')->label('User Agent')->placeholder('—')->columnSpanFull(),
+            Section::make(__('staffsus/audit_logs.sections.audit_entry'))->schema([
+                TextEntry::make('created_at')->label(__('staffsus/audit_logs.fields.time'))->dateTime(),
+                TextEntry::make('staff.name')->label(__('staffsus/audit_logs.fields.staff'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty')),
+                TextEntry::make('action')->label(__('staffsus/audit_logs.fields.action'))->badge(),
+                TextEntry::make('description')->label(__('staffsus/audit_logs.fields.description'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty'))->columnSpanFull(),
+                TextEntry::make('target_type')->label(__('staffsus/audit_logs.fields.target_type'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty')),
+                TextEntry::make('target_id')->label(__('staffsus/audit_logs.fields.target_id'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty')),
+                TextEntry::make('ip_address')->label(__('staffsus/audit_logs.fields.ip_address'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty')),
+                TextEntry::make('user_agent')->label(__('staffsus/audit_logs.fields.user_agent'))->placeholder(__('staffsus/audit_logs.fields.placeholder_empty'))->columnSpanFull(),
                 TextEntry::make('metadata')
-                    ->label('Metadata')
-                    ->placeholder('—')
+                    ->label(__('staffsus/audit_logs.fields.metadata'))
+                    ->placeholder(__('staffsus/audit_logs.fields.placeholder_empty'))
                     ->columnSpanFull()
                     ->formatStateUsing(fn ($state) => filled($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : null),
             ])->columns(2),
@@ -79,44 +84,45 @@ class AuditLogResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('Waktu')
+                    ->label(__('staffsus/audit_logs.fields.time'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('staff.name')
-                    ->label('Staff')
-                    ->placeholder('—')
+                    ->label(__('staffsus/audit_logs.fields.staff'))
+                    ->placeholder(__('staffsus/audit_logs.fields.placeholder_empty'))
                     ->searchable(),
                 TextColumn::make('action')
+                    ->label(__('staffsus/audit_logs.fields.action'))
                     ->badge()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('target_type')
-                    ->label('Target')
-                    ->formatStateUsing(fn (?string $state) => $state ? class_basename($state) : '—')
+                    ->label(__('staffsus/audit_logs.fields.target'))
+                    ->formatStateUsing(fn (?string $state) => $state ? class_basename($state) : __('staffsus/audit_logs.fields.placeholder_empty'))
                     ->toggleable(),
                 TextColumn::make('target_id')
-                    ->label('Target ID')
+                    ->label(__('staffsus/audit_logs.fields.target_id'))
                     ->limit(13)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('ip_address')
-                    ->label('IP')
+                    ->label(__('staffsus/audit_logs.fields.ip_address'))
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('action')
-                    ->label('Aksi')
+                    ->label(__('staffsus/audit_logs.filters.action'))
                     ->options(fn (): array => AuditLog::query()
                         ->distinct()
                         ->orderBy('action')
                         ->pluck('action', 'action')
                         ->all()),
                 SelectFilter::make('staff_id')
-                    ->label('Staff')
+                    ->label(__('staffsus/audit_logs.filters.staff'))
                     ->relationship('staff', 'name'),
                 Filter::make('created_at')
                     ->schema([
-                        DatePicker::make('from')->label('Dari'),
-                        DatePicker::make('until')->label('Sampai'),
+                        DatePicker::make('from')->label(__('staffsus/audit_logs.filters.from')),
+                        DatePicker::make('until')->label(__('staffsus/audit_logs.filters.until')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

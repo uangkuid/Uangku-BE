@@ -1,0 +1,86 @@
+<?php
+
+return [
+    'fields' => [
+        'id' => 'ID',
+        'user_id' => 'User ID',
+        'name' => 'Name',
+        'email' => 'Email',
+        'email_address' => 'Email address',
+        'email_status' => 'Email Status',
+        'verified' => 'Verified',
+        'unverified' => 'Unverified',
+        'account_status' => 'Account Status',
+        'suspension_reason' => 'Suspension Reason',
+        'joined_at' => 'Joined At',
+        'updated_at' => 'Last Modified At',
+        'status' => 'Status',
+        'reason' => 'Reason',
+        'placeholder_empty' => '—',
+    ],
+    'actions' => [
+        'suspend' => 'Suspend',
+        'unsuspend' => 'Reactivate',
+        'ban' => 'Ban',
+        'verify_email' => 'Mark email as verified',
+        'reset_pin' => 'Reset PIN',
+        'force_logout' => 'Force logout',
+    ],
+    'modals' => [
+        'reset_pin_description' => 'Deletes the user\'s transaction PIN. The user must create a new PIN. The secret key is NOT affected.',
+        'force_logout_description' => 'Revokes all refresh tokens. Existing access tokens will expire within ≤60 minutes.',
+    ],
+    'notifications' => [
+        'suspended' => 'User suspended',
+        'unsuspended' => 'User reactivated',
+        'banned' => 'User banned',
+        'email_verified' => 'Email marked as verified',
+        'pin_reset' => 'User PIN reset',
+        'session_revoked' => 'User session revoked',
+    ],
+    'audit_descriptions' => [
+        'unsuspend' => 'Reactivate user',
+        'verify_email' => 'Manual email verification',
+    ],
+    'relation_managers' => [
+        'wallets' => [
+            'sections' => [
+                'wallet_information' => 'Wallet Information',
+                'general_information' => 'General Information',
+            ],
+            'fields' => [
+                'wallet_id' => 'Wallet ID',
+                'type' => 'Type',
+                'amount' => 'Amount',
+                'role' => 'Role',
+                'status' => 'Status',
+                'created_at' => 'Created at',
+                'updated_at' => 'Last modified at',
+                'encrypted_zero_knowledge' => '🔒 Encrypted (zero-knowledge)',
+                'encrypted_short' => '🔒 encrypted',
+                'active' => 'Active',
+                'inactive' => 'Inactive',
+            ],
+        ],
+        'transactions' => [
+            'sections' => [
+                'transaction_information' => 'Transaction Information',
+                'general_information' => 'General Information',
+            ],
+            'fields' => [
+                'amount' => 'Amount',
+                'note' => 'Note',
+                'category' => 'Category',
+                'sub_category' => 'Sub Category',
+                'wallet_id' => 'Wallet ID',
+                'created_at' => 'Created at',
+                'updated_at' => 'Last modified at',
+                'deleted_at' => 'Deleted at',
+                'created_from' => 'Created from',
+                'created_until' => 'Created until',
+                'encrypted_zero_knowledge' => '🔒 Encrypted (zero-knowledge)',
+                'encrypted_short' => '🔒 encrypted',
+            ],
+        ],
+    ],
+];

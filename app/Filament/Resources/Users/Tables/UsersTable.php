@@ -27,7 +27,7 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('staffsus/users.fields.id'))
                     ->searchable()
                     ->toggleable(),
                 ImageColumn::make('avatar')
@@ -48,7 +48,7 @@ class UsersTable
                     ->circular()
                     ->toggleable(),
                 TextColumn::make('email')
-                    ->label('Email')
+                    ->label(__('staffsus/users.fields.email'))
                     ->formatStateUsing(fn ($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         // Cek apakah input merupakan email valid
@@ -66,30 +66,32 @@ class UsersTable
                     })
                     ->toggleable(),
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('staffsus/users.fields.status'))
                     ->badge()
                     ->formatStateUsing(fn (?UserStatus $state) => ($state ?? UserStatus::Active)->label())
                     ->color(fn (?UserStatus $state) => ($state ?? UserStatus::Active)->color())
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('email_verified_at')
-                    ->label('Verified')
+                    ->label(__('staffsus/users.fields.verified'))
                     ->dateTime()
-                    ->placeholder('Unverified')
+                    ->placeholder(__('staffsus/users.fields.unverified'))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('created_at')
+                    ->label(__('staffsus/users.fields.joined_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('staffsus/users.fields.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->label('Status')
+                    ->label(__('staffsus/users.fields.status'))
                     ->options(collect(UserStatus::cases())->mapWithKeys(fn (UserStatus $s) => [$s->value => $s->label()])->all()),
             ])
             ->recordActions([
@@ -112,12 +114,12 @@ class UsersTable
     private static function suspendAction(): Action
     {
         return Action::make('suspend')
-            ->label('Suspend')
+            ->label(__('staffsus/users.actions.suspend'))
             ->icon('heroicon-o-pause-circle')
             ->color('warning')
             ->visible(fn (User $record) => self::can('User:Suspend') && ($record->status ?? UserStatus::Active) === UserStatus::Active)
             ->schema([
-                Textarea::make('reason')->label('Alasan')->required()->maxLength(500),
+                Textarea::make('reason')->label(__('staffsus/users.fields.reason'))->required()->maxLength(500),
             ])
             ->requiresConfirmation()
             ->action(function (User $record, array $data) {
@@ -128,14 +130,14 @@ class UsersTable
                 ]);
                 UserSeasons::where('users', $record->id)->delete();
                 AuditLog::record('user.suspend', $record, ['reason' => $data['reason']], 'Suspend user');
-                Notification::make()->title('User di-suspend')->success()->send();
+                Notification::make()->title(__('staffsus/users.notifications.suspended'))->success()->send();
             });
     }
 
     private static function unsuspendAction(): Action
     {
         return Action::make('unsuspend')
-            ->label('Aktifkan kembali')
+            ->label(__('staffsus/users.actions.unsuspend'))
             ->icon('heroicon-o-play-circle')
             ->color('success')
             ->visible(fn (User $record) => self::can('User:Suspend') && ($record->status ?? UserStatus::Active) !== UserStatus::Active)
@@ -146,20 +148,20 @@ class UsersTable
                     'suspended_at' => null,
                     'suspended_reason' => null,
                 ]);
-                AuditLog::record('user.unsuspend', $record, [], 'Aktifkan kembali user');
-                Notification::make()->title('User diaktifkan kembali')->success()->send();
+                AuditLog::record('user.unsuspend', $record, [], __('staffsus/users.audit_descriptions.unsuspend'));
+                Notification::make()->title(__('staffsus/users.notifications.unsuspended'))->success()->send();
             });
     }
 
     private static function banAction(): Action
     {
         return Action::make('ban')
-            ->label('Ban')
+            ->label(__('staffsus/users.actions.ban'))
             ->icon('heroicon-o-no-symbol')
             ->color('danger')
             ->visible(fn (User $record) => self::can('User:Ban') && ($record->status ?? UserStatus::Active) !== UserStatus::Banned)
             ->schema([
-                Textarea::make('reason')->label('Alasan')->required()->maxLength(500),
+                Textarea::make('reason')->label(__('staffsus/users.fields.reason'))->required()->maxLength(500),
             ])
             ->requiresConfirmation()
             ->action(function (User $record, array $data) {
@@ -170,54 +172,54 @@ class UsersTable
                 ]);
                 UserSeasons::where('users', $record->id)->delete();
                 AuditLog::record('user.ban', $record, ['reason' => $data['reason']], 'Ban user');
-                Notification::make()->title('User di-ban')->success()->send();
+                Notification::make()->title(__('staffsus/users.notifications.banned'))->success()->send();
             });
     }
 
     private static function verifyEmailAction(): Action
     {
         return Action::make('verifyEmail')
-            ->label('Tandai email terverifikasi')
+            ->label(__('staffsus/users.actions.verify_email'))
             ->icon('heroicon-o-check-badge')
             ->color('success')
             ->visible(fn (User $record) => self::can('User:VerifyEmail') && $record->email_verified_at === null)
             ->requiresConfirmation()
             ->action(function (User $record) {
                 $record->update(['email_verified_at' => now()]);
-                AuditLog::record('user.verify_email', $record, [], 'Verifikasi email manual');
-                Notification::make()->title('Email ditandai terverifikasi')->success()->send();
+                AuditLog::record('user.verify_email', $record, [], __('staffsus/users.audit_descriptions.verify_email'));
+                Notification::make()->title(__('staffsus/users.notifications.email_verified'))->success()->send();
             });
     }
 
     private static function resetPinAction(): Action
     {
         return Action::make('resetPin')
-            ->label('Reset PIN')
+            ->label(__('staffsus/users.actions.reset_pin'))
             ->icon('heroicon-o-key')
             ->color('warning')
             ->visible(fn () => self::can('User:ResetPin'))
             ->requiresConfirmation()
-            ->modalDescription('Menghapus PIN transaksi user. User harus membuat PIN baru. Secret key TIDAK tersentuh.')
+            ->modalDescription(__('staffsus/users.modals.reset_pin_description'))
             ->action(function (User $record) {
                 UserKey::where('users', $record->id)->update(['hashed_pin' => null]);
                 AuditLog::record('user.reset_pin', $record, [], 'Reset PIN transaksi');
-                Notification::make()->title('PIN user direset')->success()->send();
+                Notification::make()->title(__('staffsus/users.notifications.pin_reset'))->success()->send();
             });
     }
 
     private static function forceLogoutAction(): Action
     {
         return Action::make('forceLogout')
-            ->label('Force logout')
+            ->label(__('staffsus/users.actions.force_logout'))
             ->icon('heroicon-o-arrow-right-on-rectangle')
             ->color('gray')
             ->visible(fn () => self::can('User:ForceLogout'))
             ->requiresConfirmation()
-            ->modalDescription('Mencabut semua refresh token. Access token yang ada akan kedaluwarsa dalam ≤60 menit.')
+            ->modalDescription(__('staffsus/users.modals.force_logout_description'))
             ->action(function (User $record) {
                 $count = UserSeasons::where('users', $record->id)->delete();
                 AuditLog::record('user.force_logout', $record, ['revoked_sessions' => $count], 'Force logout');
-                Notification::make()->title('Sesi user dicabut')->success()->send();
+                Notification::make()->title(__('staffsus/users.notifications.session_revoked'))->success()->send();
             });
     }
 }

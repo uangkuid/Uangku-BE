@@ -30,35 +30,43 @@ class StaffAccountResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Staff Management';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.staff_management');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Group::make()
                     ->schema([
-                        Section::make('Staff Information')
+                        Section::make(__('staffsus/staff_accounts.sections.staff_information'))
                             ->schema([
                                 TextInput::make('name')
+                                    ->label(__('staffsus/staff_accounts.fields.name'))
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
                                 TextInput::make('email')
+                                    ->label(__('staffsus/staff_accounts.fields.email'))
                                     ->email()
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
                                 Select::make('roles')
-                                    ->label('Panel Roles')
-                                    ->helperText('Role Shield yang menentukan resource & aksi yang bisa diakses staff ini.')
+                                    ->label(__('staffsus/staff_accounts.fields.roles'))
+                                    ->helperText(__('staffsus/staff_accounts.fields.roles_helper'))
                                     ->relationship('roles', 'name')
                                     ->multiple()
                                     ->preload()
                                     ->searchable()
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Security Settings')
+                        Section::make(__('staffsus/staff_accounts.sections.security_settings'))
                             ->schema([
                                 TextInput::make('password')
+                                    ->label(__('staffsus/staff_accounts.fields.password'))
                                     ->password()
                                     ->revealable()
                                     ->required(fn (string $context): bool => $context === 'create')
@@ -72,14 +80,14 @@ class StaffAccountResource extends Resource
                                     ->revealable()
                                     ->maxLength(255)
                                     ->same('password')
-                                    ->label('Confirm Password')
+                                    ->label(__('staffsus/staff_accounts.fields.password_confirmation'))
                                     ->columnSpanFull(),
                             ]),
                     ])
                     ->columnSpan(['lg' => fn (?StaffAccount $record) => $record === null ? 3 : 2]),
                 Group::make()
                     ->schema([
-                        Section::make('Photo Profile')
+                        Section::make(__('staffsus/staff_accounts.sections.photo_profile'))
                             ->schema([
                                 FileUpload::make('avatar')
                                     ->hiddenLabel()
@@ -91,14 +99,14 @@ class StaffAccountResource extends Resource
                                     ->imagePreviewHeight('512')
                                     ->previewable(),
                             ]),
-                        Section::make('General Information')
+                        Section::make(__('staffsus/staff_accounts.sections.general_information'))
                             ->schema([
                                 Placeholder::make('created_at')
-                                    ->label('Created at')
+                                    ->label(__('staffsus/staff_accounts.fields.created_at'))
                                     ->content(fn (StaffAccount $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                                 Placeholder::make('updated_at')
-                                    ->label('Last modified at')
+                                    ->label(__('staffsus/staff_accounts.fields.updated_at'))
                                     ->content(fn (StaffAccount $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                             ]),
                     ])

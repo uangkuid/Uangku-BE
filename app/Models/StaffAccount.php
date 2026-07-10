@@ -53,6 +53,7 @@ class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthen
         'email',
         'password',
         'avatar',
+        'locale',
     ];
 
     /**
@@ -109,6 +110,7 @@ class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthen
         'app_authentication_secret',
         'app_authentication_recovery_codes',
         'has_email_authentication',
+        'locale',
         'created_at',
         'updated_at',
     ]; // customize sesuai kebutuhan

@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Family;
 use App\Models\Transaction;
 use App\Models\Wallet;
+use Filament\Facades\Filament;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,16 @@ use Illuminate\Support\Facades\DB;
  */
 class OperationsStatsOverview extends BaseWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 1;
+
+    protected ?string $pollingInterval = '60s';
+
+    protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        return (bool) Filament::auth()->user()?->can('View:OperationsStatsOverview');
+    }
 
     protected function getStats(): array
     {
@@ -31,17 +41,17 @@ class OperationsStatsOverview extends BaseWidget
         $totalFamilies = Family::count();
 
         return [
-            Stat::make('Transaksi Hari Ini', $transactionsToday)
+            Stat::make(__('staffsus/dashboard.operations_stats.transactions_today'), $transactionsToday)
                 ->icon('heroicon-o-arrows-right-left')
                 ->color('info'),
-            Stat::make('User Aktif (30 hari)', $activeUsers30d)
-                ->description('Punya minimal 1 transaksi')
+            Stat::make(__('staffsus/dashboard.operations_stats.active_users_30d'), $activeUsers30d)
+                ->description(__('staffsus/dashboard.operations_stats.active_users_30d_description'))
                 ->icon('heroicon-o-users')
                 ->color('success'),
-            Stat::make('Wallet Aktif', $activeWallets)
+            Stat::make(__('staffsus/dashboard.operations_stats.active_wallets'), $activeWallets)
                 ->icon('heroicon-o-wallet')
                 ->color('success'),
-            Stat::make('Total Family', $totalFamilies)
+            Stat::make(__('staffsus/dashboard.operations_stats.total_families'), $totalFamilies)
                 ->icon('heroicon-o-user-group')
                 ->color('gray'),
         ];

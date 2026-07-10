@@ -3,17 +3,16 @@
 namespace App\Providers;
 
 use App\Auth\CachedEloquentStaffProvider;
-use App\Models\StaffAccount;
-use Filament\Support\Colors\Color;
+use BezhanSalleh\LanguageSwitch\Events\LocaleChanged;
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
-use Laravel\Octane\Facades\Octane;
 use Spatie\Color\Hex;
 
 class AppServiceProvider extends ServiceProvider
@@ -46,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         DB::listen(function ($query) {
-            Log::debug("SQL: {$query->sql}, Bindings: " . json_encode($query->bindings));
+            Log::debug("SQL: {$query->sql}, Bindings: ".json_encode($query->bindings));
         });
 
         /**
@@ -71,5 +70,15 @@ class AppServiceProvider extends ServiceProvider
                 900 => Hex::fromString('#03293F')->toRgb(),
             ],
         ]);
+
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch): void {
+            $switch
+                ->locales(['en', 'id'])
+                ->userPreferredLocale(fn () => Auth::guard('web')->user()?->locale);
+        });
+
+        Event::listen(LocaleChanged::class, function (LocaleChanged $event): void {
+            Auth::guard('web')->user()?->update(['locale' => $event->locale]);
+        });
     }
 }

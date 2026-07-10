@@ -3,7 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +13,19 @@ class UserRegistrationsChart extends ChartWidget
 {
     protected static ?int $sort = 2;
 
-    protected ?string $heading = 'User Registrations This Month';
+    protected ?string $pollingInterval = null;
+
+    protected int|string|array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        return (bool) Filament::auth()->user()?->can('View:UserRegistrationsChart');
+    }
+
+    public function getHeading(): string|Htmlable|null
+    {
+        return __('staffsus/dashboard.user_registrations.heading');
+    }
 
     protected function getData(): array
     {
@@ -45,7 +59,7 @@ class UserRegistrationsChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'New Users',
+                    'label' => __('staffsus/dashboard.user_registrations.series'),
                     'data' => $values,
                     'borderColor' => '#3b82f6',
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',

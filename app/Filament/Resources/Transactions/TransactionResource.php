@@ -35,6 +35,11 @@ class TransactionResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Operations';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.operations');
+    }
+
     public static function canCreate(): bool
     {
         return false;
@@ -58,22 +63,22 @@ class TransactionResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Transaction Metadata')->schema([
-                TextEntry::make('id')->label('Transaction ID')->copyable(),
-                TextEntry::make('created_at')->label('Waktu')->dateTime(),
-                TextEntry::make('transactionType.name')->label('Tipe')->badge(),
-                TextEntry::make('category.name')->label('Kategori')->placeholder('—'),
-                TextEntry::make('subCategory.name')->label('Sub Kategori')->placeholder('—'),
-                TextEntry::make('walletTransaction.wallets')->label('Wallet ID')->placeholder('—')->copyable(),
-                TextEntry::make('walletTransaction.wallet.families')->label('Family ID')->placeholder('Personal')->copyable(),
-                TextEntry::make('users')->label('User ID')->copyable(),
-                TextEntry::make('deleted_at')->label('Dihapus pada')->dateTime()->placeholder('—'),
+            Section::make(__('staffsus/transactions.sections.transaction_metadata'))->schema([
+                TextEntry::make('id')->label(__('staffsus/transactions.fields.transaction_id'))->copyable(),
+                TextEntry::make('created_at')->label(__('staffsus/transactions.fields.time'))->dateTime(),
+                TextEntry::make('transactionType.name')->label(__('staffsus/transactions.fields.type'))->badge(),
+                TextEntry::make('category.name')->label(__('staffsus/transactions.fields.category'))->placeholder(__('staffsus/transactions.fields.placeholder_empty')),
+                TextEntry::make('subCategory.name')->label(__('staffsus/transactions.fields.sub_category'))->placeholder(__('staffsus/transactions.fields.placeholder_empty')),
+                TextEntry::make('walletTransaction.wallets')->label(__('staffsus/transactions.fields.wallet_id'))->placeholder(__('staffsus/transactions.fields.placeholder_empty'))->copyable(),
+                TextEntry::make('walletTransaction.wallet.families')->label(__('staffsus/transactions.fields.family_id'))->placeholder(__('staffsus/transactions.fields.personal'))->copyable(),
+                TextEntry::make('users')->label(__('staffsus/transactions.fields.user_id'))->copyable(),
+                TextEntry::make('deleted_at')->label(__('staffsus/transactions.fields.deleted_at'))->dateTime()->placeholder(__('staffsus/transactions.fields.placeholder_empty')),
                 TextEntry::make('amount')
-                    ->label('Amount')
-                    ->state('🔒 Terenkripsi (zero-knowledge)'),
+                    ->label(__('staffsus/transactions.fields.amount'))
+                    ->state(__('staffsus/transactions.fields.encrypted_zero_knowledge')),
                 TextEntry::make('note')
-                    ->label('Note')
-                    ->state('🔒 Terenkripsi (zero-knowledge)')
+                    ->label(__('staffsus/transactions.fields.note'))
+                    ->state(__('staffsus/transactions.fields.encrypted_zero_knowledge'))
                     ->columnSpanFull(),
             ])->columns(2),
         ]);
@@ -86,51 +91,51 @@ class TransactionResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['walletTransaction.wallet']))
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('Waktu')
+                    ->label(__('staffsus/transactions.fields.time'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('transactionType.name')
-                    ->label('Tipe')
+                    ->label(__('staffsus/transactions.fields.type'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('category.name')
-                    ->label('Kategori')
+                    ->label(__('staffsus/transactions.fields.category'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('subCategory.name')
-                    ->label('Sub Kategori')
+                    ->label(__('staffsus/transactions.fields.sub_category'))
                     ->toggleable(),
                 TextColumn::make('walletTransaction.wallets')
-                    ->label('Wallet ID')
-                    ->placeholder('—')
+                    ->label(__('staffsus/transactions.fields.wallet_id'))
+                    ->placeholder(__('staffsus/transactions.fields.placeholder_empty'))
                     ->toggleable(),
                 TextColumn::make('walletTransaction.wallet.families')
-                    ->label('Family ID')
-                    ->placeholder('Personal')
+                    ->label(__('staffsus/transactions.fields.family_id'))
+                    ->placeholder(__('staffsus/transactions.fields.personal'))
                     ->toggleable(),
                 TextColumn::make('amount')
-                    ->label('Amount')
+                    ->label(__('staffsus/transactions.fields.amount'))
                     ->badge()
                     ->color('gray')
-                    ->formatStateUsing(fn () => '🔒 terenkripsi')
+                    ->formatStateUsing(fn () => __('staffsus/transactions.fields.encrypted_short'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
-                    ->label('Status')
+                    ->label(__('staffsus/transactions.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? 'Deleted' : 'Active')
+                    ->formatStateUsing(fn (?string $state) => $state ? __('staffsus/transactions.statuses.deleted') : __('staffsus/transactions.statuses.active'))
                     ->color(fn (?string $state) => $state ? 'danger' : 'success')
                     ->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('transaction_type')
-                    ->label('Tipe')
+                    ->label(__('staffsus/transactions.filters.type'))
                     ->options(fn (): array => TransactionType::query()->pluck('name', 'id')->all()),
                 SelectFilter::make('categories')
-                    ->label('Kategori')
+                    ->label(__('staffsus/transactions.filters.category'))
                     ->options(fn (): array => Category::query()->pluck('name', 'id')->all()),
                 Filter::make('wallet_id')
                     ->schema([
-                        TextInput::make('value')->label('Wallet ID'),
+                        TextInput::make('value')->label(__('staffsus/transactions.filters.wallet_id')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
@@ -140,8 +145,8 @@ class TransactionResource extends Resource
                     }),
                 Filter::make('created_at')
                     ->schema([
-                        DatePicker::make('from')->label('Dari'),
-                        DatePicker::make('until')->label('Sampai'),
+                        DatePicker::make('from')->label(__('staffsus/transactions.filters.from')),
+                        DatePicker::make('until')->label(__('staffsus/transactions.filters.until')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

@@ -17,11 +17,7 @@ enum UserStatus: string
     /** Label untuk UI admin. */
     public function label(): string
     {
-        return match ($this) {
-            self::Active => 'Active',
-            self::Suspended => 'Suspended',
-            self::Banned => 'Banned',
-        };
+        return __('staffsus/enums.user_status.'.$this->value);
     }
 
     /** Warna badge Filament. */

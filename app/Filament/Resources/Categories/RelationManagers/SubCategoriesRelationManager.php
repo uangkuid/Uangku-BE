@@ -2,19 +2,18 @@
 
 namespace App\Filament\Resources\Categories\RelationManagers;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use App\Helpers\EncryptionHelper;
 use App\Models\SubCategory;
 use Exception;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
@@ -31,46 +30,52 @@ class SubCategoriesRelationManager extends RelationManager
         return $pageClass === 'App\Filament\Resources\Categories\Pages\ViewCategory';
     }
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('staffsus/categories.relation_managers.sub_categories');
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 \Filament\Schemas\Components\Group::make()
                     ->schema([
-                        Section::make('Sub Category Information')
+                        Section::make(__('staffsus/categories.sub_categories.sections.sub_category_information'))
                             ->schema([
                                 TextInput::make('name')
+                                    ->label(__('staffsus/categories.fields.name'))
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Users Information')
+                        Section::make(__('staffsus/categories.sub_categories.sections.users_information'))
                             ->schema([
                                 Placeholder::make('user.id')
-                                    ->label('User ID')
-                                    ->content(fn(SubCategory $record): ?string => $record->user?->id),
+                                    ->label(__('staffsus/categories.sub_categories.fields.user_id'))
+                                    ->content(fn (SubCategory $record): ?string => $record->user?->id),
                                 Placeholder::make('user.email')
-                                    ->label('Email')
-                                    ->content(fn(SubCategory $record): ?string => EncryptionHelper::decryptFromString(
+                                    ->label(__('staffsus/categories.sub_categories.fields.email'))
+                                    ->content(fn (SubCategory $record): ?string => EncryptionHelper::decryptFromString(
                                         encryptedData: $record->user?->email,
                                         key: EncryptionHelper::getSystemSecretKey()
                                     ))
                                     ->columnSpanFull(),
-                            ])
+                            ]),
                     ])
-                    ->columnSpan(['lg' => fn(?SubCategory $record) => $record === null ? 3 : 2]),
-                Section::make('General Information')
+                    ->columnSpan(['lg' => fn (?SubCategory $record) => $record === null ? 3 : 2]),
+                Section::make(__('staffsus/categories.sub_categories.sections.general_information'))
                     ->schema([
                         Placeholder::make('created_at')
-                            ->label('Created at')
-                            ->content(fn(SubCategory $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
+                            ->label(__('staffsus/categories.sub_categories.fields.created_at'))
+                            ->content(fn (SubCategory $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                         Placeholder::make('updated_at')
-                            ->label('Last modified at')
-                            ->content(fn(SubCategory $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
+                            ->label(__('staffsus/categories.sub_categories.fields.updated_at'))
+                            ->content(fn (SubCategory $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
                     ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?SubCategory $record) => $record === null),
+                    ->hidden(fn (?SubCategory $record) => $record === null),
             ])
             ->columns(3);
     }
@@ -86,15 +91,16 @@ class SubCategoriesRelationManager extends RelationManager
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('user.email')
-                    ->label("User Email")
-                    ->formatStateUsing(fn($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
+                    ->label(__('staffsus/categories.sub_categories.fields.user_email'))
+                    ->formatStateUsing(fn ($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         // Cek apakah input merupakan email valid
-                        if (!filter_var($search, FILTER_VALIDATE_EMAIL)) {
+                        if (! filter_var($search, FILTER_VALIDATE_EMAIL)) {
                             return $query; // Skip filter, biar nggak error dan tetap bisa search lainnya
                         }
+
                         return $query->whereHas('user', function ($q) use ($search) {
-                            $staticIv = env("MAIN_STATIC_IV") ?? throw new Exception("Static IV not found!");
+                            $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
                             $q->where('email', EncryptionHelper::encryptAsString(
                                 data: $search,
                                 key: EncryptionHelper::getSystemSecretKey(),
@@ -104,28 +110,30 @@ class SubCategoriesRelationManager extends RelationManager
                     })
                     ->toggleable(),
                 TextColumn::make('users')
-                    ->label("User ID")
+                    ->label(__('staffsus/categories.sub_categories.fields.users'))
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('families')
-                    ->label("Family ID")
+                    ->label(__('staffsus/categories.sub_categories.fields.families'))
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
+                    ->label(__('staffsus/categories.sub_categories.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('staffsus/categories.sub_categories.fields.updated_at'))
                     ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('type')
-                    ->label('Type')
+                    ->label(__('staffsus/categories.sub_categories.filters.type'))
                     ->options([
-                        'personal' => 'Personal Only',
-                        'family' => 'Family Only',
+                        'personal' => __('staffsus/categories.sub_categories.filters.personal_only'),
+                        'family' => __('staffsus/categories.sub_categories.filters.family_only'),
                     ])
                     ->default('all')
                     ->query(function (Builder $query, array $data): Builder {
@@ -149,12 +157,12 @@ class SubCategoriesRelationManager extends RelationManager
             ])
             ->groups([
                 Group::make('user.email')
-                    ->getTitleFromRecordUsing(fn(SubCategory $record): string => EncryptionHelper::decryptFromString($record->user->email, EncryptionHelper::getSystemSecretKey()))
+                    ->getTitleFromRecordUsing(fn (SubCategory $record): string => EncryptionHelper::decryptFromString($record->user->email, EncryptionHelper::getSystemSecretKey()))
                     ->collapsible(),
                 Group::make('families')
-                    ->label('Family')
+                    ->label(__('staffsus/categories.sub_categories.groups.family'))
                     ->getTitleFromRecordUsing(function (SubCategory $record): string {
-                        return $record->families ?? 'Personal Only';
+                        return $record->families ?? __('staffsus/categories.sub_categories.filters.personal_only');
                     })
                     ->collapsible(),
             ]);
@@ -165,9 +173,9 @@ class SubCategoriesRelationManager extends RelationManager
         return false;
     }
 
-//    public static function canViewForRecord(Model $ownerRecord): bool
-//    {
-//        // Tampilkan hanya jika sedang view (bukan edit)
-//        return request()->routeIs('filament.admin.resources.categories.view');
-//    }
+    //    public static function canViewForRecord(Model $ownerRecord): bool
+    //    {
+    //        // Tampilkan hanya jika sedang view (bukan edit)
+    //        return request()->routeIs('filament.admin.resources.categories.view');
+    //    }
 }

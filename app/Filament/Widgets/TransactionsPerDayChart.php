@@ -3,7 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Transaction;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -12,9 +14,21 @@ use Illuminate\Support\Facades\DB;
  */
 class TransactionsPerDayChart extends ChartWidget
 {
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 3;
 
-    protected ?string $heading = 'Jumlah Transaksi (14 Hari Terakhir)';
+    protected ?string $pollingInterval = null;
+
+    protected int|string|array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        return (bool) Filament::auth()->user()?->can('View:TransactionsPerDayChart');
+    }
+
+    public function getHeading(): string|Htmlable|null
+    {
+        return __('staffsus/dashboard.transactions_per_day.heading');
+    }
 
     protected function getData(): array
     {
@@ -43,7 +57,7 @@ class TransactionsPerDayChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Transaksi',
+                    'label' => __('staffsus/dashboard.transactions_per_day.series'),
                     'data' => $values,
                     'borderColor' => '#3b82f6',
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',

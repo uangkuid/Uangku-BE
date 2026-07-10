@@ -36,6 +36,11 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'User';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.users');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
@@ -56,42 +61,43 @@ class UserResource extends Resource
                             ->schema([
                                 Group::make([
                                     TextEntry::make('id')
-                                        ->label('User ID')
+                                        ->label(__('staffsus/users.fields.user_id'))
                                         ->copyable()
                                         ->copyMessage('Copied!')
                                         ->copyMessageDuration(1500),
-                                    TextEntry::make('name'),
+                                    TextEntry::make('name')
+                                        ->label(__('staffsus/users.fields.name')),
                                     TextEntry::make('email')
-                                        ->label('Email')
+                                        ->label(__('staffsus/users.fields.email'))
                                         ->getStateUsing(fn ($record) => EncryptionHelper::decryptFromString(
                                             $record->email,
                                             EncryptionHelper::getSystemSecretKey()
                                         )),
                                     TextEntry::make('email_verified_at')
-                                        ->label('Email Status')
+                                        ->label(__('staffsus/users.fields.email_status'))
                                         ->badge()
-                                        ->getStateUsing(fn ($record) => $record->email_verified_at ? 'Verified' : 'Unverified')
+                                        ->getStateUsing(fn ($record) => $record->email_verified_at ? __('staffsus/users.fields.verified') : __('staffsus/users.fields.unverified'))
                                         ->color(fn (string $state) => match ($state) {
-                                            'Verified' => 'success',
-                                            'Unverified' => 'danger',
+                                            __('staffsus/users.fields.verified') => 'success',
+                                            __('staffsus/users.fields.unverified') => 'danger',
                                             default => 'gray',
                                         }),
                                     TextEntry::make('status')
-                                        ->label('Account Status')
+                                        ->label(__('staffsus/users.fields.account_status'))
                                         ->badge()
                                         ->getStateUsing(fn ($record) => ($record->status ?? UserStatus::Active)->label())
                                         ->color(fn ($record) => ($record->status ?? UserStatus::Active)->color()),
                                     TextEntry::make('suspended_reason')
-                                        ->label('Suspension Reason')
-                                        ->placeholder('—')
+                                        ->label(__('staffsus/users.fields.suspension_reason'))
+                                        ->placeholder(__('staffsus/users.fields.placeholder_empty'))
                                         ->visible(fn ($record) => filled($record->suspended_reason)),
                                 ]),
                                 Group::make([
                                     TextEntry::make('created_at')
-                                        ->label('Joined At')
+                                        ->label(__('staffsus/users.fields.joined_at'))
                                         ->dateTime(),
                                     TextEntry::make('updated_at')
-                                        ->label('Last Modified At')
+                                        ->label(__('staffsus/users.fields.updated_at'))
                                         ->since(),
                                 ]),
                             ])

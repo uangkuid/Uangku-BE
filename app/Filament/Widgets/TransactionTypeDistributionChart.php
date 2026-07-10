@@ -2,7 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -10,9 +12,21 @@ use Illuminate\Support\Facades\DB;
  */
 class TransactionTypeDistributionChart extends ChartWidget
 {
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 4;
 
-    protected ?string $heading = 'Distribusi Transaksi per Tipe (30 Hari Terakhir)';
+    protected ?string $pollingInterval = null;
+
+    protected int|string|array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        return (bool) Filament::auth()->user()?->can('View:TransactionTypeDistributionChart');
+    }
+
+    public function getHeading(): string|Htmlable|null
+    {
+        return __('staffsus/dashboard.transaction_type_distribution.heading');
+    }
 
     protected function getData(): array
     {
@@ -28,7 +42,7 @@ class TransactionTypeDistributionChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Jumlah Transaksi',
+                    'label' => __('staffsus/dashboard.transaction_type_distribution.series'),
                     'data' => $rows->values()->all(),
                     'backgroundColor' => ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'],
                 ],

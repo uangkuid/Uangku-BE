@@ -2,41 +2,40 @@
 
 namespace App\Filament\Resources\SystemConfigs;
 
-use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\SystemConfigs\Pages\ListSystemConfigs;
 use App\Filament\Resources\SystemConfigs\Pages\CreateSystemConfig;
 use App\Filament\Resources\SystemConfigs\Pages\EditSystemConfig;
-use App\Filament\Resources\SystemConfigResource\Pages;
-use App\Filament\Resources\SystemConfigResource\RelationManagers;
+use App\Filament\Resources\SystemConfigs\Pages\ListSystemConfigs;
 use App\Models\SystemConfig;
-use Filament\Forms;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class SystemConfigResource extends Resource
 {
     protected static ?string $model = SystemConfig::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'tabler-settings-cog';
-    protected static string | \UnitEnum | null $navigationGroup = 'Settings';
+    protected static string|\BackedEnum|null $navigationIcon = 'tabler-settings-cog';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.settings');
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('key')
+                    ->label(__('staffsus/system_configs.fields.key'))
                     ->required()
                     ->maxLength(255)
                     ->alphaDash()
@@ -47,6 +46,7 @@ class SystemConfigResource extends Resource
                     )
                     ->columnSpanFull(),
                 Textarea::make('value')
+                    ->label(__('staffsus/system_configs.fields.value'))
                     ->required()
                     ->columnSpanFull(),
             ]);
@@ -57,14 +57,17 @@ class SystemConfigResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('staffsus/system_configs.fields.id'))
                     ->searchable()
                     ->hidden(),
                 TextColumn::make('key')
+                    ->label(__('staffsus/system_configs.fields.key'))
                     ->searchable(),
                 TextColumn::make('value')
+                    ->label(__('staffsus/system_configs.fields.value'))
                     ->searchable(),
                 TextColumn::make('updated_at')
+                    ->label(__('staffsus/system_configs.fields.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -98,9 +101,9 @@ class SystemConfigResource extends Resource
         ];
     }
 
-//    public static function mutateFormDataBeforeCreate(array $data): array
-//    {
-//        $data['updated_by'] = auth()->id(); // atau auth()->id()
-//        return $data;
-//    }
+    //    public static function mutateFormDataBeforeCreate(array $data): array
+    //    {
+    //        $data['updated_by'] = auth()->id(); // atau auth()->id()
+    //        return $data;
+    //    }
 }

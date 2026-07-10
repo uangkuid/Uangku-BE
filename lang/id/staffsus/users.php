@@ -1,0 +1,86 @@
+<?php
+
+return [
+    'fields' => [
+        'id' => 'ID',
+        'user_id' => 'ID Pengguna',
+        'name' => 'Nama',
+        'email' => 'Email',
+        'email_address' => 'Alamat email',
+        'email_status' => 'Status Email',
+        'verified' => 'Terverifikasi',
+        'unverified' => 'Belum Terverifikasi',
+        'account_status' => 'Status Akun',
+        'suspension_reason' => 'Alasan Penangguhan',
+        'joined_at' => 'Bergabung Pada',
+        'updated_at' => 'Terakhir Diubah Pada',
+        'status' => 'Status',
+        'reason' => 'Alasan',
+        'placeholder_empty' => '—',
+    ],
+    'actions' => [
+        'suspend' => 'Suspend',
+        'unsuspend' => 'Aktifkan Kembali',
+        'ban' => 'Ban',
+        'verify_email' => 'Tandai Email Terverifikasi',
+        'reset_pin' => 'Reset PIN',
+        'force_logout' => 'Force Logout',
+    ],
+    'modals' => [
+        'reset_pin_description' => 'Menghapus PIN transaksi user. User harus membuat PIN baru. Secret key TIDAK tersentuh.',
+        'force_logout_description' => 'Mencabut semua refresh token. Access token yang ada akan kedaluwarsa dalam ≤60 menit.',
+    ],
+    'notifications' => [
+        'suspended' => 'User di-suspend',
+        'unsuspended' => 'User diaktifkan kembali',
+        'banned' => 'User di-ban',
+        'email_verified' => 'Email ditandai terverifikasi',
+        'pin_reset' => 'PIN user direset',
+        'session_revoked' => 'Sesi user dicabut',
+    ],
+    'audit_descriptions' => [
+        'unsuspend' => 'Aktifkan kembali user',
+        'verify_email' => 'Verifikasi email manual',
+    ],
+    'relation_managers' => [
+        'wallets' => [
+            'sections' => [
+                'wallet_information' => 'Informasi Wallet',
+                'general_information' => 'Informasi Umum',
+            ],
+            'fields' => [
+                'wallet_id' => 'ID Wallet',
+                'type' => 'Tipe',
+                'amount' => 'Jumlah',
+                'role' => 'Role',
+                'status' => 'Status',
+                'created_at' => 'Dibuat pada',
+                'updated_at' => 'Terakhir diubah pada',
+                'encrypted_zero_knowledge' => '🔒 Terenkripsi (zero-knowledge)',
+                'encrypted_short' => '🔒 terenkripsi',
+                'active' => 'Aktif',
+                'inactive' => 'Nonaktif',
+            ],
+        ],
+        'transactions' => [
+            'sections' => [
+                'transaction_information' => 'Informasi Transaksi',
+                'general_information' => 'Informasi Umum',
+            ],
+            'fields' => [
+                'amount' => 'Jumlah',
+                'note' => 'Catatan',
+                'category' => 'Kategori',
+                'sub_category' => 'Sub Kategori',
+                'wallet_id' => 'ID Wallet',
+                'created_at' => 'Dibuat pada',
+                'updated_at' => 'Terakhir diubah pada',
+                'deleted_at' => 'Dihapus pada',
+                'created_from' => 'Dibuat dari',
+                'created_until' => 'Dibuat sampai',
+                'encrypted_zero_knowledge' => '🔒 Terenkripsi (zero-knowledge)',
+                'encrypted_short' => '🔒 terenkripsi',
+            ],
+        ],
+    ],
+];

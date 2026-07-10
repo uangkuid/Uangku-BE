@@ -18,9 +18,10 @@ class MembersRelationManager extends RelationManager
             ->recordTitleAttribute('user')
             ->columns([
                 TextColumn::make('user')
-                    ->label('User ID')
+                    ->label(__('staffsus/families.members.fields.user_id'))
                     ->searchable(),
                 TextColumn::make('role')
+                    ->label(__('staffsus/families.members.fields.role'))
                     ->badge()
                     ->color(fn (string $state) => match ($state) {
                         'Owner' => 'danger',
@@ -28,6 +29,7 @@ class MembersRelationManager extends RelationManager
                         default => 'gray',
                     }),
                 TextColumn::make('status')
+                    ->label(__('staffsus/families.members.fields.status'))
                     ->badge()
                     ->color(fn (string $state) => match ($state) {
                         'Active' => 'success',
@@ -36,22 +38,25 @@ class MembersRelationManager extends RelationManager
                         default => 'gray',
                     }),
                 TextColumn::make('created_at')
+                    ->label(__('staffsus/families.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('role')
+                    ->label(__('staffsus/families.members.fields.role'))
                     ->options([
-                        'Owner' => 'Owner',
-                        'Admin' => 'Admin',
-                        'Member' => 'Member',
+                        'Owner' => __('staffsus/families.members.roles.owner'),
+                        'Admin' => __('staffsus/families.members.roles.admin'),
+                        'Member' => __('staffsus/families.members.roles.member'),
                     ]),
                 SelectFilter::make('status')
+                    ->label(__('staffsus/families.members.fields.status'))
                     ->options([
-                        'Active' => 'Active',
-                        'Revoked' => 'Revoked',
-                        'Left' => 'Left',
+                        'Active' => __('staffsus/families.members.statuses.active'),
+                        'Revoked' => __('staffsus/families.members.statuses.revoked'),
+                        'Left' => __('staffsus/families.members.statuses.left'),
                     ]),
             ])
             ->recordActions([

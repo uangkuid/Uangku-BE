@@ -33,6 +33,11 @@ class WalletResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Operations';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.operations');
+    }
+
     public static function canCreate(): bool
     {
         return false;
@@ -61,17 +66,17 @@ class WalletResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Wallet Metadata')->schema([
-                TextEntry::make('id')->label('Wallet ID')->copyable(),
-                TextEntry::make('type')->badge(),
-                TextEntry::make('status')->badge()->color(fn (string $state) => $state === 'active' ? 'success' : 'danger'),
-                TextEntry::make('families')->label('Family ID')->placeholder('Personal')->copyable(),
-                TextEntry::make('created_by')->label('Created By (User ID)')->copyable(),
-                TextEntry::make('accesses_count')->label('Jumlah Member')->state(fn (Wallet $record) => $record->accesses()->count()),
-                TextEntry::make('created_at')->dateTime(),
-                TextEntry::make('updated_at')->label('Last Modified')->since(),
-                TextEntry::make('name')->label('Name')->state('🔒 Terenkripsi (zero-knowledge)'),
-                TextEntry::make('amount')->label('Amount')->state('🔒 Terenkripsi (zero-knowledge)'),
+            Section::make(__('staffsus/wallets.sections.wallet_metadata'))->schema([
+                TextEntry::make('id')->label(__('staffsus/wallets.fields.wallet_id'))->copyable(),
+                TextEntry::make('type')->label(__('staffsus/wallets.fields.type'))->badge(),
+                TextEntry::make('status')->label(__('staffsus/wallets.fields.status'))->badge()->color(fn (string $state) => $state === 'active' ? 'success' : 'danger'),
+                TextEntry::make('families')->label(__('staffsus/wallets.fields.family_id'))->placeholder(__('staffsus/wallets.fields.personal'))->copyable(),
+                TextEntry::make('created_by')->label(__('staffsus/wallets.fields.created_by_user_id'))->copyable(),
+                TextEntry::make('accesses_count')->label(__('staffsus/wallets.fields.member_count'))->state(fn (Wallet $record) => $record->accesses()->count()),
+                TextEntry::make('created_at')->label(__('staffsus/wallets.fields.created_at'))->dateTime(),
+                TextEntry::make('updated_at')->label(__('staffsus/wallets.fields.updated_at'))->since(),
+                TextEntry::make('name')->label(__('staffsus/wallets.fields.name'))->state(__('staffsus/wallets.fields.encrypted_zero_knowledge')),
+                TextEntry::make('amount')->label(__('staffsus/wallets.fields.amount'))->state(__('staffsus/wallets.fields.encrypted_zero_knowledge')),
             ])->columns(2),
         ]);
     }
@@ -83,59 +88,64 @@ class WalletResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount('accesses'))
             ->columns([
                 TextColumn::make('id')
-                    ->label('Wallet ID')
+                    ->label(__('staffsus/wallets.fields.wallet_id'))
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('type')
+                    ->label(__('staffsus/wallets.fields.type'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label(__('staffsus/wallets.fields.status'))
                     ->badge()
                     ->color(fn (string $state) => $state === 'active' ? 'success' : 'danger')
                     ->sortable(),
                 TextColumn::make('accesses_count')
-                    ->label('Members')
+                    ->label(__('staffsus/wallets.fields.members'))
                     ->sortable(),
                 TextColumn::make('families')
-                    ->label('Family ID')
-                    ->placeholder('Personal')
+                    ->label(__('staffsus/wallets.fields.family_id'))
+                    ->placeholder(__('staffsus/wallets.fields.personal'))
                     ->toggleable(),
                 TextColumn::make('created_by')
-                    ->label('Created By')
+                    ->label(__('staffsus/wallets.fields.created_by'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
+                    ->label(__('staffsus/wallets.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('type')
+                    ->label(__('staffsus/wallets.fields.type'))
                     ->options([
-                        'personal' => 'Personal',
-                        'family' => 'Family',
+                        'personal' => __('staffsus/wallets.filters.type_personal'),
+                        'family' => __('staffsus/wallets.filters.type_family'),
                     ]),
                 SelectFilter::make('status')
+                    ->label(__('staffsus/wallets.fields.status'))
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
+                        'active' => __('staffsus/wallets.filters.status_active'),
+                        'inactive' => __('staffsus/wallets.filters.status_inactive'),
                     ]),
             ])
             ->recordActions([
                 ViewAction::make(),
                 Action::make('freeze')
-                    ->label('Freeze')
+                    ->label(__('staffsus/wallets.actions.freeze'))
                     ->icon('heroicon-o-lock-closed')
                     ->color('danger')
                     ->visible(fn (Wallet $record) => self::staffCan('Wallet:Freeze') && $record->status === 'active')
                     ->requiresConfirmation()
-                    ->modalDescription('Wallet dibekukan sementara (bukan aksi finansial). Investigasi penyalahgunaan.')
+                    ->modalDescription(__('staffsus/wallets.modals.freeze_description'))
                     ->action(function (Wallet $record) {
                         $record->update(['status' => 'inactive']);
                         AuditLog::record('wallet.freeze', $record, [], 'Freeze wallet');
-                        Notification::make()->title('Wallet dibekukan')->success()->send();
+                        Notification::make()->title(__('staffsus/wallets.notifications.frozen'))->success()->send();
                     }),
                 Action::make('unfreeze')
-                    ->label('Unfreeze')
+                    ->label(__('staffsus/wallets.actions.unfreeze'))
                     ->icon('heroicon-o-lock-open')
                     ->color('success')
                     ->visible(fn (Wallet $record) => self::staffCan('Wallet:Freeze') && $record->status === 'inactive')
@@ -143,7 +153,7 @@ class WalletResource extends Resource
                     ->action(function (Wallet $record) {
                         $record->update(['status' => 'active']);
                         AuditLog::record('wallet.unfreeze', $record, [], 'Unfreeze wallet');
-                        Notification::make()->title('Wallet diaktifkan kembali')->success()->send();
+                        Notification::make()->title(__('staffsus/wallets.notifications.unfrozen'))->success()->send();
                     }),
             ]);
     }

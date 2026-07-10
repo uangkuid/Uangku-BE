@@ -39,22 +39,29 @@ class CategoryResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Categories';
 
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return __('staffsus/navigation.groups.categories');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Group::make()
                     ->schema([
-                        Section::make('Category Information')
+                        Section::make(__('staffsus/categories.sections.category_information'))
                             ->schema([
                                 TextInput::make('name')
+                                    ->label(__('staffsus/categories.fields.name'))
                                     ->required()
                                     ->maxLength(255),
                                 Select::make('transaction_types')
+                                    ->label(__('staffsus/categories.fields.transaction_types'))
                                     ->required()
                                     ->relationship('transactionTypes', 'name'),
                             ]),
-                        Section::make('Image')
+                        Section::make(__('staffsus/categories.sections.image'))
                             ->schema([
                                 FileUpload::make('icon')
                                     ->hiddenLabel()
@@ -67,14 +74,14 @@ class CategoryResource extends Resource
                             ]),
                     ])
                     ->columnSpan(['lg' => fn (?Category $record) => $record === null ? 3 : 2]),
-                Section::make('General Information')
+                Section::make(__('staffsus/categories.sections.general_information'))
                     ->schema([
                         Placeholder::make('created_at')
-                            ->label('Created at')
+                            ->label(__('staffsus/categories.fields.created_at'))
                             ->content(fn (Category $record): ?string => $record->created_at?->timezone('Asia/Jakarta')->format('d M Y - H:i:s')),
 
                         Placeholder::make('updated_at')
-                            ->label('Last modified at')
+                            ->label(__('staffsus/categories.fields.updated_at'))
                             ->content(fn (Category $record): ?string => $record->updated_at?->timezone('Asia/Jakarta')->diffForHumans()),
                     ])
                     ->columnSpan(['lg' => 1])
@@ -88,10 +95,11 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('staffsus/categories.fields.id'))
                     ->hidden()
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label(__('staffsus/categories.fields.name'))
                     ->searchable(),
                 ImageColumn::make('icon')
                     ->disk('minio') // Menentukan disk yang digunakan
@@ -109,7 +117,7 @@ class CategoryResource extends Resource
                     })
                     ->height(32),
                 TextColumn::make('transactionTypes.name')
-                    ->label('Transaction Type')
+                    ->label(__('staffsus/categories.fields.transaction_types'))
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('transactionTypes', function ($q) use ($search) {
                             $q->where('name', 'like', "%{$search}%");
@@ -117,17 +125,19 @@ class CategoryResource extends Resource
                     })
                     ->toggleable(),
                 TextColumn::make('created_at')
+                    ->label(__('staffsus/categories.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('staffsus/categories.fields.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('transaction_type')
-                    ->label('Transaction Type')
+                    ->label(__('staffsus/categories.filters.transaction_type'))
                     ->relationship('transactionTypes', 'name')
                     ->options([
                         'Spending' => 'Spending',
@@ -156,12 +166,14 @@ class CategoryResource extends Resource
                                 ->schema([
                                     Group::make([
                                         TextEntry::make('id')
-                                            ->label('Category ID')
+                                            ->label(__('staffsus/categories.fields.category_id'))
                                             ->copyable()
                                             ->copyMessage('Copied!')
                                             ->copyMessageDuration(1500),
-                                        TextEntry::make('name'),
+                                        TextEntry::make('name')
+                                            ->label(__('staffsus/categories.fields.name')),
                                         TextEntry::make('transactionTypes.name')
+                                            ->label(__('staffsus/categories.fields.transaction_types'))
                                             ->badge()
                                             ->color(fn ($state) => match ($state) {
                                                 'Income' => 'success',
@@ -171,10 +183,10 @@ class CategoryResource extends Resource
                                     ]),
                                     Group::make([
                                         TextEntry::make('created_at')
-                                            ->label('Created At')
+                                            ->label(__('staffsus/categories.fields.created_at'))
                                             ->dateTime(),
                                         TextEntry::make('updated_at')
-                                            ->label('Last Modified At')
+                                            ->label(__('staffsus/categories.fields.updated_at'))
                                             ->since(),
                                     ]),
                                 ])
