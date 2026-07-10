@@ -69,7 +69,8 @@ class StaffsusPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
-                FilamentShieldPlugin::make(),
+                FilamentShieldPlugin::make()
+                    ->navigationGroup(fn () => __('staffsus/navigation.groups.staff_management')),
             ]);
     }
 }
