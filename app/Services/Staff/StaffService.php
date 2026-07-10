@@ -11,13 +11,11 @@ interface StaffService extends BaseService{
      * @param string $name
      * @param string $email
      * @param string $password
-     * @param bool $isSeeder
      * @return array
      */
     function register(
         string $name,
         string $email,
-        string $password,
-        bool $isSeeder = false
+        string $password
     ): array;
 }

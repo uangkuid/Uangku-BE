@@ -21,15 +21,13 @@ class StaffServiceImplement extends Service implements StaffService
      * @param string $name
      * @param string $email
      * @param string $password
-     * @param bool $isSeeder
      * @return array
      * @throws UserException
      */
     function register(
         string $name,
         string $email,
-        string $password,
-        bool $isSeeder = false
+        string $password
     ): array
     {
         $isExist = $this->staffAccountRepository->isNameExist($name);
@@ -38,20 +36,11 @@ class StaffServiceImplement extends Service implements StaffService
             throw new UserException("Staff account with name {$name} already exists.");
         }
 
-        if (!$isSeeder) {
-            $staff = $this->staffAccountRepository->create([
-                'name' => $name,
-                'email' => $email,
-                'password' => bcrypt($password),
-            ]);
-        } else {
-            $staff = $this->staffAccountRepository->create([
-                'name' => $name,
-                'email' => $email,
-                'password' => bcrypt($password),
-                'role' => "admin"
-            ]);
-        }
+        $staff = $this->staffAccountRepository->create([
+            'name' => $name,
+            'email' => $email,
+            'password' => bcrypt($password),
+        ]);
 
         return [
             'id' => $staff->id,

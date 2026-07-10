@@ -24,7 +24,6 @@ class StaffAccountSeeder extends Seeder
                 name: "Administrator",
                 email: "admin@uangku.com",
                 password: "Password123",
-                isSeeder: true
             );
 
             $superAdmin = Role::findOrCreate('super_admin', 'web');

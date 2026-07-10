@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\StorageHelper;
 use App\Observers\StaffAccountObserver;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
@@ -10,6 +11,7 @@ use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Auth\MultiFactor\Email\Concerns\InteractsWithEmailAuthentication;
 use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,7 +25,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
 #[ObservedBy([StaffAccountObserver::class])]
-class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasEmailAuthentication, JWTSubject
+class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasAvatar, HasEmailAuthentication, JWTSubject
 {
     use HasFactory, HasRoles, HasUuids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, InteractsWithEmailAuthentication, Notifiable;
 
@@ -34,13 +36,11 @@ class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthen
     protected string $guard_name = 'web';
 
     /**
-     * Hanya staff dengan role/permission valid yang boleh masuk panel.
-     * Fallback legacy `role === 'admin'` menjaga admin lama tetap bisa masuk
-     * selama masa transisi; hapus setelah semua staff punya role Shield.
+     * Hanya staff dengan role/permission Shield yang valid yang boleh masuk panel.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->roles()->exists() || $this->role === 'admin';
+        return $this->roles()->exists();
     }
 
     /**
@@ -52,6 +52,7 @@ class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthen
         'name',
         'email',
         'password',
+        'avatar',
     ];
 
     /**
@@ -90,12 +91,20 @@ class StaffAccount extends Authenticatable implements FilamentUser, HasAppAuthen
         return $this->hasMany(FeatureStatus::class, 'updated_by');
     }
 
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if (! $this->avatar) {
+            return null;
+        }
+
+        return StorageHelper::temporaryUrl('minio', $this->avatar, now()->addMinutes(60));
+    }
+
     protected $defaultSelect = [
         'id',
         'name',
         'email',
         'password',
-        'role',
         'avatar',
         'app_authentication_secret',
         'app_authentication_recovery_codes',
