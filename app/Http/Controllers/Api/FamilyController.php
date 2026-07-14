@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class FamilyController extends Controller
 {
@@ -36,6 +37,30 @@ class FamilyController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    #[OA\Post(
+        path: '/family',
+        summary: 'Create a family',
+        description: 'Creates a family owned by the authenticated user. Each user can own at most one family. '
+            .'public_key/wrapped_private_key are the family\'s own keypair, generated client-side.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'public_key', 'wrapped_private_key'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'public_key', type: 'string'),
+                    new OA\Property(property: 'wrapped_private_key', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Family created successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $current_user = $request->user();
@@ -90,6 +115,18 @@ class FamilyController extends Controller
     /**
      * Display the specified resource.
      */
+    #[OA\Get(
+        path: '/family/{id}',
+        summary: 'Get family summary',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get family', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function show(Request $request, string $id)
     {
         try {
@@ -113,6 +150,18 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/{id}/leave',
+        summary: 'Leave family',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success leave family', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function leave(Request $request, string $id): JsonResponse
     {
         try {
@@ -130,6 +179,16 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Get(
+        path: '/family/{id}/member',
+        summary: 'List family members',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get family member', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+        ]
+    )]
     public function getFamilyMember(Request $request, string $id): JsonResponse
     {
         $resource = $this->familyService->getMember($id); // AnonymousResourceCollection
@@ -144,6 +203,16 @@ class FamilyController extends Controller
         ), 200);
     }
 
+    #[OA\Get(
+        path: '/family/{id}/admin',
+        summary: 'List family admins',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get family admin', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+        ]
+    )]
     public function getFamilyAdmin(Request $request, string $id): JsonResponse
     {
         $resource = $this->familyService->getAdmin($id); // AnonymousResourceCollection
@@ -161,6 +230,26 @@ class FamilyController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[OA\Put(
+        path: '/family/{id}',
+        summary: 'Update family',
+        description: 'Requires family-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name'],
+                properties: [new OA\Property(property: 'name', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success update family', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -198,6 +287,20 @@ class FamilyController extends Controller
      * The current user's own wrapped family private key. 404-like "pending"
      * status if an admin hasn't wrapped it for them yet (see getPendingKeys).
      */
+    #[OA\Get(
+        path: '/family/{id}/my-key',
+        summary: 'Get my wrapped family key',
+        description: "The current user's own wrapped family private key. Indicates a pending state if an admin "
+            .'has not wrapped it for them yet (see /family/{id}/pending-keys).',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get family key', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function myKey(Request $request, string $id): JsonResponse
     {
         try {
@@ -222,6 +325,19 @@ class FamilyController extends Controller
      * Members who joined but don't have a wrapped family key yet, with their
      * public key so the admin's client can wrap the family private key for them.
      */
+    #[OA\Get(
+        path: '/family/{id}/pending-keys',
+        summary: 'List members pending a wrapped family key',
+        description: 'Requires family-admin role. Returns members who joined but do not have a wrapped family key '
+            .'yet, with their public key so the admin can wrap the family private key for them.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get pending family members', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function pendingKeys(Request $request, string $id): JsonResponse
     {
         try {
@@ -238,6 +354,29 @@ class FamilyController extends Controller
     /**
      * Admin uploads a wrapped family private key for a specific pending member.
      */
+    #[OA\Post(
+        path: '/family/{id}/member-key',
+        summary: 'Grant member a wrapped family key',
+        description: 'Requires family-admin role. Uploads a wrapped family private key for a specific pending member.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['user_id', 'wrapped_private_key'],
+                properties: [
+                    new OA\Property(property: 'user_id', type: 'string'),
+                    new OA\Property(property: 'wrapped_private_key', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success grant family key', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function grantMemberKey(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -274,6 +413,42 @@ class FamilyController extends Controller
      * for each remaining member). Call after revoking a member for full
      * protection against them reading newly-encrypted family data.
      */
+    #[OA\Post(
+        path: '/family/{id}/rotate-key',
+        summary: 'Rotate family keypair',
+        description: 'Requires family-admin role. Rotates the family keypair (new public key + freshly wrapped '
+            .'private key for each remaining member). Call after revoking a member for full protection against '
+            .'them reading newly-encrypted family data.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['public_key', 'member_keys'],
+                properties: [
+                    new OA\Property(property: 'public_key', type: 'string'),
+                    new OA\Property(
+                        property: 'member_keys',
+                        type: 'array',
+                        items: new OA\Items(
+                            required: ['user_id', 'wrapped_private_key'],
+                            properties: [
+                                new OA\Property(property: 'user_id', type: 'string'),
+                                new OA\Property(property: 'wrapped_private_key', type: 'string'),
+                            ],
+                            type: 'object'
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success rotate family key', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function rotateKey(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -307,6 +482,19 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/{id}/invite',
+        summary: 'Invite a member to the family',
+        description: 'Requires family-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success invite family member', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function inviteMember(Request $request, string $id): JsonResponse
     {
         try {
@@ -327,6 +515,27 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/join',
+        summary: 'Respond to a family invitation',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['invitation_id', 'family_id'],
+                properties: [
+                    new OA\Property(property: 'invitation_id', type: 'string'),
+                    new OA\Property(property: 'family_id', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success response family invitation', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function responseInvitation(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -361,6 +570,26 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/{id}/admin',
+        summary: 'Grant admin role to a family member',
+        description: 'Requires family-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['user_id'],
+                properties: [new OA\Property(property: 'user_id', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success grant admin family', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function grantAdmin(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -393,6 +622,22 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/{id}/member/{userId}/revoke',
+        summary: 'Revoke a family member',
+        description: 'Requires family-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Success revoke family member', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function revokeMember(Request $request, string $id, string $userId): JsonResponse
     {
         try {
@@ -417,6 +662,22 @@ class FamilyController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/family/{id}/admin/{userId}/revoke',
+        summary: 'Revoke admin role from a family member',
+        description: 'Requires family-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Family'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Success revoke family admin', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function revokeAdmin(Request $request, string $id, string $userId): JsonResponse
     {
         try {

@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -53,6 +54,42 @@ class AuthController extends Controller
      * the private key. The server never sees the password, the secret key, or
      * the private key in plaintext. See docs/encryption_refactor.md.
      */
+    #[OA\Post(
+        path: '/auth/register',
+        summary: 'Register a new account',
+        description: 'Zero-knowledge registration: the client has already generated the secret key, derived the '
+            .'2SKD unlockKey/authKey, generated the RSA keypair, and wrapped the private key. Requires an OTP '
+            .'obtained from /otp/send/register. Optionally creates a first wallet.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'email', 'otp', 'uuid', 'salt', 'auth_key', 'public_key', 'wrapped_private_key'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    new OA\Property(property: 'uuid', type: 'string'),
+                    new OA\Property(property: 'salt', type: 'string', description: 'Client-generated KDF salt'),
+                    new OA\Property(property: 'auth_key', type: 'string', description: 'Client-derived authentication key (never the raw password)'),
+                    new OA\Property(property: 'public_key', type: 'string', description: 'Client-generated RSA public key'),
+                    new OA\Property(property: 'wrapped_private_key', type: 'string', description: 'RSA private key wrapped under the unlockKey'),
+                    new OA\Property(property: 'wallet_name', type: 'string', nullable: true),
+                    new OA\Property(property: 'wallet_amount', type: 'string', nullable: true),
+                    new OA\Property(property: 'start_date_month', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Account created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')
+            ),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 409, description: 'Account already exists / registration failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -139,6 +176,28 @@ class AuthController extends Controller
      * (fetched via /auth/salt) + password + secret key. The server never
      * receives the password or the secret key.
      */
+    #[OA\Post(
+        path: '/auth/login',
+        summary: 'Login',
+        description: 'Challenge-based login: the client derives auth_key locally from email + salt (fetched via '
+            .'/auth/salt) + password + secret key. Rate limited to 10 requests/min.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'auth_key'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email'),
+                    new OA\Property(property: 'auth_key', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Login successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / invalid credentials', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -191,6 +250,25 @@ class AuthController extends Controller
      * Return the salt (and KDF iteration count) a client needs to derive its
      * authKey for a given email, without revealing whether the account exists.
      */
+    #[OA\Post(
+        path: '/auth/salt',
+        summary: 'Get login salt',
+        description: 'Returns the salt (and KDF iteration count) needed to derive auth_key for a given email, '
+            .'without revealing whether the account exists. Rate limited to 20 requests/min.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email'],
+                properties: [new OA\Property(property: 'email', type: 'string', format: 'email')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function salt(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -212,6 +290,26 @@ class AuthController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/logout',
+        summary: 'Logout',
+        description: 'Revokes the given refresh token and blacklists the current access token.',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['refresh_token'],
+                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Logout successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 401, description: 'Invalid/expired session', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Logout failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function logout(Request $request): JsonResponse
     {
         // set validation
@@ -262,6 +360,26 @@ class AuthController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/refresh-token',
+        summary: 'Refresh access token',
+        description: 'Revokes the given refresh token and session, then issues a new access + refresh token pair.',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['refresh_token'],
+                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Refresh token successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 401, description: 'Refresh token expired or invalid', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function refreshToken(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -341,6 +459,24 @@ class AuthController extends Controller
         return $refreshToken;
     }
 
+    #[OA\Post(
+        path: '/auth/pre-register',
+        summary: 'Pre-register email check',
+        description: 'Checks whether an email is eligible for registration, before sending the registration OTP.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email'],
+                properties: [new OA\Property(property: 'email', type: 'string', format: 'email')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Pre-register success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / email not eligible', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function preRegister(Request $request): JsonResponse
     {
         // set validation
@@ -376,6 +512,19 @@ class AuthController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/pre-change-password',
+        summary: 'Pre-change-password check',
+        description: 'Security pre-check before sending the change-password OTP (see /otp/send/change-password).',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        responses: [
+            new OA\Response(response: 200, description: 'Pre-change password success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 409, description: 'Failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 423, description: 'Locked (security check failed)', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function preChangePassword(Request $request): JsonResponse
     {
         try {
@@ -405,6 +554,34 @@ class AuthController extends Controller
      * holds the old unlockKey, decrypts the existing private key locally, and
      * re-wraps it under the new unlockKey — no data loss.
      */
+    #[OA\Post(
+        path: '/auth/change-password',
+        summary: 'Change password / secret key',
+        description: 'Changes password and/or secret key while authenticated. The client decrypts the existing '
+            .'private key locally with the old unlockKey and re-wraps it under the new unlockKey. Requires an OTP '
+            .'obtained from /otp/send/change-password. Revokes all other sessions on success.',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['old_auth_key', 'new_salt', 'new_auth_key', 'new_wrapped_private_key', 'otp', 'uuid'],
+                properties: [
+                    new OA\Property(property: 'old_auth_key', type: 'string'),
+                    new OA\Property(property: 'new_salt', type: 'string'),
+                    new OA\Property(property: 'new_auth_key', type: 'string'),
+                    new OA\Property(property: 'new_wrapped_private_key', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    new OA\Property(property: 'uuid', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Change password success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 409, description: 'Failed to change credentials', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function changePassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -448,6 +625,24 @@ class AuthController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/forgot-password',
+        summary: 'Request password reset',
+        description: 'Triggers the forgot-password flow for the given email. Follow with /otp/send/forgot-password then /auth/reset-password.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email'],
+                properties: [new OA\Property(property: 'email', type: 'string', format: 'email')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Forgot password success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function forgotPassword(Request $request): JsonResponse
     {
         // set validation
@@ -489,6 +684,35 @@ class AuthController extends Controller
      * replaces the account's key material with a brand new keypair — any
      * data encrypted under the old key becomes unreadable afterwards.
      */
+    #[OA\Post(
+        path: '/auth/reset-password',
+        summary: 'Reset password (forgot password recovery)',
+        description: 'Recovers account access after a forgotten password. Since the client cannot unwrap the old '
+            .'private key, this replaces the account key material with a brand new keypair — data encrypted under '
+            .'the old key becomes unreadable afterwards. Requires an OTP obtained from /otp/send/forgot-password. '
+            .'Revokes all sessions on success.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'otp', 'uuid', 'new_salt', 'new_auth_key', 'new_public_key', 'new_wrapped_private_key'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                    new OA\Property(property: 'uuid', type: 'string'),
+                    new OA\Property(property: 'new_salt', type: 'string'),
+                    new OA\Property(property: 'new_auth_key', type: 'string'),
+                    new OA\Property(property: 'new_public_key', type: 'string'),
+                    new OA\Property(property: 'new_wrapped_private_key', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Reset password success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function resetPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

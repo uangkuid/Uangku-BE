@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class UserController extends Controller
 {
@@ -32,6 +33,16 @@ class UserController extends Controller
      * wrapped-private-key) — see AuthController::preChangePassword /
      * AuthController::changePassword.
      */
+    #[OA\Get(
+        path: '/user',
+        summary: 'Get authenticated user profile',
+        security: [['bearerAuth' => []]],
+        tags: ['User'],
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function getProfile(Request $request): JsonResponse
     {
         try {
@@ -75,6 +86,24 @@ class UserController extends Controller
         }
     }
 
+    #[OA\Put(
+        path: '/user',
+        summary: 'Update authenticated user profile',
+        security: [['bearerAuth' => []]],
+        tags: ['User'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name'],
+                properties: [new OA\Property(property: 'name', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function updateProfile(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -99,6 +128,24 @@ class UserController extends Controller
         }
     }
 
+    #[OA\Put(
+        path: '/user/date',
+        summary: 'Update user\'s finance-month start date',
+        security: [['bearerAuth' => []]],
+        tags: ['User'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['date'],
+                properties: [new OA\Property(property: 'date', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function updateDate(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -131,6 +178,29 @@ class UserController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/user/avatar',
+        summary: 'Update user avatar',
+        security: [['bearerAuth' => []]],
+        tags: ['User'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['avatar'],
+                    properties: [
+                        new OA\Property(property: 'avatar', type: 'string', format: 'binary', description: 'jpeg, png, jpg, gif or svg, max 2MB'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function updateAvatar(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

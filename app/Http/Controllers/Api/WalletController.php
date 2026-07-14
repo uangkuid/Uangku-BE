@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class WalletController extends Controller
 {
@@ -31,6 +32,18 @@ class WalletController extends Controller
     /**
      * Display a listing of the resource.
      */
+    #[OA\Get(
+        path: '/wallet',
+        summary: 'List wallets',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [
+            new OA\Parameter(name: 'family_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet data', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $user = $this->userService->getUserByToken($request->bearerToken());
@@ -54,6 +67,29 @@ class WalletController extends Controller
      * Store a newly created resource in storage. $name/$amount are ciphertext
      * the client already encrypted to the right public key.
      */
+    #[OA\Post(
+        path: '/wallet',
+        summary: 'Create wallet',
+        description: 'name/amount are ciphertext already encrypted client-side to the right public key.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'amount'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', description: 'Client-encrypted wallet name'),
+                    new OA\Property(property: 'amount', type: 'string', description: 'Client-encrypted initial amount'),
+                    new OA\Property(property: 'family_id', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Wallet created successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function store(Request $request)
     {
 
@@ -104,6 +140,29 @@ class WalletController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[OA\Put(
+        path: '/wallet/{id}',
+        summary: 'Update wallet',
+        description: 'Requires wallet-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'family_id', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -141,6 +200,26 @@ class WalletController extends Controller
         //
     }
 
+    #[OA\Post(
+        path: '/wallet/{id}/status',
+        summary: 'Update wallet status',
+        description: 'Requires wallet-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['status'],
+                properties: [new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive'])]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet status updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function updateStatus(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -168,6 +247,16 @@ class WalletController extends Controller
         }
     }
 
+    #[OA\Get(
+        path: '/wallet/{id}/member',
+        summary: 'List wallet members',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet member data', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+        ]
+    )]
     public function getMember(Request $request, string $id)
     {
         $resource = $this->walletService->getMember(
@@ -184,6 +273,19 @@ class WalletController extends Controller
         ));
     }
 
+    #[OA\Get(
+        path: '/wallet/{id}/family',
+        summary: 'List family members not yet in the wallet',
+        description: 'Requires wallet-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet member data', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function getFamilyMember(Request $request, string $id)
     {
         try {
@@ -204,6 +306,26 @@ class WalletController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/wallet/{id}/member',
+        summary: 'Add member to wallet',
+        description: 'Requires wallet-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['user_id'],
+                properties: [new OA\Property(property: 'user_id', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Member added successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function addMember(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -232,6 +354,22 @@ class WalletController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/wallet/{id}/member/{userId}/revoke',
+        summary: 'Revoke wallet member',
+        description: 'Requires wallet-admin role.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Member revoked successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Business error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function revokeMember(Request $request, string $id, string $userId)
     {
         try {
@@ -251,6 +389,17 @@ class WalletController extends Controller
         }
     }
 
+    #[OA\Get(
+        path: '/wallet/{id}/snapshot',
+        summary: 'Get latest wallet balance snapshot',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Wallet snapshot data', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function getSnapshot(Request $request, string $id)
     {
         try {
@@ -264,6 +413,17 @@ class WalletController extends Controller
         }
     }
 
+    #[OA\Get(
+        path: '/wallet/{id}/transaction',
+        summary: 'Get wallet transactions (not implemented)',
+        description: 'Currently always returns 404 "Not implemented". Use GET /transaction with a wallet_id filter instead.',
+        security: [['bearerAuth' => []]],
+        tags: ['Wallet'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 404, description: 'Not implemented', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function getTransaction(Request $request, string $id)
     {
         return response()->json(new BaseResponse(404, 'Not implemented', null), 404);

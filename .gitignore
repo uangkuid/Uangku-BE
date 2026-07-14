@@ -26,6 +26,9 @@ yarn-error.log
 /phpunit-coverage.xml
 /clover.xml
 
+# Generated OpenAPI/Swagger docs (run `php artisan l5-swagger:generate`)
+/storage/api-docs
+
 **/caddy
 frankenphp
 frankenphp-worker.php

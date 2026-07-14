@@ -12,6 +12,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use OpenApi\Attributes as OA;
 
 class PinController extends Controller
 {
@@ -22,6 +23,30 @@ class PinController extends Controller
         $this->pinService = $pinService;
     }
 
+    #[OA\Post(
+        path: '/auth/pin',
+        summary: 'Create transaction PIN',
+        description: 'Creates a 6-digit PIN for the authenticated user. Requires an OTP obtained from /otp/send/pin.',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['pin', 'pin_confirmation', 'uuid', 'otp'],
+                properties: [
+                    new OA\Property(property: 'pin', type: 'string', example: '123456', description: '6-digit numeric PIN'),
+                    new OA\Property(property: 'pin_confirmation', type: 'string', example: '123456'),
+                    new OA\Property(property: 'uuid', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Create PIN success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / PIN already enabled', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [
@@ -60,6 +85,17 @@ class PinController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/pin/init',
+        summary: 'Initialize PIN flow',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        responses: [
+            new OA\Response(response: 200, description: 'Init pin success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function init(Request $request): JsonResponse
     {
         try {
@@ -77,6 +113,17 @@ class PinController extends Controller
         }
     }
 
+    #[OA\Delete(
+        path: '/auth/pin',
+        summary: 'Delete transaction PIN',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        responses: [
+            new OA\Response(response: 200, description: 'Delete PIN success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'PIN already disabled', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function destroy(Request $request): JsonResponse
     {
         try {
@@ -100,6 +147,25 @@ class PinController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/pin/forgot',
+        summary: 'Forgot PIN (while password known)',
+        description: 'Disables/resets PIN state using the current auth_key, for a user who knows their password but forgot their PIN.',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['auth_key'],
+                properties: [new OA\Property(property: 'auth_key', type: 'string')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Forgot PIN success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / PIN disabled', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function forgot(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [
@@ -134,6 +200,30 @@ class PinController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/pin/reset',
+        summary: 'Reset PIN',
+        description: 'Sets a new PIN. Requires an OTP obtained from /otp/send/forgot-pin.',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['pin', 'pin_confirmation', 'uuid', 'otp'],
+                properties: [
+                    new OA\Property(property: 'pin', type: 'string', example: '123456'),
+                    new OA\Property(property: 'pin_confirmation', type: 'string', example: '123456'),
+                    new OA\Property(property: 'uuid', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Reset PIN success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / PIN disabled', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function reset(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [
@@ -172,6 +262,25 @@ class PinController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/auth/pin/verify',
+        summary: 'Verify PIN',
+        description: 'Verifies the given PIN against the authenticated user\'s stored PIN. Rate limited to 5 requests/min.',
+        security: [['bearerAuth' => []]],
+        tags: ['PIN'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['pin'],
+                properties: [new OA\Property(property: 'pin', type: 'string', example: '123456')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Verify PIN success', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed / PIN disabled / incorrect PIN', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function verify(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [

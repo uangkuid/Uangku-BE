@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class OtpController extends Controller
 {
@@ -22,6 +23,24 @@ class OtpController extends Controller
         $this->otpService = $otpService;
     }
 
+    #[OA\Post(
+        path: '/otp/send/register',
+        summary: 'Send registration OTP',
+        description: 'Sends a one-time-password to the given email to complete registration via /auth/register.',
+        tags: ['OTP'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email'],
+                properties: [new OA\Property(property: 'email', type: 'string', format: 'email')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'OTP sent successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or sending failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function sendRegister(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -54,6 +73,18 @@ class OtpController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/otp/send/change-password',
+        summary: 'Send change-password OTP',
+        description: 'Sends a one-time-password to the authenticated user\'s email, required to confirm /auth/change-password.',
+        security: [['bearerAuth' => []]],
+        tags: ['OTP'],
+        responses: [
+            new OA\Response(response: 200, description: 'OTP sent successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Sending failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function sendChangePassword(Request $request): JsonResponse
     {
         try {
@@ -77,6 +108,24 @@ class OtpController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/otp/send/forgot-password',
+        summary: 'Send forgot-password OTP',
+        description: 'Sends a one-time-password to the given email, required to confirm /auth/reset-password.',
+        tags: ['OTP'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email'],
+                properties: [new OA\Property(property: 'email', type: 'string', format: 'email')]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'OTP sent successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or sending failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function sendForgotPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -109,6 +158,18 @@ class OtpController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/otp/send/pin',
+        summary: 'Send create-PIN OTP',
+        description: 'Sends a one-time-password to the authenticated user\'s email, required to confirm /auth/pin (PIN creation).',
+        security: [['bearerAuth' => []]],
+        tags: ['OTP'],
+        responses: [
+            new OA\Response(response: 200, description: 'OTP sent successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Sending failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function sendPin(Request $request): JsonResponse
     {
         try {
@@ -132,6 +193,18 @@ class OtpController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/otp/send/forgot-pin',
+        summary: 'Send forgot-PIN OTP',
+        description: 'Sends a one-time-password to the authenticated user\'s email, required to confirm /auth/pin/reset.',
+        security: [['bearerAuth' => []]],
+        tags: ['OTP'],
+        responses: [
+            new OA\Response(response: 200, description: 'OTP sent successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Sending failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function sendForgotPin(Request $request): JsonResponse
     {
         try {
