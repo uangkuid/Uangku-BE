@@ -4,9 +4,6 @@ namespace Database\Seeders;
 
 use App\Enums\RoleWallet;
 use App\Helpers\EncryptionHelper;
-use App\Models\User;
-use App\Models\Wallet;
-use App\Models\WalletAccess;
 use App\Services\Auth\AuthService;
 use App\Services\UserConfig\UserConfigService;
 use App\Services\UserSession\UserSessionService;
@@ -19,6 +16,13 @@ class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * The real registration flow is Zero-Knowledge: the client generates the
+     * secret key, the RSA keypair, and wraps the private key before ever
+     * talking to the server. A seeder has no client, so this simulates that
+     * client-side work in PHP with fixed, well-known seed credentials
+     * (never do this for a real user).
+     *
      * @throws Exception
      */
     public function run(): void
@@ -27,83 +31,67 @@ class UserSeeder extends Seeder
         $walletService = app(WalletService::class);
         $userSessionService = app(UserSessionService::class);
         $userConfigService = app(UserConfigService::class);
+
         DB::transaction(function () use ($userConfigService, $authService, $walletService, $userSessionService) {
-            $password = "Password123";
-            /**
-             * Create Account
-             */
+            $password = 'Password123';
+            $secretKey = env('ADMIN_SECRET_KEY', 'UANGKU-SEEDED-ADMIN0-00000-00000-00000');
+            $salt = random_bytes(16);
+
+            // --- Simulated client-side 2SKD + keygen (see docs/encryption_refactor.md) ---
+            $stretched = EncryptionHelper::pbkdf2($password, $salt, EncryptionHelper::PBKDF2_ITERATIONS, 32);
+            $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'admin@uangku.com');
+            $unlockKey = $stretched ^ $kdfSecret;
+            $authKey = base64_encode(EncryptionHelper::hkdf($unlockKey, 'uangku-auth-v1', 32));
+
+            $keyPair = openssl_pkey_new([
+                'digest_alg' => 'sha256',
+                'private_key_bits' => 4096,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            ]);
+            openssl_pkey_export($keyPair, $privateKeyPem);
+            $publicKeyPem = openssl_pkey_get_details($keyPair)['key'];
+
+            $wrappedPrivateKey = EncryptionHelper::aesGcmEncrypt($privateKeyPem, $unlockKey);
+            // --- end simulated client-side work ---
+
             $registerResult = $authService->register(
-                name: "Administrator",
-                email: "admin@uangku.com",
-                password: $password,
-                otp: "000000",
-                uuid: "00000000-0000-0000-0000-000000000000",
+                name: 'Administrator',
+                email: 'admin@uangku.com',
+                authKey: $authKey,
+                salt: base64_encode($salt),
+                publicKey: base64_encode($publicKeyPem),
+                wrappedPrivateKey: $wrappedPrivateKey,
+                otp: '000000',
+                uuid: '00000000-0000-0000-0000-000000000000',
                 isSeeder: true,
             );
-            $user = $registerResult['user'];
-//            $user = User::create([
-//                'name' => EncryptionHelper::encryptAsString(
-//                    data: 'Administrator',
-//                    key: EncryptionHelper::getSystemSecretKey(),
-//                    iv: $staticIv,
-//                ),
-//                'email' => EncryptionHelper::encryptAsString(
-//                    data: 'admin@uangku.com',
-//                    key: EncryptionHelper::getSystemSecretKey(),
-//                    iv: $staticIv,
-//                ),
-//                'password' => bcrypt($encryptKey),
-//                'email_verified_at' => now(),
-//            ]);
-            /**
-             * Save User Key
-             */
-            $userKey = $authService->saveUserKey(
-                userId: $user->id,
-                publicKey: $registerResult['public_key'],
-                privateKey: $registerResult['private_key'],
-                secretKey: $registerResult['secret_key'],
-                password: $password
-            );
 
-            $config = $userConfigService->create([
+            $user = $registerResult['user'];
+
+            $userConfigService->create([
                 'users' => $user->id,
                 'is_pin_enabled' => false,
-                'start_date_month' => EncryptionHelper::encryptAsymmetric("1", $registerResult['raw_public_key'])
+                'start_date_month' => null,
             ]);
 
-            $wallet_name = sprintf("%s's Cash", 'Administrator');
-
-            /**
-             * Create users wallet
-             */
             $wallet = $walletService->create([
-                'name' => EncryptionHelper::encryptAsymmetric($wallet_name, $registerResult['raw_public_key']),
-                'amount' => EncryptionHelper::encryptAsymmetric("0", $registerResult['raw_public_key']),
+                // Client-encrypted values in the real flow; plaintext here since
+                // the seed admin account has no real client to decrypt them.
+                'name' => "Administrator's Cash",
+                'amount' => '0',
                 'created_by' => $user->id,
             ]);
-//            $wallet = Wallet::create([
-//                'name' => EncryptionHelper::encryptAsString(
-//                    data: $wallet_name,
-//                    key: $encryptKey,
-//                    iv: $staticIv,
-//                ),
-//                'amount' => EncryptionHelper::encryptAsString(
-//                    data: "0",
-//                    key: $encryptKey,
-//                    iv: $staticIv,
-//                ),
-//                'created_by' => $user->id,
-//            ]);
 
-            /**
-             * Grant users access to wallet
-             */
-            $walletAccess = $walletService->grantAccess(
+            $walletService->grantAccess(
                 userId: $user->id,
                 walletId: $wallet->id,
                 accessType: RoleWallet::Admin
             );
+
+            $userSessionService->create([
+                'refresh_token' => $registerResult['refresh_token'],
+                'users' => $user->id,
+            ]);
         });
     }
 }

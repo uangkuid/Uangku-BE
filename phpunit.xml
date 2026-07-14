@@ -34,5 +34,10 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Zero-Knowledge encryption keys — test-only values, never use these in a real environment. -->
+        <env name="MAIN_SALT_KEY" value="test_salt_key_67890"/>
+        <env name="MAIN_SYSTEM_KEY" value="test_system_key_12345"/>
+        <env name="MAIN_BLIND_INDEX_KEY" value="test_blind_index_key_abcde"/>
+        <env name="ADMIN_SECRET_KEY" value="UANGKU-TESTAD-MIN000-00000-00000-00000"/>
     </php>
 </phpunit>

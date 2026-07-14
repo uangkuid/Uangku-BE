@@ -4,64 +4,67 @@ namespace App\Services\Family;
 
 use App\Enums\RedisKey;
 use App\Enums\RoleFamily;
-use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
-use App\Helpers\EncryptionHelper;
 use App\Http\Resources\Models\FamilyMemberResource;
 use App\Models\FamilyMember;
 use App\Repositories\Family\FamilyRepository;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
 use App\Repositories\FamilyMember\FamilyMemberRepository;
+use App\Repositories\FamilyMemberKey\FamilyMemberKeyRepository;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Collection;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Ramsey\Uuid\Uuid;
-use Random\RandomException;
 
 class FamilyServiceImplement extends Service implements FamilyService
 {
-
     /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
     protected FamilyRepository $mainRepository;
+
     protected FamilyMemberRepository $familyMemberRepository;
+
     protected FamilyKeyRepository $familyKeyRepository;
+
+    protected FamilyMemberKeyRepository $familyMemberKeyRepository;
+
     protected S3Repository $s3Repository;
+
     protected UserRepository $userRepository;
+
     protected RedisRepository $redisRepository;
 
     public function __construct(
-        FamilyRepository       $mainRepository,
+        FamilyRepository $mainRepository,
         FamilyMemberRepository $familyMemberRepository,
-        FamilyKeyRepository    $familyKeyRepository,
-        S3Repository           $s3Repository,
-        UserRepository         $userRepository,
-        RedisRepository        $redisRepository
-    )
-    {
+        FamilyKeyRepository $familyKeyRepository,
+        FamilyMemberKeyRepository $familyMemberKeyRepository,
+        S3Repository $s3Repository,
+        UserRepository $userRepository,
+        RedisRepository $redisRepository
+    ) {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->familyKeyRepository = $familyKeyRepository;
+        $this->familyMemberKeyRepository = $familyMemberKeyRepository;
         $this->s3Repository = $s3Repository;
         $this->userRepository = $userRepository;
         $this->redisRepository = $redisRepository;
     }
 
     /**
-     * Create a new Family
-     * @param string $token
-     * @param string $name
-     * @return array
-     * @throws RandomException
-     * @throws EncryptionException
+     * Create a new Family. The client has already generated the family
+     * keypair and wrapped the private key to its own public key.
+     *
      * @throws FamilyException
      */
-    function createFamily(string $token, string $name): array
+    public function createFamily(string $token, string $name, string $publicKey, string $wrappedPrivateKey): array
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -74,12 +77,9 @@ class FamilyServiceImplement extends Service implements FamilyService
             throw new FamilyException('You cannot create more than one family.');
         }
 
-        $secretKey = EncryptionHelper::generateUsersSecretKey();
-        $keyPair = EncryptionHelper::generateAsymmetricKey();
-
         $families = $this->mainRepository->create([
-            'name' => EncryptionHelper::encryptAsymmetric($name, base64_decode($keyPair['public'])),
-            'created_by' => $user->id
+            'name' => $name,
+            'created_by' => $user->id,
         ]);
 
         $familyMember = $this->familyMemberRepository->create([
@@ -90,41 +90,28 @@ class FamilyServiceImplement extends Service implements FamilyService
 
         $familyKey = $this->familyKeyRepository->create([
             'family' => $families->id,
-            'public_key' => $keyPair['public'],
-            'private_key' => EncryptionHelper::encryptAsString(data: $keyPair['private'], key: $secretKey),
-            'hashed_key' => EncryptionHelper::hashSecretKey($secretKey),
+            'public_key' => $publicKey,
         ]);
+
+        $this->familyMemberKeyRepository->upsertMemberKey($families->id, $user->id, $wrappedPrivateKey);
 
         return [
             'id' => $families->id,
             'name' => $name,
             'role' => $familyMember->role,
-            'secret_key' => $secretKey,
             'public_key' => $familyKey->public_key,
-            'private_key' => $familyKey->private_key,
+            'wrapped_private_key' => $wrappedPrivateKey,
         ];
     }
 
-    /**
-     * Get a family member list
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
-     */
-    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
+    public function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->familyMemberRepository->getFamilyMemberPaging($id, $perPage);
 
         return FamilyMemberResource::collection($paginator);
     }
 
-    /**
-     * Check if a user has access to a family
-     * @param string $id
-     * @param string $token
-     * @return bool
-     */
-    function isHasAccess(string $id, string $token): bool
+    public function isHasAccess(string $id, string $token): bool
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -135,13 +122,7 @@ class FamilyServiceImplement extends Service implements FamilyService
         return $this->familyMemberRepository->isHasAccess($user->id, $id);
     }
 
-    /**
-     * Check if a user has admin access to a family
-     * @param string $id
-     * @param string $token
-     * @return bool
-     */
-    function isHasAdminAccess(string $id, string $token): bool
+    public function isHasAdminAccess(string $id, string $token): bool
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -152,13 +133,7 @@ class FamilyServiceImplement extends Service implements FamilyService
         return $this->familyMemberRepository->isHasAdmin($user->id, $id);
     }
 
-    /**
-     * Get a family admin list
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
-     */
-    function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection
+    public function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->familyMemberRepository->getFamilyAdminPaging($id, $perPage);
 
@@ -166,46 +141,12 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
-     * Validate a secret key
-     * @param string $familyId
-     * @param string $secretKey
-     * @param string $token
-     * @return array
+     * Update a family's name. $name is client ciphertext (encrypted to the
+     * family public key), stored as-is.
+     *
      * @throws FamilyException
      */
-    function validateSecretKey(string $familyId, string $secretKey, string $token): array
-    {
-        $user = JWTAuth::setToken($token)->user();
-
-        if ($user == null) {
-            throw new FamilyException('User not found');
-        }
-
-        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
-
-        if ($familyKey == null) {
-            throw new FamilyException('Family Key not found');
-        }
-
-        if (!EncryptionHelper::validateSecretKey($secretKey, $familyKey->hashed_key)) {
-            throw new FamilyException('Invalid secret key');
-        }
-
-        return [
-            'public_key' => $familyKey->public_key,
-            'private_key' => $familyKey->private_key,
-        ];
-    }
-
-    /**
-     * Update a family data
-     * @param string $familyId
-     * @param string $name
-     * @return void
-     * @throws FamilyException
-     * @throws EncryptionException
-     */
-    function updateFamily(string $familyId, string $name): void
+    public function updateFamily(string $familyId, string $name): void
     {
         $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
 
@@ -213,22 +154,13 @@ class FamilyServiceImplement extends Service implements FamilyService
             throw new FamilyException('Family Key not found');
         }
 
-        $encryptedName = EncryptionHelper::encryptAsymmetric(
-            data: $name,
-            publicKey: base64_decode($familyKey->public_key)
-        );
-
-        $this->mainRepository->update($familyId, ['name' => $encryptedName]);
+        $this->mainRepository->update($familyId, ['name' => $name]);
     }
 
     /**
-     * Invite a member of a family
-     * @param string $familyId
-     * @param string $token
-     * @return array
      * @throws FamilyException
      */
-    function inviteMember(string $familyId, string $token): array
+    public function inviteMember(string $familyId, string $token): array
     {
         $admin = JWTAuth::setToken($token)->user();
 
@@ -237,9 +169,9 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $familyInvitation = [
-            "id" => Uuid::uuid4()->toString(),
-            "family" => $familyId,
-            "inviter_id" => $admin->id,
+            'id' => Uuid::uuid4()->toString(),
+            'family' => $familyId,
+            'inviter_id' => $admin->id,
         ];
 
         $redisKey = RedisKey::FamilyInvitation;
@@ -262,18 +194,13 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
-     * Response to an invitation
-     * @param string $invitationId
-     * @param string $familyId
-     * @param string $token
-     * @return array
+     * Join a family. Membership is granted immediately; the family private
+     * key is not — an admin must wrap it for this member first (see
+     * getPendingMembers/grantMemberKey). The client should poll getMyMemberKey.
+     *
      * @throws FamilyException
      */
-    function responseInvitation(
-        string $invitationId,
-        string $familyId,
-        string $token
-    ): array
+    public function responseInvitation(string $invitationId, string $familyId, string $token): array
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -294,7 +221,7 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $familyInvitation = $this->redisRepository->getRedis(
-            key: RedisKey::FamilyInvitation->value . ":{$familyId}"
+            key: RedisKey::FamilyInvitation->value.":{$familyId}"
         );
 
         if ($familyInvitation == null) {
@@ -321,23 +248,107 @@ class FamilyServiceImplement extends Service implements FamilyService
             ]);
         }
 
+        $memberKey = $this->familyMemberKeyRepository->getMemberKey($familyId, $user->id);
+
         return [
             'id' => $familyInvitation['id'],
             'family' => $familyInvitation['family'],
-            'public_key' => $familyKey['public_key'],
-            'private_key' => $familyKey['private_key'],
+            'public_key' => $familyKey?->public_key,
+            'wrapped_private_key' => $memberKey?->wrapped_private_key,
+            'key_status' => $memberKey ? 'granted' : 'pending',
+        ];
+    }
+
+    public function getPendingMembers(string $familyId): Collection
+    {
+        return $this->familyMemberKeyRepository->getPendingMembers($familyId);
+    }
+
+    /**
+     * @throws FamilyException
+     */
+    public function grantMemberKey(string $familyId, string $userId, string $wrappedPrivateKey, string $token): void
+    {
+        $admin = JWTAuth::setToken($token)->user();
+
+        if ($admin == null) {
+            throw new FamilyException('Admin not recognized');
+        }
+
+        $isMember = $this->familyMemberRepository->isHasAccess($userId, $familyId);
+
+        if (! $isMember) {
+            throw new FamilyException('User is not a member of this family');
+        }
+
+        $this->familyMemberKeyRepository->upsertMemberKey($familyId, $userId, $wrappedPrivateKey);
+    }
+
+    /**
+     * @throws FamilyException
+     */
+    public function getMyMemberKey(string $familyId, string $token): array
+    {
+        $user = JWTAuth::setToken($token)->user();
+
+        if ($user == null) {
+            throw new FamilyException('User not found');
+        }
+
+        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+        if ($familyKey == null) {
+            throw new FamilyException('Family Key not found');
+        }
+
+        $memberKey = $this->familyMemberKeyRepository->getMemberKey($familyId, $user->id);
+
+        return [
+            'public_key' => $familyKey->public_key,
+            'wrapped_private_key' => $memberKey?->wrapped_private_key,
+            'key_status' => $memberKey ? 'granted' : 'pending',
         ];
     }
 
     /**
-     * Grant admin access to a user
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return array
+     * Rotate the family keypair: replace the public key and re-wrap the
+     * private key for each currently-active member. Any member NOT included
+     * in $memberKeys (e.g. one just revoked) loses access to newly-encrypted
+     * family data going forward — their previously-cached copy of the old
+     * key still exists on their device, which is an inherent limitation of
+     * E2EE revocation shared by every product in this space.
+     *
      * @throws FamilyException
      */
-    function grantAdmin(string $familyId, string $userId, string $token,): void
+    public function rotateKey(string $familyId, string $publicKey, array $memberKeys, string $token): void
+    {
+        $admin = JWTAuth::setToken($token)->user();
+
+        if ($admin == null) {
+            throw new FamilyException('Admin not recognized');
+        }
+
+        $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
+
+        if ($familyKey == null) {
+            throw new FamilyException('Family Key not found');
+        }
+
+        $familyKey->public_key = $publicKey;
+        $familyKey->save();
+
+        $this->familyMemberKeyRepository->deleteAllForFamily($familyId);
+
+        foreach ($memberKeys as $memberKey) {
+            $this->familyMemberKeyRepository->upsertMemberKey(
+                $familyId,
+                $memberKey['user_id'],
+                $memberKey['wrapped_private_key']
+            );
+        }
+    }
+
+    public function grantAdmin(string $familyId, string $userId, string $token): void
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -355,14 +366,14 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
-     * Revoke member access to a family
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return void
+     * Revoke a member's access to the family. Their wrapped family key row is
+     * deleted so they can no longer fetch it — but full protection against a
+     * revoked member reading NEW family data requires the admin to also call
+     * rotateKey() afterwards.
+     *
      * @throws FamilyException
      */
-    function revokeMember(string $familyId, string $userId, string $token): void
+    public function revokeMember(string $familyId, string $userId, string $token): void
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -376,22 +387,18 @@ class FamilyServiceImplement extends Service implements FamilyService
 
         $isAlreadyAccess = $this->familyMemberRepository->isHasAccess($userId, $familyId);
 
-        if (!$isAlreadyAccess) {
+        if (! $isAlreadyAccess) {
             throw new FamilyException('User has been revoked or left from this family');
         }
 
         $this->familyMemberRepository->revokeMember($userId, $familyId);
+        $this->familyMemberKeyRepository->deleteMemberKey($familyId, $userId);
     }
 
     /**
-     * Revoke admin access to a user
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return void
      * @throws FamilyException
      */
-    function revokeAdmin(string $familyId, string $userId, string $token): void
+    public function revokeAdmin(string $familyId, string $userId, string $token): void
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -413,13 +420,9 @@ class FamilyServiceImplement extends Service implements FamilyService
     }
 
     /**
-     * Leave from family
-     * @param string $familyId
-     * @param string $token
-     * @return void
      * @throws FamilyException
      */
-    function leave(string $familyId, string $token)
+    public function leave(string $familyId, string $token)
     {
         $user = JWTAuth::setToken($token)->user();
 
@@ -428,28 +431,19 @@ class FamilyServiceImplement extends Service implements FamilyService
         }
 
         $this->familyMemberRepository->leaveFamily($user->id, $familyId);
+        $this->familyMemberKeyRepository->deleteMemberKey($familyId, $user->id);
     }
 
-
-    /**
-     * Get family user info
-     * @param string $userId
-     * @return FamilyMember|null
-     */
-    function getFamilyUserInfo(string $userId): ?FamilyMember
+    public function getFamilyUserInfo(string $userId): ?FamilyMember
     {
         return $this->familyMemberRepository->getDetailFromUser($userId);
     }
 
     /**
-     * Get family summary
-     * @param string $familyId
-     * @return array
      * @throws FamilyException
      */
-    function getFamilySummary(string $familyId): array
+    public function getFamilySummary(string $familyId): array
     {
-
         $family = $this->mainRepository->getFamilyDetail($familyId);
 
         if ($family == null) {
@@ -460,13 +454,13 @@ class FamilyServiceImplement extends Service implements FamilyService
 
         return [
             'id' => $family->id,
-            'name' =>$family->name,
+            'name' => $family->name,
             'created_by' => $family->created_by,
             'member' => $member->map(function ($member) {
                 $avatar = null;
 
-                if (!empty($member->users->avatar)) {
-                    $avatar = $this->s3Repository->getData('avatar/' . $member->users->id, $member->users->avatar);
+                if (! empty($member->users->avatar)) {
+                    $avatar = $this->s3Repository->getData('avatar/'.$member->users->id, $member->users->avatar);
                 }
 
                 return [

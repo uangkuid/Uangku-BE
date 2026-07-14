@@ -69,10 +69,7 @@ class UserResource extends Resource
                                         ->label(__('staffsus/users.fields.name')),
                                     TextEntry::make('email')
                                         ->label(__('staffsus/users.fields.email'))
-                                        ->getStateUsing(fn ($record) => EncryptionHelper::decryptFromString(
-                                            $record->email,
-                                            EncryptionHelper::getSystemSecretKey()
-                                        )),
+                                        ->getStateUsing(fn ($record) => EncryptionHelper::decryptEmail($record->email)),
                                     TextEntry::make('email_verified_at')
                                         ->label(__('staffsus/users.fields.email_status'))
                                         ->badge()

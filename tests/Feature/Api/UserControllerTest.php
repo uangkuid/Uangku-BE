@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
@@ -19,7 +19,7 @@ class UserControllerTest extends TestCase
     public function test_update_profile_requires_authentication(): void
     {
         $response = $this->putJson('/api/user', [
-            'name' => 'Updated Name'
+            'name' => 'Updated Name',
         ]);
 
         $response->assertStatus(401);
@@ -28,7 +28,7 @@ class UserControllerTest extends TestCase
     public function test_update_date_requires_authentication(): void
     {
         $response = $this->putJson('/api/user/date', [
-            'start_date_month' => 1
+            'start_date_month' => 1,
         ]);
 
         $response->assertStatus(401);
@@ -41,17 +41,7 @@ class UserControllerTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_pre_generate_secret_key_requires_authentication(): void
-    {
-        $response = $this->postJson('/api/user/secret/pre-generate');
-
-        $response->assertStatus(401);
-    }
-
-    public function test_generate_secret_key_requires_authentication(): void
-    {
-        $response = $this->postJson('/api/user/secret/generate');
-
-        $response->assertStatus(401);
-    }
+    // Secret-key rotation was consolidated into /auth/pre-change-password and
+    // /auth/change-password (see AuthControllerTest) — rotating the password
+    // and rotating the secret key are the same operation server-side now.
 }

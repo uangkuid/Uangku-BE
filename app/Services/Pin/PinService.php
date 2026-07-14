@@ -9,30 +9,22 @@ use LaravelEasyRepository\BaseService;
 
 interface PinService extends BaseService
 {
-
     /**
      * Check if pin is enabled for the user
-     * @param string $token
-     * @return bool
      */
     public function isPinEnable(string $token): bool;
 
     /**
      * Init PIN session for the user, active for 5 minutes and automatically deleted when expired
-     * @param string $token
-     * @return void
+     *
      * @throws SecurityException
-     * * @throws PinException
+     *                           * @throws PinException
      */
     public function initPin(string $token): void;
 
     /**
      * Create Pin for the user and enable PIN for the user
-     * @param string $token
-     * @param string $pin
-     * @param string $uuid
-     * @param string $otp
-     * @return void
+     *
      * @throws SecurityException|AuthException
      */
     public function createPin(
@@ -44,31 +36,25 @@ interface PinService extends BaseService
 
     /**
      * Delete Pin and disable PIN for the user
-     * @param string $token
-     * @return void
+     *
      * @throws AuthException|SecurityException
      */
     public function deletePin(string $token): void;
 
     /**
-     * Forgot Pin for the user, active for 5 minutes and automatically deleted when expired
-     * @param string $token
-     * @param string $password
-     * @return void
+     * Forgot Pin for the user, active for 5 minutes and automatically deleted when expired.
+     * $authKey proves the caller currently holds valid password+secret-key
+     * credentials (users.password stores bcrypt(authKey), not a raw password).
+     *
      * @throws PinException|SecurityException|AuthException
      */
     public function forgotPin(
         string $token,
-        string $password,
+        string $authKey,
     ): void;
 
     /**
      * Reset Pin for the user
-     * @param string $token
-     * @param string $pin
-     * @param string $uuid
-     * @param string $otp
-     * @return void
      */
     public function resetPin(
         string $token,
@@ -79,9 +65,6 @@ interface PinService extends BaseService
 
     /**
      * Verify Pin for the user
-     * @param string $token
-     * @param string $pin
-     * @return void
      */
     public function verifyPin(
         string $token,

@@ -15,7 +15,7 @@ class ViewUser extends ViewRecord
     {
         $record = $this->getRecord();
 
-        return EncryptionHelper::decryptFromString($record->email, EncryptionHelper::getSystemSecretKey());
+        return EncryptionHelper::decryptEmail($record->email);
     }
 
     protected function getHeaderWidgets(): array

@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
 {
-
     protected WalletService $walletService;
+
     protected UserService $userService;
 
     public function __construct(WalletService $walletService, UserService $userService)
@@ -42,7 +42,7 @@ class WalletController extends Controller
 
         return response()->json(new PaginationResponse(
             status: 200,
-            message: "Wallet data",
+            message: 'Wallet data',
             page: $wallet->currentPage(),
             totalPage: $wallet->total(),
             totalData: $wallet->total(),
@@ -51,18 +51,20 @@ class WalletController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created resource in storage. $name/$amount are ciphertext
+     * the client already encrypted to the right public key.
      */
     public function store(Request $request)
     {
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',
+            'amount' => 'required',
         ]);
 
-        //if validation fails
+        // if validation fails
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to create families", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to create families', $validator->errors()), 400);
         }
 
         try {
@@ -72,6 +74,7 @@ class WalletController extends Controller
 
             $wallet = $this->walletService->createWallet(
                 name: $request->name,
+                amount: $request->amount,
                 userId: $user->id,
                 familyId: $request->family_id ?? null,
             );
@@ -82,17 +85,19 @@ class WalletController extends Controller
                 201,
                 'Family created successfully.',
                 [
-                    "id" => $wallet["wallet"]->id,
-                    "name" => $request->name,
-                    "amount" => "0",
+                    'id' => $wallet['wallet']->id,
+                    'name' => $request->name,
+                    'amount' => $request->amount,
                 ]
             ));
         } catch (FamilyException|GeneralException|UserException $e) {
             DB::rollBack();
+
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(500, "Failed to create wallet", $e->getMessage()), 500);
+
+            return response()->json(new BaseResponse(500, 'Failed to create wallet', $e->getMessage()), 500);
         }
     }
 
@@ -105,9 +110,9 @@ class WalletController extends Controller
             'name' => 'required',
         ]);
 
-        //if validation fails
+        // if validation fails
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to update wallet", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to update wallet', $validator->errors()), 400);
         }
 
         try {
@@ -124,7 +129,7 @@ class WalletController extends Controller
         } catch (FamilyException|UserException|GeneralException $e) {
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to update wallet", $e->getMessage()), 500);
+            return response()->json(new BaseResponse(500, 'Failed to update wallet', $e->getMessage()), 500);
         }
     }
 
@@ -139,11 +144,11 @@ class WalletController extends Controller
     public function updateStatus(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'status' => "required|in:active,inactive",
+            'status' => 'required|in:active,inactive',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to update wallet status", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to update wallet status', $validator->errors()), 400);
         }
 
         try {
@@ -159,7 +164,7 @@ class WalletController extends Controller
         } catch (FamilyException|UserException|GeneralException $e) {
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to update wallet status", $e->getMessage()), 500);
+            return response()->json(new BaseResponse(500, 'Failed to update wallet status', $e->getMessage()), 500);
         }
     }
 
@@ -171,7 +176,7 @@ class WalletController extends Controller
 
         return response()->json(new PaginationResponse(
             status: 200,
-            message: "Wallet member data",
+            message: 'Wallet member data',
             page: $resource->currentPage(),
             totalPage: $resource->lastPage(),
             totalData: $resource->total(),
@@ -186,7 +191,7 @@ class WalletController extends Controller
 
             return response()->json(new PaginationResponse(
                 status: 200,
-                message: "Wallet member data",
+                message: 'Wallet member data',
                 page: $resource->currentPage(),
                 totalPage: $resource->lastPage(),
                 totalData: $resource->total(),
@@ -195,7 +200,7 @@ class WalletController extends Controller
         } catch (GeneralException $e) {
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to get family member", $e->getMessage()), 500);
+            return response()->json(new BaseResponse(500, 'Failed to get family member', $e->getMessage()), 500);
         }
     }
 
@@ -205,9 +210,9 @@ class WalletController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        //if validation fails
+        // if validation fails
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to add member", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to add member', $validator->errors()), 400);
         }
 
         try {
@@ -223,7 +228,7 @@ class WalletController extends Controller
         } catch (GeneralException $e) {
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to add member", $e->getMessage()), 500);
+            return response()->json(new BaseResponse(500, 'Failed to add member', $e->getMessage()), 500);
         }
     }
 
@@ -242,7 +247,7 @@ class WalletController extends Controller
         } catch (GeneralException $e) {
             return response()->json(new BaseResponse(400, $e->getMessage(), null), 400);
         } catch (Exception $e) {
-            return response()->json(new BaseResponse(500, "Failed to revoke member", $e->getMessage()), 500);
+            return response()->json(new BaseResponse(500, 'Failed to revoke member', $e->getMessage()), 500);
         }
     }
 
@@ -251,30 +256,30 @@ class WalletController extends Controller
         try {
             return response()->json(new BaseResponse(
                 200,
-                "Wallet snapshot data",
+                'Wallet snapshot data',
                 $this->walletService->getLatestSnapshot($id)
             ));
         } catch (Exception) {
-            return response()->json(new BaseResponse(500, "Failed to get wallet snapshot", null), 500);
+            return response()->json(new BaseResponse(500, 'Failed to get wallet snapshot', null), 500);
         }
     }
 
     public function getTransaction(Request $request, string $id)
     {
-        return response()->json(new BaseResponse(404, "Not implemented", null), 404);
-//        try {
-//            $resource = $this->walletService->getWalletTransaction($id);
-//
-//            return response()->json(new PaginationResponse(
-//                status: 200,
-//                message: "Wallet transaction data",
-//                page: $resource->currentPage(),
-//                totalPage: $resource->lastPage(),
-//                totalData: $resource->total(),
-//                resource: $resource
-//            ));
-//        } catch (Exception $e) {
-//            return response()->json(new BaseResponse(500, "Failed to get wallet transaction", $e->getMessage()), 500);
-//        }
+        return response()->json(new BaseResponse(404, 'Not implemented', null), 404);
+        //        try {
+        //            $resource = $this->walletService->getWalletTransaction($id);
+        //
+        //            return response()->json(new PaginationResponse(
+        //                status: 200,
+        //                message: "Wallet transaction data",
+        //                page: $resource->currentPage(),
+        //                totalPage: $resource->lastPage(),
+        //                totalData: $resource->total(),
+        //                resource: $resource
+        //            ));
+        //        } catch (Exception $e) {
+        //            return response()->json(new BaseResponse(500, "Failed to get wallet transaction", $e->getMessage()), 500);
+        //        }
     }
 }

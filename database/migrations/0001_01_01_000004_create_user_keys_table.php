@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('users')->index();
             $table->text('private_key');
             $table->text('public_key');
-            $table->string('hashed_key', 255);
+            $table->string('salt', 255);
             $table->string('hashed_pin', 255)->nullable();
             $table->timestamps();
 

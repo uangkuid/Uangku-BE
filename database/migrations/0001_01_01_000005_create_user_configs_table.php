@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('users')->index();
             $table->boolean('is_pin_enabled')->default(false);
-            $table->text('start_date_month');
+            $table->text('start_date_month')->nullable();
             $table->timestamps();
 
             $table->foreign('users')
