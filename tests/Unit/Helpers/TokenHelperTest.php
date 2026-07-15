@@ -4,8 +4,8 @@ namespace Tests\Unit\Helpers;
 
 use App\Helpers\TokenHelper;
 use App\Models\User;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class TokenHelperTest extends TestCase
 {
@@ -14,11 +14,7 @@ class TokenHelperTest extends TestCase
     public function test_generate_refresh_token_returns_string(): void
     {
         // Create a test user
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        $user = User::factory()->forEmail('test@example.com')->create(['name' => 'Test User']);
 
         $token = TokenHelper::generateRefreshToken($user);
 
@@ -28,11 +24,7 @@ class TokenHelperTest extends TestCase
 
     public function test_generate_refresh_token_creates_valid_jwt(): void
     {
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        $user = User::factory()->forEmail('test@example.com')->create(['name' => 'Test User']);
 
         $token = TokenHelper::generateRefreshToken($user);
 
@@ -43,11 +35,7 @@ class TokenHelperTest extends TestCase
 
     public function test_generate_refresh_token_has_extended_expiry(): void
     {
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        $user = User::factory()->forEmail('test@example.com')->create(['name' => 'Test User']);
 
         $token = TokenHelper::generateRefreshToken($user);
 

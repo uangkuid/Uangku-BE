@@ -59,8 +59,9 @@ jobs:
 
     - name: Set testing environment variables
       run: |
-        echo "MAIN_SECRET_KEY=test_secret_key_12345" >> .env
         echo "MAIN_SALT_KEY=test_salt_key_67890" >> .env
+        echo "MAIN_SYSTEM_KEY=test_system_key_12345" >> .env
+        echo "MAIN_BLIND_INDEX_KEY=test_blind_index_key_abcde" >> .env
         echo "JWT_SECRET=test_jwt_secret_key_for_testing_32chars" >> .env
 
     - name: Run Unit Tests

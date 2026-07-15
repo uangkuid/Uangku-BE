@@ -10,10 +10,10 @@ use App\Models\TransactionType;
 use App\Services\General\GeneralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class CategoryController extends Controller
 {
-
     protected GeneralService $generalService;
 
     public function __construct(GeneralService $generalService)
@@ -32,14 +32,14 @@ class CategoryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to create new categories", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to create new categories', $validator->errors()), 400);
         }
 
         $transactionType = TransactionType::where('id', $request['type']);
 
         // Check Transaction type
         if ($transactionType->count() < 1) {
-            return response()->json(new BaseResponse(400, "Transaction type not found"), 400);
+            return response()->json(new BaseResponse(400, 'Transaction type not found'), 400);
         }
 
         $category = Category::create([
@@ -49,7 +49,7 @@ class CategoryController extends Controller
 
         return response()->json(new BaseResponse(
             200,
-            "Create category successful",
+            'Create category successful',
             $category
         ));
     }
@@ -57,6 +57,18 @@ class CategoryController extends Controller
     /**
      * Display the specified resource.
      */
+    #[OA\Get(
+        path: '/categories',
+        summary: 'List categories',
+        description: 'Paginated list of transaction categories, optionally filtered by transaction type.',
+        tags: ['Category'],
+        parameters: [
+            new OA\Parameter(name: 'filter', in: 'query', required: false, description: 'Transaction type ID to filter by', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Success', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+        ]
+    )]
     public function getCategories(Request $request)
     {
         $type = $request->query('filter');
@@ -65,7 +77,7 @@ class CategoryController extends Controller
 
         return response()->json(new PaginationResponse(
             200,
-            "Success get categories",
+            'Success get categories',
             page: $resource->currentPage(),
             totalPage: $resource->currentPage(),
             totalData: $resource->total(),
@@ -89,7 +101,7 @@ class CategoryController extends Controller
         $category = Category::where('id', $id);
 
         if ($category->count() < 1) {
-            return response()->json(new BaseResponse(400, "Category requested not found"), 400);
+            return response()->json(new BaseResponse(400, 'Category requested not found'), 400);
         }
 
         $validator = Validator::make($request->all(), [
@@ -98,14 +110,14 @@ class CategoryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to update category", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to update category', $validator->errors()), 400);
         }
 
         $transactionType = TransactionType::where('id', $request['type']);
 
         // Check Transaction type
         if ($transactionType->count() < 1) {
-            return response()->json(new BaseResponse(400, "Transaction type not found"), 400);
+            return response()->json(new BaseResponse(400, 'Transaction type not found'), 400);
         }
 
         $category->update([
@@ -115,7 +127,7 @@ class CategoryController extends Controller
 
         return response()->json(new BaseResponse(
             200,
-            "Update category successful"
+            'Update category successful'
         ));
     }
 
@@ -127,14 +139,14 @@ class CategoryController extends Controller
         $category = Category::where('id', $id);
 
         if ($category->count() < 1) {
-            return response()->json(new BaseResponse(400, "Category requested not found"), 400);
+            return response()->json(new BaseResponse(400, 'Category requested not found'), 400);
         }
 
         $category->delete();
 
         return response()->json(new BaseResponse(
             200,
-            "Delete category successful"
+            'Delete category successful'
         ));
     }
 }

@@ -6,47 +6,33 @@ use App\Models\User;
 use App\Models\UserKey;
 use LaravelEasyRepository\Repository;
 
-interface UserRepository extends Repository{
-
+interface UserRepository extends Repository
+{
     /**
-     * Save the user's public and private keys.
-     * @param string $userId
-     * @param string $publicKey
-     * @param string $privateKey
-     * @param string $hashedKey
-     * @return UserKey
+     * Save the user's public key and client-wrapped private key.
+     *
+     * @param  string  $publicKey  Plaintext (public by definition).
+     * @param  string  $privateKey  Ciphertext: wrapped client-side with the 2SKD unlockKey.
+     * @param  string  $salt  Base64 PBKDF2 salt used by the client to derive kdfPass.
      */
-    function saveUserKey(
+    public function saveUserKey(
         string $userId,
         string $publicKey,
         string $privateKey,
-        string $hashedKey
+        string $salt
     ): UserKey;
 
-    /**
-     * Get the user's public and private keys.
-     * @param string $userId
-     * @return ?UserKey
-     */
-    function getUserKey(
+    public function getUserKey(
         string $userId
     ): ?UserKey;
 
     /**
-     * Check if the email already exists in the database.
-     * @param string $email
-     * @return bool
+     * Check if a user with the given email blind index already exists.
      */
-    function isEmailExist(
-        string $email,
-    ): bool;
+    public function isBlindIndexExist(string $blindIndex): bool;
 
     /**
-     * Get the user by email.
-     * @param string $email
-     * @return User|null
+     * Look up a user by their email blind index (HMAC lookup, not plaintext email).
      */
-    function getUserByEmail(
-        string $email,
-    ): ?User;
+    public function getUserByBlindIndex(string $blindIndex): ?User;
 }

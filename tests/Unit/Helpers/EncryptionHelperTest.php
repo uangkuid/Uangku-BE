@@ -12,220 +12,194 @@ class EncryptionHelperTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Set environment variables for testing
-        config(['app.key' => 'base64:' . base64_encode(random_bytes(32))]);
-        putenv('MAIN_SECRET_KEY=test_secret_key_12345');
         putenv('MAIN_SALT_KEY=test_salt_key_67890');
+        putenv('MAIN_SYSTEM_KEY=test_system_key_12345');
+        putenv('MAIN_BLIND_INDEX_KEY=test_blind_index_key_abcde');
     }
 
-    public function test_encrypt_returns_array_with_iv_and_data(): void
+    public function test_aes_gcm_encrypt_decrypt_round_trip(): void
     {
-        $data = 'test data';
-        $result = EncryptionHelper::encrypt($data);
+        $key = random_bytes(32);
+        $plaintext = 'wallet balance payload';
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('iv', $result);
-        $this->assertArrayHasKey('data', $result);
-        $this->assertNotEmpty($result['iv']);
-        $this->assertNotEmpty($result['data']);
+        $ciphertext = EncryptionHelper::aesGcmEncrypt($plaintext, $key);
+        $decrypted = EncryptionHelper::aesGcmDecrypt($ciphertext, $key);
+
+        $this->assertNotEquals($plaintext, $ciphertext);
+        $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function test_encrypt_and_decrypt_symmetric(): void
+    public function test_aes_gcm_encrypt_produces_random_iv_each_time(): void
     {
-        $data = 'test data for encryption';
-        $encrypted = EncryptionHelper::encrypt($data);
+        $key = random_bytes(32);
+        $plaintext = 'same plaintext';
 
-        $decrypted = EncryptionHelper::decrypt($encrypted['data'], $encrypted['iv']);
+        $a = EncryptionHelper::aesGcmEncrypt($plaintext, $key);
+        $b = EncryptionHelper::aesGcmEncrypt($plaintext, $key);
 
-        $this->assertEquals($data, $decrypted);
+        // No static IV: identical plaintext must not produce identical ciphertext.
+        $this->assertNotEquals($a, $b);
     }
 
-    public function test_encrypt_as_string_returns_string_with_dot_separator(): void
+    public function test_aes_gcm_decrypt_fails_on_tampered_ciphertext(): void
     {
-        $data = 'test data';
-        $result = EncryptionHelper::encryptAsString($data);
+        $key = random_bytes(32);
+        $ciphertext = EncryptionHelper::aesGcmEncrypt('integrity check', $key);
 
-        $this->assertIsString($result);
-        $this->assertStringContainsString('.', $result);
-        $parts = explode('.', $result);
-        $this->assertCount(2, $parts);
-    }
+        $raw = base64_decode($ciphertext);
+        $raw[strlen($raw) - 1] = chr(ord($raw[strlen($raw) - 1]) ^ 0xFF);
+        $tampered = base64_encode($raw);
 
-    public function test_encrypt_as_string_and_decrypt_from_string(): void
-    {
-        $data = 'test data for encryption';
-        $encrypted = EncryptionHelper::encryptAsString($data);
-
-        $decrypted = EncryptionHelper::decryptFromString($encrypted);
-
-        $this->assertEquals($data, $decrypted);
-    }
-
-    public function test_encrypt_asymmetric_and_decrypt_asymmetric(): void
-    {
-        $keyPair = EncryptionHelper::generateAsymmetricKey();
-        $publicKey = base64_decode($keyPair['public']);
-        $privateKey = base64_decode($keyPair['private']);
-
-        $data = 'test asymmetric encryption';
-        $encrypted = EncryptionHelper::encryptAsymmetric($data, $publicKey);
-
-        $this->assertIsString($encrypted);
-        $this->assertNotEmpty($encrypted);
-
-        $decrypted = EncryptionHelper::decryptAsymmetric($encrypted, $privateKey);
-
-        $this->assertEquals($data, $decrypted);
-    }
-
-    public function test_hash_secret_key_returns_hashed_string(): void
-    {
-        $secretKey = 'my-secret-key';
-        $hashed = EncryptionHelper::hashSecretKey($secretKey);
-
-        $this->assertIsString($hashed);
-        $this->assertNotEquals($secretKey, $hashed);
-        $this->assertNotEmpty($hashed);
-    }
-
-    public function test_validate_secret_key_with_correct_key(): void
-    {
-        $secretKey = 'my-secret-key';
-        $hashed = EncryptionHelper::hashSecretKey($secretKey);
-
-        $isValid = EncryptionHelper::validateSecretKey($secretKey, $hashed);
-
-        $this->assertTrue($isValid);
-    }
-
-    public function test_validate_secret_key_with_incorrect_key(): void
-    {
-        $secretKey = 'my-secret-key';
-        $wrongKey = 'wrong-secret-key';
-        $hashed = EncryptionHelper::hashSecretKey($secretKey);
-
-        $isValid = EncryptionHelper::validateSecretKey($wrongKey, $hashed);
-
-        $this->assertFalse($isValid);
-    }
-
-    public function test_generate_users_secret_key_format(): void
-    {
-        $secretKey = EncryptionHelper::generateUsersSecretKey();
-
-        $this->assertIsString($secretKey);
-        $this->assertStringStartsWith('UANGKU-', $secretKey);
-
-        // Check format: UANGKU-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX
-        $parts = explode('-', $secretKey);
-        $this->assertCount(6, $parts);
-        $this->assertEquals('UANGKU', $parts[0]);
-        $this->assertEquals(6, strlen($parts[1]));
-        $this->assertEquals(6, strlen($parts[2]));
-        $this->assertEquals(5, strlen($parts[3]));
-        $this->assertEquals(5, strlen($parts[4]));
-        $this->assertEquals(5, strlen($parts[5]));
-    }
-
-    public function test_xor_string_produces_different_output(): void
-    {
-        $input = 'test string';
-        $key = 16;
-
-        $result = EncryptionHelper::xorString($input, $key);
-
-        $this->assertIsString($result);
-        $this->assertNotEquals($input, $result);
-        $this->assertEquals(strlen($input), strlen($result));
-    }
-
-    public function test_xor_string_is_reversible(): void
-    {
-        $input = 'test string';
-        $key = 16;
-
-        $encoded = EncryptionHelper::xorString($input, $key);
-        $decoded = EncryptionHelper::xorString($encoded, $key);
-
-        $this->assertEquals($input, $decoded);
-    }
-
-    public function test_get_users_salt_from_secret_key(): void
-    {
-        $secretKey = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
-
-        $salt = EncryptionHelper::getUsersSalt($secretKey);
-
-        $this->assertIsString($salt);
-        $this->assertNotEmpty($salt);
-    }
-
-    public function test_get_users_encrypt_key(): void
-    {
-        $secretKey = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
-        $password = 'mypassword123';
-
-        $encryptKey = EncryptionHelper::getUsersEncryptKey($secretKey, $password);
-
-        $this->assertIsString($encryptKey);
-        $this->assertNotEmpty($encryptKey);
-    }
-
-    public function test_get_family_encryption_key(): void
-    {
-        $secretKey = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
-
-        $encryptKey = EncryptionHelper::getFamilyEncryptionKey($secretKey);
-
-        $this->assertIsString($encryptKey);
-        $this->assertNotEmpty($encryptKey);
-    }
-
-    public function test_generate_asymmetric_key_returns_key_pair(): void
-    {
-        $keyPair = EncryptionHelper::generateAsymmetricKey();
-
-        $this->assertIsArray($keyPair);
-        $this->assertArrayHasKey('private', $keyPair);
-        $this->assertArrayHasKey('public', $keyPair);
-        $this->assertNotEmpty($keyPair['private']);
-        $this->assertNotEmpty($keyPair['public']);
-    }
-
-    public function test_decrypt_throws_exception_with_invalid_data(): void
-    {
         $this->expectException(SecurityException::class);
-        $this->expectExceptionMessage('Decryption failed');
-
-        // Use properly formatted but invalid data (correct IV length)
-        $validIvLength = base64_encode(random_bytes(16));
-        $invalidData = base64_encode('corrupted_encrypted_data');
-        EncryptionHelper::decrypt($invalidData, $validIvLength);
+        EncryptionHelper::aesGcmDecrypt($tampered, $key);
     }
 
-    public function test_decrypt_from_string_throws_exception_with_invalid_data(): void
+    public function test_aes_gcm_decrypt_fails_with_wrong_key(): void
     {
+        $ciphertext = EncryptionHelper::aesGcmEncrypt('secret', random_bytes(32));
+
         $this->expectException(SecurityException::class);
-
-        // Use properly formatted but invalid data (correct IV length)
-        $validIvLength = base64_encode(random_bytes(16));
-        $invalidData = base64_encode('corrupted_encrypted_data');
-        EncryptionHelper::decryptFromString($validIvLength . '.' . $invalidData);
+        EncryptionHelper::aesGcmDecrypt($ciphertext, random_bytes(32));
     }
 
-    public function test_get_system_secret_key_returns_combined_keys(): void
+    public function test_aes_gcm_rejects_non_32_byte_keys(): void
     {
-        // Temporarily set environment variables using config
-        config(['app.main_secret_key' => 'test_secret_key_12345']);
-        config(['app.main_salt_key' => 'test_salt_key_67890']);
-        
-        // Mock env() to return config values
-        putenv('MAIN_SECRET_KEY=test_secret_key_12345');
-        putenv('MAIN_SALT_KEY=test_salt_key_67890');
-        
-        $result = EncryptionHelper::getSystemSecretKey();
+        $this->expectException(EncryptionException::class);
+        EncryptionHelper::aesGcmEncrypt('data', 'too-short-key');
+    }
 
-        $this->assertIsString($result);
-        $this->assertNotEmpty($result);
+    public function test_pbkdf2_is_deterministic_for_same_inputs(): void
+    {
+        $salt = random_bytes(16);
+
+        $a = EncryptionHelper::pbkdf2('correct horse battery staple', $salt, 10000, 32);
+        $b = EncryptionHelper::pbkdf2('correct horse battery staple', $salt, 10000, 32);
+
+        $this->assertEquals($a, $b);
+        $this->assertEquals(32, strlen($a));
+    }
+
+    public function test_pbkdf2_differs_for_different_passwords(): void
+    {
+        $salt = random_bytes(16);
+
+        $a = EncryptionHelper::pbkdf2('password-one', $salt, 10000);
+        $b = EncryptionHelper::pbkdf2('password-two', $salt, 10000);
+
+        $this->assertNotEquals($a, $b);
+    }
+
+    public function test_hkdf_domain_separation_produces_distinct_keys(): void
+    {
+        $ikm = random_bytes(32);
+
+        $authKey = EncryptionHelper::hkdf($ikm, 'uangku-auth-v1');
+        $encKey = EncryptionHelper::hkdf($ikm, 'uangku-enc-v1');
+
+        $this->assertEquals(32, strlen($authKey));
+        $this->assertNotEquals($authKey, $encKey);
+    }
+
+    /**
+     * Simulates the client-side 2SKD derivation to prove the resulting
+     * unlockKey requires BOTH the password and the secret key: flipping
+     * either factor alone must change the derived key.
+     */
+    public function test_two_secret_key_derivation_requires_both_factors(): void
+    {
+        $salt = random_bytes(16);
+        $deriveUnlockKey = function (string $password, string $secretKey) use ($salt): string {
+            $kdfPass = EncryptionHelper::pbkdf2($password, $salt, 1000, 32);
+            $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'user-salt');
+
+            return $kdfPass ^ $kdfSecret;
+        };
+
+        $correctPassword = 'CorrectHorse123!';
+        $correctSecret = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
+
+        $reference = $deriveUnlockKey($correctPassword, $correctSecret);
+        $wrongPassword = $deriveUnlockKey('WrongPassword!', $correctSecret);
+        $wrongSecret = $deriveUnlockKey($correctPassword, 'UANGKU-000000-000000-00000-00000-00000');
+
+        $this->assertNotEquals($reference, $wrongPassword);
+        $this->assertNotEquals($reference, $wrongSecret);
+        $this->assertNotEquals($wrongPassword, $wrongSecret);
+    }
+
+    public function test_hash_and_validate_secret_round_trip(): void
+    {
+        $authKey = base64_encode(random_bytes(32));
+        $hashed = EncryptionHelper::hashSecret($authKey);
+
+        $this->assertNotEquals($authKey, $hashed);
+        $this->assertTrue(EncryptionHelper::validateSecret($authKey, $hashed));
+        $this->assertFalse(EncryptionHelper::validateSecret('wrong-auth-key', $hashed));
+    }
+
+    public function test_blind_index_is_deterministic_and_case_insensitive(): void
+    {
+        $a = EncryptionHelper::blindIndex('User@Example.com');
+        $b = EncryptionHelper::blindIndex('user@example.com ');
+
+        $this->assertEquals($a, $b);
+        $this->assertEquals(64, strlen($a)); // hex-encoded SHA-256
+    }
+
+    public function test_blind_index_differs_for_different_emails(): void
+    {
+        $a = EncryptionHelper::blindIndex('alice@example.com');
+        $b = EncryptionHelper::blindIndex('bob@example.com');
+
+        $this->assertNotEquals($a, $b);
+    }
+
+    public function test_encrypt_system_and_decrypt_system_round_trip(): void
+    {
+        $email = 'support-visible@example.com';
+        $encrypted = EncryptionHelper::encryptSystem($email);
+        $decrypted = EncryptionHelper::decryptSystem($encrypted);
+
+        $this->assertNotEquals($email, $encrypted);
+        $this->assertEquals($email, $decrypted);
+    }
+
+    public function test_encrypt_email_produces_different_ciphertext_each_time(): void
+    {
+        $email = 'same@example.com';
+
+        $a = EncryptionHelper::encryptEmail($email);
+        $b = EncryptionHelper::encryptEmail($email);
+
+        // Random IV per encryption: no more static-IV equality leak.
+        $this->assertNotEquals($a, $b);
+        $this->assertEquals($email, EncryptionHelper::decryptEmail($a));
+        $this->assertEquals($email, EncryptionHelper::decryptEmail($b));
+    }
+
+    public function test_encrypt_system_throws_when_key_not_configured(): void
+    {
+        $this->unsetEnv('MAIN_SYSTEM_KEY');
+
+        $this->expectException(EncryptionException::class);
+        EncryptionHelper::encryptSystem('data');
+    }
+
+    public function test_blind_index_throws_when_key_not_configured(): void
+    {
+        $this->unsetEnv('MAIN_BLIND_INDEX_KEY');
+
+        $this->expectException(EncryptionException::class);
+        EncryptionHelper::blindIndex('someone@example.com');
+    }
+
+    /**
+     * putenv() alone doesn't clear $_ENV/$_SERVER, which phpunit.xml <env>
+     * values populate — env() checks those first, so all three must be cleared.
+     */
+    private function unsetEnv(string $key): void
+    {
+        putenv($key);
+        unset($_ENV[$key], $_SERVER[$key]);
     }
 }

@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class FamilyKey extends Model
+class FamilyMemberKey extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'public_key',
         'family',
+        'users',
+        'wrapped_private_key',
     ];
 }

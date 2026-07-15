@@ -14,7 +14,7 @@ class UserKey extends Model
         'public_key',
         'private_key',
         'users',
-        'hashed_key',
-        'hashed_pin'
+        'salt',
+        'hashed_pin',
     ];
 }
