@@ -49,20 +49,14 @@ class UsersTable
                     ->toggleable(),
                 TextColumn::make('email')
                     ->label(__('staffsus/users.fields.email'))
-                    ->formatStateUsing(fn ($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
+                    ->formatStateUsing(fn ($state) => EncryptionHelper::decryptEmail($state))
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         // Cek apakah input merupakan email valid
                         if (! filter_var($search, FILTER_VALIDATE_EMAIL)) {
                             return $query; // Skip filter, biar nggak error dan tetap bisa search lainnya
                         }
 
-                        $staticIv = env('MAIN_STATIC_IV') ?? throw new \Exception('Static IV not found!');
-
-                        return $query->where('email', EncryptionHelper::encryptAsString(
-                            data: $search,
-                            key: EncryptionHelper::getSystemSecretKey(),
-                            iv: $staticIv,
-                        ));
+                        return $query->where('blind_index', EncryptionHelper::blindIndex($search));
                     })
                     ->toggleable(),
                 TextColumn::make('status')

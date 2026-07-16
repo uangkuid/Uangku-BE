@@ -3,8 +3,8 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class OtpControllerTest extends TestCase
 {
@@ -21,7 +21,7 @@ class OtpControllerTest extends TestCase
     {
         $response = $this->postJson('/api/otp/send/register', [
             'email' => 'test@example.com',
-            'uuid' => 'test-uuid'
+            'uuid' => 'test-uuid',
         ]);
 
         // Response depends on implementation (may return 500 if email service not configured)
@@ -37,13 +37,11 @@ class OtpControllerTest extends TestCase
 
     public function test_send_forgot_password_otp_with_valid_email(): void
     {
-        $user = User::factory()->create([
-            'email' => 'test@example.com'
-        ]);
+        $user = User::factory()->forEmail('test@example.com')->create();
 
         $response = $this->postJson('/api/otp/send/forgot-password', [
             'email' => 'test@example.com',
-            'uuid' => 'test-uuid'
+            'uuid' => 'test-uuid',
         ]);
 
         // Response depends on implementation (may return 500 if email service not configured)
@@ -67,13 +65,6 @@ class OtpControllerTest extends TestCase
     public function test_send_forgot_pin_otp_requires_authentication(): void
     {
         $response = $this->postJson('/api/otp/send/forgot-pin');
-
-        $response->assertStatus(401);
-    }
-
-    public function test_send_change_secret_key_otp_requires_authentication(): void
-    {
-        $response = $this->postJson('/api/otp/send/change-secret-key');
 
         $response->assertStatus(401);
     }

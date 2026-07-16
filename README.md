@@ -27,6 +27,22 @@ php artisan vendor:publish --provider="PHPOpenSourceSaver\JWTAuth\Providers\Lara
 php artisan jwt:secret
 ```
 
+### Generate Zero-Knowledge Encryption Secrets
+
+Uangku's encryption layer (see [`docs/encryption_refactor.md`](docs/encryption_refactor.md)) needs a few
+server-side secrets in `.env`: `MAIN_SALT_KEY`, `MAIN_SYSTEM_KEY`, `MAIN_BLIND_INDEX_KEY`, and
+`ADMIN_SECRET_KEY`. Generate them all in one go instead of filling them in by hand:
+
+```
+php artisan uangku:generate-secrets
+```
+
+- Only fills in **blank** values by default — safe to re-run, won't touch keys you've already set.
+- `--show` prints generated values without writing to `.env` (dry run).
+- `--force` regenerates *everything*, including values already set — only use this on a fresh
+  install. Rotating these on a running system invalidates existing PIN hashes, email lookups, and
+  login verifiers for every account.
+
 ### Service Library
 
 ```
@@ -184,14 +200,13 @@ use App\Helpers\EncryptionHelper;
 
 class EncryptionHelperTest extends TestCase
 {
-    public function test_encryption_works(): void
+    public function test_aes_gcm_round_trip(): void
     {
-        $data = 'test data';
-        $result = EncryptionHelper::encrypt($data);
-        
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('iv', $result);
-        $this->assertArrayHasKey('data', $result);
+        $key = random_bytes(32);
+        $ciphertext = EncryptionHelper::aesGcmEncrypt('test data', $key);
+
+        $this->assertNotEquals('test data', $ciphertext);
+        $this->assertEquals('test data', EncryptionHelper::aesGcmDecrypt($ciphertext, $key));
     }
 }
 ```

@@ -4,15 +4,12 @@ namespace App\Services\Wallet;
 
 use App\Enums\RoleFamily;
 use App\Enums\RoleWallet;
-use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
 use App\Exceptions\UserException;
-use App\Helpers\EncryptionHelper;
 use App\Http\Resources\Models\FamilyMemberResource;
 use App\Http\Resources\Models\WalletMemberResource;
 use App\Http\Resources\Models\WalletResource;
-use App\Http\Resources\Models\WalletTransactionResource;
 use App\Models\WalletAccess;
 use App\Models\WalletSnapshot;
 use App\Models\WalletTransaction;
@@ -28,29 +25,33 @@ use LaravelEasyRepository\Service;
 
 class WalletServiceImplement extends Service implements WalletService
 {
-
     /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
     protected WalletRepository $mainRepository;
+
     protected WalletAccessRepository $access;
+
     protected FamilyKeyRepository $familyKeyRepository;
+
     protected FamilyMemberRepository $familyMemberRepository;
+
     protected UserRepository $userRepository;
+
     protected WalletTransactionRepository $walletTransactionRepository;
+
     protected WalletSnapshotRepository $walletSnapshotRepository;
 
     public function __construct(
-        WalletRepository       $mainRepository,
+        WalletRepository $mainRepository,
         WalletAccessRepository $access,
-        FamilyKeyRepository    $familyKeyRepository,
+        FamilyKeyRepository $familyKeyRepository,
         FamilyMemberRepository $familyMemberRepository,
-        UserRepository         $userRepository,
+        UserRepository $userRepository,
         WalletTransactionRepository $walletTransactionRepository,
         WalletSnapshotRepository $walletSnapshotRepository
-    )
-    {
+    ) {
         $this->mainRepository = $mainRepository;
         $this->access = $access;
         $this->familyKeyRepository = $familyKeyRepository;
@@ -62,54 +63,46 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Get wallet access for a user.
-     * @param string $userId
-     * @return array
      */
-    function getWalletAccess(string $userId): array
+    public function getWalletAccess(string $userId): array
     {
         return $this->mainRepository->getIndividualWallet($userId);
     }
 
     /**
-     * Create a new wallet for a user.
-     * @param string $name
-     * @param string $userId
-     * @param string|null $familyId
-     * @return array
+     * Create a new wallet for a user. $name and $amount are ciphertext the
+     * client already encrypted to the right public key (the family's if
+     * $familyId is set, otherwise the user's own) — the server never sees
+     * the plaintext wallet name or balance.
+     *
+     * Note: because $name is non-deterministic ciphertext, the "name already
+     * exists" check below can no longer reliably detect duplicate plaintext
+     * names — it only catches byte-identical ciphertext. This is an inherent
+     * trade-off of moving encryption client-side.
+     *
      * @throws FamilyException
-     * @throws EncryptionException
      * @throws UserException
      * @throws GeneralException
      */
-    function createWallet(string $name, string $userId, ?string $familyId = null): array
+    public function createWallet(string $name, string $amount, string $userId, ?string $familyId = null): array
     {
         if ($familyId != null) {
             $isHasAdmin = $this->familyMemberRepository->isHasAdmin($userId, $familyId);
 
-            if (!$isHasAdmin) {
+            if (! $isHasAdmin) {
                 throw new FamilyException("You don't have permission to create a wallet in this family");
             }
 
             $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
 
             if ($familyKey == null) {
-                throw new FamilyException("FamilyKey not found");
+                throw new FamilyException('FamilyKey not found');
             }
-
-            $name = EncryptionHelper::encryptAsymmetric(
-                data: $name,
-                publicKey: base64_decode($familyKey->public_key)
-            );
-
-            $amount = EncryptionHelper::encryptAsymmetric(
-                data: "0",
-                publicKey: base64_decode($familyKey->public_key)
-            );
 
             $isExist = $this->mainRepository->isNameExist(name: $name, familyId: $familyId);
 
             if ($isExist) {
-                throw new GeneralException("Wallet name already exists in this family");
+                throw new GeneralException('Wallet name already exists in this family');
             }
 
             $wallet = $this->mainRepository->createWallet(
@@ -118,28 +111,17 @@ class WalletServiceImplement extends Service implements WalletService
                 userId: $userId,
                 familyId: $familyId
             );
-
         } else {
             $userKey = $this->userRepository->getUserKey($userId);
 
             if ($userKey == null) {
-                throw new UserException("User key not found");
+                throw new UserException('User key not found');
             }
-
-            $name = EncryptionHelper::encryptAsymmetric(
-                data: $name,
-                publicKey: base64_decode($userKey->public_key)
-            );
-
-            $amount = EncryptionHelper::encryptAsymmetric(
-                data: "0",
-                publicKey: base64_decode($userKey->public_key)
-            );
 
             $isExist = $this->mainRepository->isNameExist(name: $name);
 
             if ($isExist) {
-                throw new GeneralException("Wallet name already exists in this family");
+                throw new GeneralException('Wallet name already exists in this family');
             }
 
             $wallet = $this->mainRepository->createWallet(
@@ -147,7 +129,6 @@ class WalletServiceImplement extends Service implements WalletService
                 amount: $amount,
                 userId: $userId
             );
-
         }
 
         $access = $this->grantAccess(
@@ -158,19 +139,14 @@ class WalletServiceImplement extends Service implements WalletService
 
         return [
             'wallet' => $wallet,
-            'access' => $access
+            'access' => $access,
         ];
     }
 
     /**
      * Grant access to a user for a specific wallet.
-     *
-     * @param string $userId
-     * @param string $walletId
-     * @param RoleWallet $accessType
-     * @return WalletAccess
      */
-    function grantAccess(string $userId, string $walletId, RoleWallet $accessType): WalletAccess
+    public function grantAccess(string $userId, string $walletId, RoleWallet $accessType): WalletAccess
     {
         $isHasAccessBefore = $this->access->isHasAccessBefore(
             userId: $userId,
@@ -178,7 +154,8 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         if ($isHasAccessBefore) {
-            $this->access->grantAccess(walletId: $walletId,userId: $userId);
+            $this->access->grantAccess(walletId: $walletId, userId: $userId);
+
             return $this->access->getDetailAccess(walletId: $walletId, userId: $userId);
         } else {
             return $this->access->create([
@@ -190,13 +167,7 @@ class WalletServiceImplement extends Service implements WalletService
         }
     }
 
-    /**
-     * @param string $userId
-     * @param int $perPage
-     * @param string|null $familyId
-     * @return AnonymousResourceCollection
-     */
-    function getWallet(string $userId, int $perPage = 10, ?string $familyId = null): AnonymousResourceCollection
+    public function getWallet(string $userId, int $perPage = 10, ?string $familyId = null): AnonymousResourceCollection
     {
         $paginator = $this->access->getWalletPaging(
             userId: $userId,
@@ -209,12 +180,8 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Check if a user has admin access to a wallet.
-     * @param string $walletId
-     * @param string $userId
-     * @param string|null $familyId
-     * @return bool
      */
-    function isHasAdminAccess(string $walletId, string $userId, ?string $familyId = null): bool
+    public function isHasAdminAccess(string $walletId, string $userId, ?string $familyId = null): bool
     {
         return $this->access->isHasAdminAccess(
             userId: $userId,
@@ -223,29 +190,19 @@ class WalletServiceImplement extends Service implements WalletService
     }
 
     /**
-     * Update a wallet's data
-     * @param string $walletId
-     * @param string $name
-     * @param string|null $familyId
-     * @return void
+     * Update a wallet's data. $name is client ciphertext, stored as-is.
+     *
      * @throws FamilyException
-     * @throws UserException|EncryptionException
-     * @throws GeneralException
+     * @throws UserException
      */
-    function updateWallet(string $walletId, string $name, ?string $familyId = null): void
+    public function updateWallet(string $walletId, string $name, ?string $familyId = null): void
     {
         if ($familyId != null) {
-
             $familyKey = $this->familyKeyRepository->getFamilyKey($familyId);
 
             if ($familyKey == null) {
-                throw new FamilyException("FamilyKey not found");
+                throw new FamilyException('FamilyKey not found');
             }
-
-            $name = EncryptionHelper::encryptAsymmetric(
-                data: $name,
-                publicKey: base64_decode($familyKey->public_key)
-            );
 
             $this->mainRepository->updateWallet(
                 name: $name,
@@ -256,13 +213,8 @@ class WalletServiceImplement extends Service implements WalletService
             $userKey = $this->userRepository->getUserKey(auth()->user()->id);
 
             if ($userKey == null) {
-                throw new UserException("User key not found");
+                throw new UserException('User key not found');
             }
-
-            $name = EncryptionHelper::encryptAsymmetric(
-                data: $name,
-                publicKey: base64_decode($userKey->public_key)
-            );
 
             $this->mainRepository->updateWallet(
                 name: $name,
@@ -273,11 +225,8 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Update the status of a wallet.
-     * @param string $walletId
-     * @param string $status
-     * @return void
      */
-    function updateWalletStatus(string $walletId, string $status): void
+    public function updateWalletStatus(string $walletId, string $status): void
     {
         $this->mainRepository->updateWalletStatus(
             walletId: $walletId,
@@ -287,22 +236,16 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Check if a user has access to a wallet.
-     * @param string $walletId
-     * @param string $userId
-     * @return bool
      */
-    function isHasAccess(string $walletId, string $userId): bool
+    public function isHasAccess(string $walletId, string $userId): bool
     {
         return $this->access->isHasAccess(userId: $userId, walletId: $walletId);
     }
 
     /**
      * Get a list of users who have access to a specific wallet.
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
      */
-    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
+    public function getMember(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->access->getAccessPaging(
             walletId: $id,
@@ -314,12 +257,10 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Get a list of family members who have access to a specific wallet.
-     * @param string $id
-     * @param int $perPage
-     * @return AnonymousResourceCollection
+     *
      * @throws GeneralException
      */
-    function getFamilyNotJoinWallet(string $id, int $perPage = 10): AnonymousResourceCollection
+    public function getFamilyNotJoinWallet(string $id, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->familyMemberRepository->getMemberNotJoinWallet(
             walletId: $id,
@@ -331,12 +272,10 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Add a member to a wallet.
-     * @param string $id
-     * @param string $userId
-     * @return array
+     *
      * @throws GeneralException
      */
-    function addMember(string $id, string $userId): array
+    public function addMember(string $id, string $userId): array
     {
         $isExist = $this->access->isHasAccess(
             userId: $userId,
@@ -344,7 +283,7 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         if ($isExist) {
-            throw new GeneralException("User already has access to this wallet");
+            throw new GeneralException('User already has access to this wallet');
         }
 
         $familyAccess = $this->familyMemberRepository->getDetailFromUser(
@@ -352,7 +291,7 @@ class WalletServiceImplement extends Service implements WalletService
         );
 
         if ($familyAccess == null) {
-            throw new GeneralException("User is not a member of any family");
+            throw new GeneralException('User is not a member of any family');
         }
 
         if ($familyAccess->role == RoleFamily::Member->value) {
@@ -370,26 +309,24 @@ class WalletServiceImplement extends Service implements WalletService
         }
 
         return [
-            "access" => $access,
+            'access' => $access,
         ];
     }
 
     /**
      * Revoke a user's access to a wallet.
-     * @param string $id
-     * @param string $userId
-     * @return void
+     *
      * @throws GeneralException
      */
-    function revokeMember(string $id, string $userId): void
+    public function revokeMember(string $id, string $userId): void
     {
         $isExist = $this->access->isHasAccess(
             userId: $userId,
             walletId: $id
         );
 
-        if (!$isExist) {
-            throw new GeneralException("User does not have access to this wallet");
+        if (! $isExist) {
+            throw new GeneralException('User does not have access to this wallet');
         }
 
         $this->access->revokeAccess(
@@ -400,25 +337,18 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Create a new wallet transaction.
-     * @param string $userId
-     * @param string $walletId
-     * @param string $amount
-     * @param string $transactionTypeId
-     * @param string|null $family
-     * @return WalletTransaction
+     *
      * @throws GeneralException
      * @throws FamilyException
-     * @throws EncryptionException
      */
-    function createWalletTransaction(
+    public function createWalletTransaction(
         string $userId,
         string $walletId,
         string $amount,
         string $transactionTypeId,
         string $transactionId,
         ?string $family = null
-    ): WalletTransaction
-    {
+    ): WalletTransaction {
         $walletAccess = $this->access->getDetailAccess(
             walletId: $walletId,
             userId: $userId
@@ -440,43 +370,34 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Get the latest wallet snapshot for a specific wallet.
-     * @param string $walletId
-     * @return WalletSnapshot|null
      */
-    function getLatestSnapshot(
+    public function getLatestSnapshot(
         string $walletId,
-    ): ?WalletSnapshot
-    {
+    ): ?WalletSnapshot {
         return $this->walletSnapshotRepository->getLastSnapshot($walletId);
     }
 
     /**
      * Create a wallet snapshot.
-     * @param string $wallet
-     * @param string $walletTransaction
-     * @param string $amount
-     * @param string|null $balance
-     * @param string|null $snapshotId
-     * @return WalletSnapshot
+     *
      * @throws GeneralException
      */
-    function createWalletSnapshot(
+    public function createWalletSnapshot(
         string $wallet,
         string $walletTransaction,
         string $amount,
         ?string $balance = null,
         ?string $snapshotId = null
-    ): WalletSnapshot
-    {
+    ): WalletSnapshot {
         if ($snapshotId != null) {
             $lastSnapshot = $this->walletSnapshotRepository->getLastSnapshot($wallet);
 
             if ($lastSnapshot != null && $lastSnapshot->id != $snapshotId) {
-                throw new GeneralException("Snapshot not found or does not match the last snapshot");
+                throw new GeneralException('Snapshot not found or does not match the last snapshot');
             }
 
             if ($balance == null) {
-                throw new GeneralException("Balance is required when snapshot ID is provided");
+                throw new GeneralException('Balance is required when snapshot ID is provided');
             }
 
             // amount with balance
@@ -492,40 +413,30 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Update an existing wallet transaction.
-     * @param string $id
-     * @param string $amount
-     * @param string $userId
-     * @return void
      */
-    function updateWalletTransaction(
+    public function updateWalletTransaction(
         string $id,
         string $amount,
         string $userId
-    ): void
-    {
+    ): void {
         $this->walletTransactionRepository->updateTransaction(
             id: $id,
-            amount: $amount,userId: $userId
+            amount: $amount, userId: $userId
         );
     }
 
     /**
      * Get detailed information about a specific wallet transaction.
-     * @param string $id
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransaction(string $id): ?WalletTransaction
+    public function getDetailWalletTransaction(string $id): ?WalletTransaction
     {
         return $this->walletTransactionRepository->getDetailWalletTransaction(id: $id);
     }
 
     /**
      * Delete a wallet transaction.
-     * @param string $id
-     * @param string $userId
-     * @return void
      */
-    function deleteWalletTransaction(string $id, string $userId): void
+    public function deleteWalletTransaction(string $id, string $userId): void
     {
 
         $this->walletTransactionRepository->deleteTransaction(id: $id, userId: $userId);
@@ -533,10 +444,8 @@ class WalletServiceImplement extends Service implements WalletService
 
     /**
      * Get detailed wallet transaction by transaction ID.
-     * @param string $transactionId
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    public function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
     {
         return $this->walletTransactionRepository->getDetailWalletTransactionByTransactionId(transactionId: $transactionId);
     }

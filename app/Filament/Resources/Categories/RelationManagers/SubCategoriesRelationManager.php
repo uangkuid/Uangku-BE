@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Categories\RelationManagers;
 
 use App\Helpers\EncryptionHelper;
 use App\Models\SubCategory;
-use Exception;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -56,10 +55,9 @@ class SubCategoriesRelationManager extends RelationManager
                                     ->content(fn (SubCategory $record): ?string => $record->user?->id),
                                 Placeholder::make('user.email')
                                     ->label(__('staffsus/categories.sub_categories.fields.email'))
-                                    ->content(fn (SubCategory $record): ?string => EncryptionHelper::decryptFromString(
-                                        encryptedData: $record->user?->email,
-                                        key: EncryptionHelper::getSystemSecretKey()
-                                    ))
+                                    ->content(fn (SubCategory $record): ?string => $record->user?->email
+                                        ? EncryptionHelper::decryptEmail($record->user->email)
+                                        : null)
                                     ->columnSpanFull(),
                             ]),
                     ])
@@ -92,7 +90,7 @@ class SubCategoriesRelationManager extends RelationManager
                     ->searchable(),
                 TextColumn::make('user.email')
                     ->label(__('staffsus/categories.sub_categories.fields.user_email'))
-                    ->formatStateUsing(fn ($state) => EncryptionHelper::decryptFromString($state, EncryptionHelper::getSystemSecretKey()))
+                    ->formatStateUsing(fn ($state) => $state ? EncryptionHelper::decryptEmail($state) : null)
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         // Cek apakah input merupakan email valid
                         if (! filter_var($search, FILTER_VALIDATE_EMAIL)) {
@@ -100,12 +98,7 @@ class SubCategoriesRelationManager extends RelationManager
                         }
 
                         return $query->whereHas('user', function ($q) use ($search) {
-                            $staticIv = env('MAIN_STATIC_IV') ?? throw new Exception('Static IV not found!');
-                            $q->where('email', EncryptionHelper::encryptAsString(
-                                data: $search,
-                                key: EncryptionHelper::getSystemSecretKey(),
-                                iv: $staticIv,
-                            ));
+                            $q->where('blind_index', EncryptionHelper::blindIndex($search));
                         });
                     })
                     ->toggleable(),
@@ -157,7 +150,7 @@ class SubCategoriesRelationManager extends RelationManager
             ])
             ->groups([
                 Group::make('user.email')
-                    ->getTitleFromRecordUsing(fn (SubCategory $record): string => EncryptionHelper::decryptFromString($record->user->email, EncryptionHelper::getSystemSecretKey()))
+                    ->getTitleFromRecordUsing(fn (SubCategory $record): string => EncryptionHelper::decryptEmail($record->user->email))
                     ->collapsible(),
                 Group::make('families')
                     ->label(__('staffsus/categories.sub_categories.groups.family'))

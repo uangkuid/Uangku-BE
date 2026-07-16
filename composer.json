@@ -9,6 +9,7 @@
         "ext-openssl": "*",
         "bezhansalleh/filament-language-switch": "^5.0",
         "bezhansalleh/filament-shield": "^4.2",
+        "darkaonline/l5-swagger": "^11.1",
         "filament/filament": "^5.1",
         "laravel/framework": "^13.0",
         "laravel/octane": "^2.9",

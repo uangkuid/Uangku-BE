@@ -11,135 +11,111 @@ use Exception;
 use LaravelEasyRepository\BaseService;
 use Random\RandomException;
 
+/**
+ * Zero-Knowledge auth contract. The server never receives a raw password or
+ * the user's UANGKU-XXXX secret key — only the client-derived authKey (proof
+ * of both factors via 2SKD) and opaque, client-encrypted key material.
+ * See docs/encryption_refactor.md for the full derivation clients must implement.
+ */
 interface AuthService extends BaseService
 {
-
     /**
-     * Register a new user.
-     * @param string $name
-     * @param string $email
-     * @param string $password
-     * @param string $otp
-     * @param string $uuid
-     * @param bool $isSeeder
-     * @return array
+     * Register a new user. The client has already generated the secret key,
+     * the RSA keypair, and wrapped the private key with the 2SKD unlockKey.
+     *
+     * @param  string  $authKey  Base64 authKey derived client-side from password + secret key.
+     * @param  string  $salt  Base64 PBKDF2 salt used by the client.
+     * @param  string  $publicKey  Base64 public key (plaintext by definition).
+     * @param  string  $wrappedPrivateKey  Client ciphertext (AES-256-GCM under unlockKey).
+     *
      * @throws AuthException
      */
-    function register(
+    public function register(
         string $name,
         string $email,
-        string $password,
+        string $authKey,
+        string $salt,
+        string $publicKey,
+        string $wrappedPrivateKey,
         string $otp,
         string $uuid,
-        bool   $isSeeder = false
+        bool $isSeeder = false
     ): array;
 
     /**
-     * Save the user's public and private keys.
-     * @param string $userId
-     * @param string $publicKey
-     * @param string $privateKey
-     * @param string $secretKey
-     * @param string $password
-     * @return UserKey
-     */
-    function saveUserKey(
-        string $userId,
-        string $publicKey,
-        string $privateKey,
-        string $secretKey,
-        string $password
-    ): UserKey;
-
-    /**
-     * Get the user's public and private keys.
-     * @param string $userId
-     * @return UserKey
      * @throws AuthException
      */
-    function getUserKey(
-        string $userId
-    ): UserKey;
+    public function getUserKey(string $userId): UserKey;
 
     /**
-     * Pre-register a new user. active for 5 minutes when expired user will delete automatically
-     * @param string $email
-     * @return void
      * @throws AuthException
      * @throws Exception
      */
-    function preRegister(
-        string $email
-    );
+    public function preRegister(string $email): void;
 
     /**
-     * Login a user.
-     * @param string $email
-     * @param string $password
-     * @param string $secretKey
-     * @return array
+     * Return the salt (and KDF params) a client needs to derive kdfPass for the
+     * given email. Returns a deterministic, indistinguishable salt for unknown
+     * emails so the endpoint cannot be used to enumerate registered accounts.
+     */
+    public function getSalt(string $email): array;
+
+    /**
      * @throws AuthException
      * @throws Exception
      */
-    function login(
-        string $email,
-        string $password,
-        string $secretKey
-    ): array;
+    public function login(string $email, string $authKey): array;
 
     /**
-     * Logout a user. and revoke the token
-     * @param string $token
-     * @param string $refreshToken
-     * @return bool
      * @throws AuthException
      */
-    function logout(
-        string $token,
-        string $refreshToken
-    ): bool;
+    public function logout(string $token, string $refreshToken): bool;
 
     /**
-     * Pre change password. active for 5 minutes when expired session will delete automatically
-     * @param $token
-     * @return void
-     * @return void
      * @throws AuthException
      * @throws Exception|SecurityException
      */
-    function preChangePassword($token): void;
+    public function preChangeCredentials($token): void;
 
     /**
-     * @param string $token
-     * @param string $oldPassword
-     * @param string $newPassword
-     * @param string $otp
-     * @param string $uuid
+     * Change password/secret-key while authenticated: the client still holds
+     * the old unlockKey, decrypts the existing private key, and re-wraps it
+     * under the new unlockKey — no data loss.
+     *
      * @throws AuthException|SecurityException
-     * @return User return updated user
      */
-    function changePassword(
+    public function changeCredentials(
         string $token,
-        string $oldPassword,
-        string $newPassword,
+        string $oldAuthKey,
+        string $newSalt,
+        string $newAuthKey,
+        string $newWrappedPrivateKey,
         string $otp,
         string $uuid
     ): User;
 
     /**
-     * Forgot password. active for 5 minutes when expired session will delete automatically
-     * @param string $email
-     * @return void
      * @throws EncryptionException|RandomException
      * @throws AuthException
      */
-    function forgotPassword(
-        string $email,
-    ): void;
+    public function forgotPassword(string $email): void;
 
-    function resetPassword(
+    /**
+     * Recover account access after a forgotten password. Because the client
+     * cannot unwrap the old private key without the old password, this
+     * necessarily replaces the account's key material with a brand new
+     * keypair — any data encrypted under the old key becomes unreadable.
+     * This mirrors the real limitation of every E2EE product: the server
+     * cannot recover what it never had the key to.
+     *
+     * @throws AuthException
+     */
+    public function resetCredentials(
         string $email,
-        string $newPassword,
+        string $newSalt,
+        string $newAuthKey,
+        string $newPublicKey,
+        string $newWrappedPrivateKey,
         string $otp,
         string $uuid
     ): User;

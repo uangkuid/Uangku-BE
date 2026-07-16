@@ -5,328 +5,209 @@ namespace App\Helpers;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Random\RandomException;
 
+/**
+ * Server-side crypto surface for the Zero-Knowledge architecture.
+ *
+ * All key generation, key derivation (2SKD: password + secret key), and
+ * encryption of financial data (wallet/transaction fields, private keys)
+ * happens on the CLIENT. The server never receives a raw password, the
+ * user's UANGKU-XXXX secret key, or a private key in plaintext.
+ *
+ * The only primitives that remain here are the ones the server legitimately
+ * needs: verifying proof of the client-derived authKey, and encrypting the
+ * deliberately-excluded fields (email, category names) with a server-held
+ * key so support/admin tooling can read them.
+ *
+ * See docs/encryption_refactor.md for the full key hierarchy and the
+ * client-side derivation contract clients must implement identically.
+ */
 class EncryptionHelper
 {
+    /** Version byte for the AES-256-GCM container: ver(1B)‖iv(12B)‖ciphertext(N)‖tag(16B), base64-encoded. */
+    public const CIPHER_VERSION_GCM = 0x02;
+
+    private const GCM_IV_LEN = 12;
+
+    private const GCM_TAG_LEN = 16;
+
     /**
-     * Encrypt the given data using AES-CBC.
-     *
-     * @param string $data
-     * @param string|null $key
-     * @return array
-     * @throws RandomException
+     * PBKDF2 iteration count clients must use to derive kdfPass in the 2SKD scheme.
+     * Returned to clients via /auth/salt so it can be raised later without breaking old clients.
+     */
+    public const PBKDF2_ITERATIONS = 600000;
+
+    // =========================================================================
+    // AES-256-GCM (AEAD) — the only symmetric primitive used server-side.
+    // =========================================================================
+
+    /**
      * @throws EncryptionException
      */
-    public static function encrypt(string $data, string $key = null): array
+    public static function aesGcmEncrypt(string $plaintext, string $key): string
     {
-        // Use dynamic secret key from .env or default value
-        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
-
-        // Ensure the key is the right length for AES-256
-        $key = substr(hash('sha256', $key, true), 0, 32);
-
-        // Generate a random Initialization Vector (IV)
-        $iv = random_bytes(openssl_cipher_iv_length('aes-256-cbc'));
-
-        // Encrypt the data using AES-256-CBC
-        $encryptedData = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
-
-        if ($encryptedData === false) {
-            throw new EncryptionException('Encryption failed.');
+        if (strlen($key) !== 32) {
+            throw new EncryptionException('AES-256-GCM requires a 32-byte key.');
         }
 
-        // Return encrypted data and the IV used
-        return [
-            'iv' => base64_encode($iv),
-            'data' => base64_encode($encryptedData),
-        ];
-    }
+        $iv = random_bytes(self::GCM_IV_LEN);
+        $tag = '';
+        $ciphertext = openssl_encrypt($plaintext, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, '', self::GCM_TAG_LEN);
 
-    /**
-     * Encrypt the given data using asymmetric encryption with a public key.
-     * @param string $data
-     * @param string $publicKey
-     * @return string
-     * @throws EncryptionException
-     */
-    public static function encryptAsymmetric(string $data, string $publicKey): string
-    {
-        // Encrypt the data using the public key
-        $isSuccess = openssl_public_encrypt($data, $encryptedData, $publicKey);
-
-        if ($isSuccess === false) {
-            throw new EncryptionException('Encryption failed.');
+        if ($ciphertext === false) {
+            throw new EncryptionException('AES-256-GCM encryption failed.');
         }
 
-        // Return the encrypted data
-        return base64_encode($encryptedData);
+        return base64_encode(chr(self::CIPHER_VERSION_GCM).$iv.$ciphertext.$tag);
     }
 
     /**
-     * Encrypt the given data using AES-CBC.
-     *
-     * @param string $data
-     * @param string|null $key
-     * @param string|null $iv
-     * @return string with pattern iv + '.' + encryptedData
-     * @throws RandomException
-     * @throws EncryptionException
-     */
-    public static function encryptAsString(string $data, string $key = null, string $iv = null): string
-    {
-        // Use dynamic secret key from .env or default value
-        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
-
-        // Ensure the key is the right length for AES-256
-        $key = substr(hash('sha256', $key, true), 0, 32);
-
-        // Generate a random Initialization Vector (IV)
-
-        $iv = $iv ?? random_bytes(openssl_cipher_iv_length('aes-256-cbc'));
-
-        // Encrypt the data using AES-256-CBC
-        $encryptedData = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
-
-        if ($encryptedData === false) {
-            throw new EncryptionException('Encryption failed.');
-        }
-
-        // Return encrypted data and the IV used
-        return base64_encode($iv) . '.' . base64_encode($encryptedData);
-    }
-
-    /**
-     * Hash the given secret key using a salt.
-     * @param string $secretKey
-     * @return string
-     */
-    public static function hashSecretKey(string $secretKey): string
-    {
-        $salt = env('MAIN_SALT_KEY', 'Password');
-        return Hash::make($salt . $secretKey . $salt);
-    }
-
-    /**
-     * Validate the given secret key against the hashed data.
-     * @param string $inputKey
-     * @param string $hashedData
-     * @return bool
-     */
-    public static function validateSecretKey(string $inputKey, string $hashedData): bool
-    {
-        $salt = env('MAIN_SALT_KEY', 'Password');
-        return Hash::check($salt . $inputKey . $salt, $hashedData);
-    }
-
-    /**
-     * Decrypt the given data using AES-CBC.
-     *
-     * @param string $encryptedData
-     * @param string $iv
-     * @param string|null $key
-     * @return string
      * @throws SecurityException
      */
-    public static function decrypt(string $encryptedData, string $iv, string $key = null): string
+    public static function aesGcmDecrypt(string $blob, string $key): string
     {
-        // Use dynamic secret key from .env or default value
-        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
-
-        // Ensure the key is the right length for AES-256
-        $key = substr(hash('sha256', $key, true), 0, 32);
-
-        // Decode the IV and encrypted data from base64
-        $iv = base64_decode($iv);
-        $encryptedData = base64_decode($encryptedData);
-
-        // Decrypt the data using AES-256-CBC
-        $decryptedData = openssl_decrypt($encryptedData, 'aes-256-cbc', $key, 0, $iv);
-
-        if ($decryptedData === false) {
-            throw new SecurityException('Decryption failed. Invalid key or data.');
+        if (strlen($key) !== 32) {
+            throw new SecurityException('AES-256-GCM requires a 32-byte key.');
         }
 
-        return $decryptedData;
-    }
-
-    /**
-     * Decrypt the given data using asymmetric encryption with a private key.
-     * @param string $encryptedData
-     * @param string $privateKey
-     * @return string
-     * @throws SecurityException
-     */
-    public static function decryptAsymmetric(string $encryptedData, string $privateKey): string
-    {
-        // Decrypt the data using the private key
-        $isSuccess = openssl_private_decrypt(base64_decode($encryptedData), $decryptedData, $privateKey);
-
-        if ($isSuccess === false) {
-            throw new SecurityException('Decryption failed. Invalid key or data.');
+        $raw = base64_decode($blob, true);
+        if ($raw === false || strlen($raw) < 1 + self::GCM_IV_LEN + self::GCM_TAG_LEN) {
+            throw new SecurityException('Malformed ciphertext container.');
         }
 
-        // Return the decrypted data
-        return $decryptedData;
+        if (ord($raw[0]) !== self::CIPHER_VERSION_GCM) {
+            throw new SecurityException('Unsupported ciphertext version.');
+        }
+
+        $iv = substr($raw, 1, self::GCM_IV_LEN);
+        $tag = substr($raw, -self::GCM_TAG_LEN);
+        $ciphertext = substr($raw, 1 + self::GCM_IV_LEN, -self::GCM_TAG_LEN);
+
+        $plaintext = openssl_decrypt($ciphertext, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+
+        if ($plaintext === false) {
+            throw new SecurityException('AES-256-GCM decryption/authentication failed.');
+        }
+
+        return $plaintext;
     }
 
+    // =========================================================================
+    // KDF primitives — exposed so the server can generate/verify the shared
+    // test vectors clients (Vue/KMP) must reproduce byte-for-byte. Not used
+    // to derive any key the server itself relies on for financial data.
+    // =========================================================================
+
+    public static function pbkdf2(string $password, string $salt, int $iterations = self::PBKDF2_ITERATIONS, int $length = 32): string
+    {
+        return hash_pbkdf2('sha256', $password, $salt, $iterations, $length, true);
+    }
+
+    public static function hkdf(string $ikm, string $info, int $length = 32, string $salt = ''): string
+    {
+        return hash_hkdf('sha256', $ikm, $length, $info, $salt);
+    }
+
+    // =========================================================================
+    // Email blind index + system-key encryption (the deliberate ZK exception).
+    // Also reused for other admin-manageable, non-financial text such as
+    // category/sub-category names.
+    // =========================================================================
+
     /**
-     * Decrypt the given data using AES-CBC
+     * Deterministic HMAC-SHA256 lookup index for a system-decryptable value (email).
+     * Deterministic-but-keyed avoids the static-IV equality leak of the old scheme
+     * while still allowing O(1) lookups and uniqueness checks.
      *
-     * @param string $encryptedData
-     * @param string|null $key
-     * @return string
-     * @throws SecurityException
-     */
-    public static function decryptFromString(string $encryptedData, string $key = null): string
-    {
-        // Use dynamic secret key from .env or default value
-        $key = $key ?? env('MAIN_SECRET_KEY', 'Password');
-
-        // Ensure the key is the right length for AES-256
-        $key = substr(hash('sha256', $key, true), 0, 32);
-
-        $dataAsArray = explode('.', $encryptedData);
-
-        $iv = base64_decode($dataAsArray[0]);
-        $encryptedData = base64_decode($dataAsArray[1]);
-
-        // Decrypt the data using AES-256-CBC
-        $decryptedData = openssl_decrypt($encryptedData, 'aes-256-cbc', $key, 0, $iv);
-
-        if ($decryptedData === false) {
-            throw new SecurityException('Decryption failed. Invalid key or data.');
-        }
-
-        return $decryptedData;
-    }
-
-    /**
-     * Generate a secret key in the format "XXXX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX".
-     *
-     * @return string
-     * @throws RandomException
-     */
-    public static function generateUsersSecretKey(): string
-    {
-        // Generate 20 random bytes and encode in Base32 for readability
-        $randomBytes = random_bytes(128);
-        $base32Key = strtoupper(str_replace(['=', '+', '/'], '', base64_encode($randomBytes)));
-
-        // Split the Base32 encoded string into blocks with specified length
-        return "UANGKU" . '-' .
-            substr($base32Key, 0, 6) . '-' .
-            substr($base32Key, 6, 6) . '-' .
-            substr($base32Key, 12, 5) . '-' .
-            substr($base32Key, 17, 5) . '-' .
-            substr($base32Key, 22, 5);
-    }
-
-    /**
-     * Get system secret key and salt.
-     * @return string
      * @throws EncryptionException
      */
-    public static function getSystemSecretKey(): string
+    public static function blindIndex(string $value): string
     {
-        $secretKey = env('MAIN_SECRET_KEY') ?? throw new EncryptionException('MAIN_SECRET_KEY is not set in .env file.');
-        $saltKey = env('MAIN_SALT_KEY') ?? throw new EncryptionException('MAIN_SECRET_KEY is not set in .env file.');
-        return $secretKey . $saltKey;
-    }
-
-    /**
-     * Get Users salt using given secret key
-     * @param $secretKey
-     * @return string
-     */
-    public static function getUsersSalt($secretKey): string
-    {
-        $secretKeyAsArray = explode("-", $secretKey);
-        return self::xorString($secretKeyAsArray[1] . "-" . $secretKeyAsArray[0] . "-" . end($secretKeyAsArray), 16);
-    }
-
-    /**
-     * XOR a string with an integer key.
-     *
-     * @param string $string The input string to be XORed.
-     * @param int $key The integer key for XOR operation.
-     * @return string The XORed result as a string.
-     */
-    public static function xorString(string $string, int $key): string
-    {
-        $result = '';
-
-        // Iterate over each character in the string
-        for ($i = 0; $i < strlen($string); $i++) {
-            // XOR each character with the key and append to result
-            $result .= chr(ord($string[$i]) ^ $key);
+        $key = env('MAIN_BLIND_INDEX_KEY');
+        if (empty($key)) {
+            throw new EncryptionException('MAIN_BLIND_INDEX_KEY is not configured.');
         }
 
-        return $result;
+        return hash_hmac('sha256', mb_strtolower(trim($value)), $key);
     }
 
     /**
-     * Generate an encrypted key for a user based on the provided secret key and password.
+     * Encrypt a system-readable value (email, category name) with the server-held
+     * system key, AES-256-GCM with a random IV (no more static-IV equality leak).
      *
-     * This method concatenates a salt, the user's password, and a sanitized version of
-     * the secret key to create a unique encrypted key for the user.
-     *
-     * @param string $secretKey The user's unique secret key.
-     * @param string $password The user's password to be included in the key generation.
-     *
-     * @return string A unique encrypted key for the user.
+     * @throws EncryptionException
      */
-    public static function getUsersEncryptKey(string $secretKey, string $password): string
+    public static function encryptSystem(string $plaintext): string
     {
-        $salt = self::getUsersSalt($secretKey);
-        $secretKeySanitize = str_replace("-", "", $secretKey);
-        return self::xorString(($salt . $password . $secretKeySanitize), 8);
+        return self::aesGcmEncrypt($plaintext, self::systemKey());
     }
 
     /**
-     * Generate an encrypted key for a family based on the provided secret key.
-     *
-     * This method concatenates a salt, and a sanitized version of
-     * the secret key to create a unique encrypted key for the family.
-     *
-     * @param string $secretKey The user's unique secret key.
-     *
-     * @return string A unique encrypted key for the user.
+     * @throws SecurityException
+     * @throws EncryptionException
      */
-    public static function getFamilyEncryptionKey(string $secretKey): string
+    public static function decryptSystem(string $blob): string
     {
-        $salt = self::getUsersSalt($secretKey);
-        $secretKeySanitize = str_replace("-", "", $secretKey);
-        $secretKeyAsArray = explode("-", $secretKey);
-        return $salt . $secretKeyAsArray[1] . $secretKeySanitize;
+        return self::aesGcmDecrypt($blob, self::systemKey());
+    }
+
+    /** @throws EncryptionException */
+    public static function encryptEmail(string $email): string
+    {
+        return self::encryptSystem($email);
     }
 
     /**
-     * Generate a random asymmetric key pair.
-     * @return array a pair of keys public and private
+     * @throws SecurityException
+     * @throws EncryptionException
      */
-    public static function generateAsymmetricKey(): array
+    public static function decryptEmail(string $blob): string
     {
-        // Konfigurasi untuk pembuatan kunci
-        $config = [
-            "digest_alg" => "sha256",
-            "private_key_bits" => 2048,
-            "private_key_type" => OPENSSL_KEYTYPE_RSA,
-        ];
+        return self::decryptSystem($blob);
+    }
 
-        // Membuat pasangan kunci
-        $res = openssl_pkey_new($config);
+    /**
+     * @throws EncryptionException
+     */
+    private static function systemKey(): string
+    {
+        $key = env('MAIN_SYSTEM_KEY');
+        if (empty($key)) {
+            throw new EncryptionException('MAIN_SYSTEM_KEY is not configured.');
+        }
 
-        // Ekstrak kunci privat
-        openssl_pkey_export($res, $privateKey);
+        return hash('sha256', $key, true);
+    }
 
-        // Ekstrak kunci publik
-        $publicKeyDetails = openssl_pkey_get_details($res);
-        $publicKey = $publicKeyDetails["key"];
-        return [
-            "private" => base64_encode($privateKey),
-            "public" => base64_encode($publicKey),
-        ];
+    // =========================================================================
+    // Generic secret hashing — used for the authKey verifier and the local PIN.
+    // Both are bcrypt with a server-held pepper (MAIN_SALT_KEY); neither value
+    // is reversible, and neither is the user's real password or secret key.
+    // =========================================================================
+
+    /**
+     * @throws EncryptionException
+     */
+    public static function hashSecret(string $secret): string
+    {
+        $pepper = env('MAIN_SALT_KEY');
+        if (empty($pepper)) {
+            throw new EncryptionException('MAIN_SALT_KEY is not configured.');
+        }
+
+        return Hash::make($pepper.$secret.$pepper);
+    }
+
+    /**
+     * @throws EncryptionException
+     */
+    public static function validateSecret(string $secret, string $hashedSecret): bool
+    {
+        $pepper = env('MAIN_SALT_KEY');
+        if (empty($pepper)) {
+            throw new EncryptionException('MAIN_SALT_KEY is not configured.');
+        }
+
+        return Hash::check($pepper.$secret.$pepper, $hashedSecret);
     }
 }

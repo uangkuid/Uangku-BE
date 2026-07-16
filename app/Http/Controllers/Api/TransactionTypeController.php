@@ -6,18 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Models\TransactionType;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class TransactionTypeController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    #[OA\Get(
+        path: '/transaction-type',
+        summary: 'List transaction types',
+        description: 'Public list of transaction types (e.g. income, expense).',
+        tags: ['TransactionType'],
+        responses: [
+            new OA\Response(response: 200, description: 'Success Get Transaction Type', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+        ]
+    )]
     public function index()
     {
         $transactionTypes = TransactionType::all();
+
         return response()->json(new BaseResponse(
             status: 200,
-            message: "Success Get Transaction Type",
+            message: 'Success Get Transaction Type',
             resource: $transactionTypes
         ));
     }

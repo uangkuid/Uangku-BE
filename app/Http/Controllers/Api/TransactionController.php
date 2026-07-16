@@ -13,20 +13,21 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
 class TransactionController extends Controller
 {
-
     protected TransactionService $transactionService;
+
     protected UserService $userService;
+
     protected WalletService $walletService;
 
     public function __construct(
         TransactionService $transactionService,
-        UserService        $userService,
-        WalletService      $walletService
-    )
-    {
+        UserService $userService,
+        WalletService $walletService
+    ) {
         $this->transactionService = $transactionService;
         $this->userService = $userService;
         $this->walletService = $walletService;
@@ -35,6 +36,26 @@ class TransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
+    #[OA\Get(
+        path: '/transaction',
+        summary: 'List transactions',
+        security: [['bearerAuth' => []]],
+        tags: ['Transaction'],
+        parameters: [
+            new OA\Parameter(name: 'start_date', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'end_date', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'family_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'category_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'transaction_type_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'wallet_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 10)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Success get transaction', content: new OA\JsonContent(ref: '#/components/schemas/PaginationResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+        ]
+    )]
     public function index(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -43,7 +64,7 @@ class TransactionController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to get transaction", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to get transaction', $validator->errors()), 400);
         }
 
         $user = $this->userService->getUserByToken(request()->bearerToken());
@@ -61,7 +82,7 @@ class TransactionController extends Controller
 
         return response()->json(new PaginationResponse(
             status: 200,
-            message: "Success get transaction.",
+            message: 'Success get transaction.',
             page: $resource->currentPage(),
             totalPage: $resource->lastPage(),
             totalData: $resource->total(),
@@ -72,6 +93,36 @@ class TransactionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    #[OA\Post(
+        path: '/transaction',
+        summary: 'Create transaction',
+        description: 'Creates a transaction, its wallet transaction, and a wallet balance snapshot in one call. Requires wallet membership.',
+        security: [['bearerAuth' => []]],
+        tags: ['Transaction'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['category', 'wallet', 'transaction_type', 'amount'],
+                properties: [
+                    new OA\Property(property: 'category', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'wallet', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'transaction_type', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'amount', type: 'string'),
+                    new OA\Property(property: 'snapshot_id', type: 'string', nullable: true),
+                    new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'family_id', type: 'string', nullable: true),
+                    new OA\Property(property: 'sub_category_id', type: 'string', nullable: true),
+                    new OA\Property(property: 'transaction_id', type: 'string', nullable: true),
+                    new OA\Property(property: 'balance', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Transaction created successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -82,7 +133,7 @@ class TransactionController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to create transaction", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to create transaction', $validator->errors()), 400);
         }
 
         try {
@@ -124,13 +175,15 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            return response()->json(new BaseResponse(201, "Transaction created successfully", $transaction), 201);
+            return response()->json(new BaseResponse(201, 'Transaction created successfully', $transaction), 201);
         } catch (GeneralException $e) {
             DB::rollBack();
+
             return response()->json(new BaseResponse(400, $e->getMessage()), 500);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(500, "Failed to create transaction", $e->getMessage()), 500);
+
+            return response()->json(new BaseResponse(500, 'Failed to create transaction', $e->getMessage()), 500);
         }
     }
 
@@ -145,6 +198,34 @@ class TransactionController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[OA\Put(
+        path: '/transaction/{id}',
+        summary: 'Update transaction',
+        description: 'Updates the transaction, its wallet transaction, and adds a new wallet balance snapshot. Requires wallet membership.',
+        security: [['bearerAuth' => []]],
+        tags: ['Transaction'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['category', 'wallet', 'snapshot_id', 'amount', 'balance'],
+                properties: [
+                    new OA\Property(property: 'category', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'wallet', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'snapshot_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'amount', type: 'string'),
+                    new OA\Property(property: 'balance', type: 'string'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'sub_category_id', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Transaction updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -156,7 +237,7 @@ class TransactionController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to update transaction", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to update transaction', $validator->errors()), 400);
         }
 
         try {
@@ -164,8 +245,8 @@ class TransactionController extends Controller
             $user = $this->userService->getUserByToken($request->bearerToken());
             $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
-            if (!$walletTransaction) {
-                throw new GeneralException("Wallet transaction not found");
+            if (! $walletTransaction) {
+                throw new GeneralException('Wallet transaction not found');
             }
 
             // Update Wallet Transaction
@@ -201,19 +282,45 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            return response()->json(new BaseResponse(200, "Transaction updated successfully", $transaction), 200);
+            return response()->json(new BaseResponse(200, 'Transaction updated successfully', $transaction), 200);
         } catch (GeneralException $e) {
             DB::rollBack();
+
             return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(500, "Failed to update transaction", $e->getMessage()), 500);
+
+            return response()->json(new BaseResponse(500, 'Failed to update transaction', $e->getMessage()), 500);
         }
     }
 
     /**
      * Remove the specified resource from storage.
      */
+    #[OA\Delete(
+        path: '/transaction/{id}',
+        summary: 'Delete transaction',
+        description: 'Deletes the transaction and its wallet transaction, then adds a new wallet balance snapshot reflecting the reversal. Requires wallet membership.',
+        security: [['bearerAuth' => []]],
+        tags: ['Transaction'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['wallet', 'snapshot_id', 'balance'],
+                properties: [
+                    new OA\Property(property: 'wallet', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'snapshot_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'balance', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Transaction deleted successfully', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
+            new OA\Response(response: 400, description: 'Validation or business error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
     public function destroy(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
@@ -223,7 +330,7 @@ class TransactionController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(new BaseResponse(400, "Failed to delete transaction", $validator->errors()), 400);
+            return response()->json(new BaseResponse(400, 'Failed to delete transaction', $validator->errors()), 400);
         }
 
         try {
@@ -233,12 +340,12 @@ class TransactionController extends Controller
             $transaction = $this->transactionService->getDetailTransaction($id);
             $walletTransaction = $this->walletService->getDetailWalletTransactionByTransactionId($id);
 
-            if (!$transaction) {
-                throw new GeneralException("Transaction not found");
+            if (! $transaction) {
+                throw new GeneralException('Transaction not found');
             }
 
-            if (!$walletTransaction) {
-                throw new GeneralException("Wallet transaction not found");
+            if (! $walletTransaction) {
+                throw new GeneralException('Wallet transaction not found');
             }
 
             $this->transactionService->deleteTransaction(
@@ -264,13 +371,15 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            return response()->json(new BaseResponse(200, "Transaction deleted successfully"), 200);
+            return response()->json(new BaseResponse(200, 'Transaction deleted successfully'), 200);
         } catch (GeneralException $e) {
             DB::rollBack();
+
             return response()->json(new BaseResponse(400, $e->getMessage()), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(new BaseResponse(500, "Failed to delete transaction", $e->getMessage()), 500);
+
+            return response()->json(new BaseResponse(500, 'Failed to delete transaction', $e->getMessage()), 500);
         }
     }
 }

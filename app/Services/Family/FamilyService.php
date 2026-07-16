@@ -2,170 +2,111 @@
 
 namespace App\Services\Family;
 
-use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Models\FamilyMember;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Collection;
 use LaravelEasyRepository\BaseService;
-use Random\RandomException;
 
-interface FamilyService extends BaseService{
-
+/**
+ * Zero-Knowledge family sharing: the family keypair is generated client-side
+ * by the owner. Each member gets their own copy of the family private key,
+ * wrapped (client-side) to their own public key — there is no shared
+ * "family secret key" transmitted to or verified by the server.
+ * See docs/encryption_refactor.md.
+ */
+interface FamilyService extends BaseService
+{
     /**
-     * Create a new Family
-     * @param string $token
-     * @param string $name
-     * @return array
-     * @throws RandomException
-     * @throws EncryptionException
+     * @param  string  $name  Client ciphertext (encrypted to the new family public key).
+     * @param  string  $publicKey  Base64 public key (plaintext by definition).
+     * @param  string  $wrappedPrivateKey  Family private key wrapped to the owner's own public key.
+     *
      * @throws FamilyException
      */
-    function createFamily(string $token, string $name): array;
+    public function createFamily(string $token, string $name, string $publicKey, string $wrappedPrivateKey): array;
+
+    public function getMember(string $id, int $perPage = 10): AnonymousResourceCollection;
+
+    public function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection;
+
+    public function isHasAccess(string $id, string $token): bool;
+
+    public function isHasAdminAccess(string $id, string $token): bool;
 
     /**
-     * Get a family member list
-     * @param string $id
-     * @param int $perPage
-     * @return array
-     */
-    function getMember(string $id, int $perPage = 10): AnonymousResourceCollection;
-
-    /**
-     * Get a family admin list
-     * @param string $id
-     * @param int $perPage
-     * @return array
-     */
-    function getAdmin(string $id, int $perPage = 10): AnonymousResourceCollection;
-
-    /**
-     * Check if a user has access to a family
-     * @param string $id
-     * @param string $token
-     * @return bool
-     */
-    function isHasAccess(string $id, string $token): bool;
-
-    /**
-     * Check if a user has admin access to a family
-     * @param string $id
-     * @param string $token
-     * @return bool
-     */
-    function isHasAdminAccess(string $id, string $token): bool;
-
-    /**
-     * Validate a secret key
-     * @param string $familyId
-     * @param string $secretKey
-     * @param string $token
-     * @return array
      * @throws FamilyException
      */
-    function validateSecretKey(string $familyId, string $secretKey, string $token): array;
+    public function updateFamily(string $familyId, string $name): void;
 
     /**
-     * Update a family data
-     * @param string $familyId
-     * @param string $name
-     * @return void
-     * @throws FamilyException
-     * @throws EncryptionException
-     */
-    function updateFamily(string $familyId, string $name): void;
-
-    /**
-     * Invite a member of a family
-     * @param string $familyId
-     * @param string $token
-     * @return array
      * @throws FamilyException
      */
-    function inviteMember(string $familyId, string $token): array;
+    public function inviteMember(string $familyId, string $token): array;
 
     /**
-     * Response to an invitation
-     * @param string $invitationId
-     * @param string $familyId
-     * @param string $token
-     * @return array
+     * Join a family. The membership is created immediately, but the family
+     * private key is not available until an admin wraps it for this member
+     * (see getPendingMembers/grantMemberKey) — the client should poll
+     * getMyMemberKey until it's ready.
+     *
      * @throws FamilyException
      */
-    function responseInvitation(
-        string $invitationId,
-        string $familyId,
-        string $token,
-    ): array;
+    public function responseInvitation(string $invitationId, string $familyId, string $token): array;
 
     /**
-     * Grant admin access to a user
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return void
+     * Family members awaiting a wrapped copy of the family private key, with
+     * their public key so the admin's client can wrap it for them.
      */
-    function grantAdmin(
-        string $familyId,
-        string $userId,
-        string $token,
-    ): void;
+    public function getPendingMembers(string $familyId): Collection;
 
     /**
-     * Revoke member access to a family
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return void
+     * Upload a wrapped family private key for a specific member (admin action,
+     * performed by the admin's client after fetching getPendingMembers).
+     *
      * @throws FamilyException
      */
-    function revokeMember(
-        string $familyId,
-        string $userId,
-        string $token
-    ): void;
+    public function grantMemberKey(string $familyId, string $userId, string $wrappedPrivateKey, string $token): void;
 
     /**
-     * Revoke admin access to a user
-     * @param string $familyId
-     * @param string $userId
-     * @param string $token
-     * @return void
+     * Fetch the current user's own wrapped family private key.
+     *
      * @throws FamilyException
      */
-    function revokeAdmin(
-        string $familyId,
-        string $userId,
-        string $token
-    ): void;
+    public function getMyMemberKey(string $familyId, string $token): array;
 
     /**
-     * Leave from family
-     * @param string $familyId
-     * @param string $token
-     * @return void
+     * Rotate the family keypair (new public key + freshly wrapped private key
+     * for each remaining member). Use after revoking a member so their old
+     * copy can no longer decrypt newly-encrypted family data.
+     *
+     * @param  array<int, array{user_id: string, wrapped_private_key: string}>  $memberKeys
+     *
      * @throws FamilyException
      */
-    function leave(
-        string $familyId,
-        string $token
-    );
+    public function rotateKey(string $familyId, string $publicKey, array $memberKeys, string $token): void;
+
+    public function grantAdmin(string $familyId, string $userId, string $token): void;
 
     /**
-     * Get family user info
-     * @param string $userId
-     * @return FamilyMember|null
-     */
-    function getFamilyUserInfo(
-        string $userId
-    ): ?FamilyMember;
-
-    /**
-     * Get family summary
-     * @param string $familyId
-     * @return array
      * @throws FamilyException
      */
-    function getFamilySummary(
-        string $familyId,
-    ): array;
+    public function revokeMember(string $familyId, string $userId, string $token): void;
+
+    /**
+     * @throws FamilyException
+     */
+    public function revokeAdmin(string $familyId, string $userId, string $token): void;
+
+    /**
+     * @throws FamilyException
+     */
+    public function leave(string $familyId, string $token);
+
+    public function getFamilyUserInfo(string $userId): ?FamilyMember;
+
+    /**
+     * @throws FamilyException
+     */
+    public function getFamilySummary(string $familyId): array;
 }
