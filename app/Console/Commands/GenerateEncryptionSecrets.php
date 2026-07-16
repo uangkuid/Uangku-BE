@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 
 /**
  * Fills in the Zero-Knowledge encryption secrets required by
- * app/Helpers/EncryptionHelper.php (see docs/encryption_refactor.md).
+ * app/Helpers/EncryptionHelper.php (see docs/encryption.md).
  *
  * Mirrors the UX of `key:generate`/`jwt:secret`: only fills blank values by
  * default, writes in place, and warns loudly before overwriting anything

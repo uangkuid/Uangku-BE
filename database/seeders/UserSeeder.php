@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
             $secretKey = env('ADMIN_SECRET_KEY', 'UANGKU-SEEDED-ADMIN0-00000-00000-00000');
             $salt = random_bytes(16);
 
-            // --- Simulated client-side 2SKD + keygen (see docs/encryption_refactor.md) ---
+            // --- Simulated client-side 2SKD + keygen (see docs/encryption.md) ---
             $stretched = EncryptionHelper::pbkdf2($password, $salt, EncryptionHelper::PBKDF2_ITERATIONS, 32);
             $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'admin@uangku.com');
             $unlockKey = $stretched ^ $kdfSecret;

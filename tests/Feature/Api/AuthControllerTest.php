@@ -14,7 +14,7 @@ class AuthControllerTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Simulates the client-side 2SKD derivation (see docs/encryption_refactor.md)
+     * Simulates the client-side 2SKD derivation (see docs/encryption.md)
      * so tests can register/login without a real client.
      */
     private function deriveAuthKey(string $password, string $secretKey, string $salt): string

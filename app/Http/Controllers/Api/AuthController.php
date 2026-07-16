@@ -52,7 +52,7 @@ class AuthController extends Controller
      * Zero-Knowledge contract: the client has already generated the secret key,
      * derived the 2SKD unlockKey/authKey, generated the RSA keypair, and wrapped
      * the private key. The server never sees the password, the secret key, or
-     * the private key in plaintext. See docs/encryption_refactor.md.
+     * the private key in plaintext. See docs/encryption.md.
      */
     #[OA\Post(
         path: '/auth/register',

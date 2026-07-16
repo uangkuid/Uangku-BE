@@ -13,7 +13,7 @@ use LaravelEasyRepository\BaseService;
  * by the owner. Each member gets their own copy of the family private key,
  * wrapped (client-side) to their own public key — there is no shared
  * "family secret key" transmitted to or verified by the server.
- * See docs/encryption_refactor.md.
+ * See docs/encryption.md.
  */
 interface FamilyService extends BaseService
 {

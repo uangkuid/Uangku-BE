@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Hash;
  * deliberately-excluded fields (email, category names) with a server-held
  * key so support/admin tooling can read them.
  *
- * See docs/encryption_refactor.md for the full key hierarchy and the
+ * See docs/encryption.md for the full key hierarchy and the
  * client-side derivation contract clients must implement identically.
  */
 class EncryptionHelper

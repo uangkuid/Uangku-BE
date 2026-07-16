@@ -29,7 +29,7 @@ php artisan jwt:secret
 
 ### Generate Zero-Knowledge Encryption Secrets
 
-Uangku's encryption layer (see [`docs/encryption_refactor.md`](docs/encryption_refactor.md)) needs a few
+Uangku's encryption layer (see [`docs/encryption.md`](docs/encryption.md)) needs a few
 server-side secrets in `.env`: `MAIN_SALT_KEY`, `MAIN_SYSTEM_KEY`, `MAIN_BLIND_INDEX_KEY`, and
 `ADMIN_SECRET_KEY`. Generate them all in one go instead of filling them in by hand:
 

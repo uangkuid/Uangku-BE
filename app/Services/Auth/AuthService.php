@@ -15,7 +15,7 @@ use Random\RandomException;
  * Zero-Knowledge auth contract. The server never receives a raw password or
  * the user's UANGKU-XXXX secret key — only the client-derived authKey (proof
  * of both factors via 2SKD) and opaque, client-encrypted key material.
- * See docs/encryption_refactor.md for the full derivation clients must implement.
+ * See docs/encryption.md for the full derivation clients must implement.
  */
 interface AuthService extends BaseService
 {
