@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\Exceptions\AuthException;
 use App\Exceptions\EncryptionException;
 use App\Exceptions\SecurityException;
+use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\UserKey;
 use Exception;
@@ -25,6 +26,8 @@ interface AuthService extends BaseService
      *
      * @param  string  $authKey  Base64 authKey derived client-side from password + secret key.
      * @param  string  $salt  Base64 PBKDF2 salt used by the client.
+     * @param  int  $iterations  PBKDF2 iterations the client used with $salt. Stored per-user
+     *                           so raising the global default later doesn't lock out old accounts.
      * @param  string  $publicKey  Base64 public key (plaintext by definition).
      * @param  string  $wrappedPrivateKey  Client ciphertext (AES-256-GCM under unlockKey).
      *
@@ -39,7 +42,8 @@ interface AuthService extends BaseService
         string $wrappedPrivateKey,
         string $otp,
         string $uuid,
-        bool $isSeeder = false
+        bool $isSeeder = false,
+        int $iterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): array;
 
     /**
@@ -91,7 +95,8 @@ interface AuthService extends BaseService
         string $newAuthKey,
         string $newWrappedPrivateKey,
         string $otp,
-        string $uuid
+        string $uuid,
+        int $newIterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): User;
 
     /**
@@ -117,6 +122,7 @@ interface AuthService extends BaseService
         string $newPublicKey,
         string $newWrappedPrivateKey,
         string $otp,
-        string $uuid
+        string $uuid,
+        int $newIterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): User;
 }

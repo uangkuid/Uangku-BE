@@ -2,6 +2,7 @@
 
 namespace App\Repositories\User;
 
+use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\UserKey;
 use LaravelEasyRepository\Implementations\Eloquent;
@@ -26,13 +27,14 @@ class UserRepositoryImplement extends Eloquent implements UserRepository
         $this->user_key = $user_key;
     }
 
-    public function saveUserKey(string $userId, string $publicKey, string $privateKey, string $salt): UserKey
+    public function saveUserKey(string $userId, string $publicKey, string $privateKey, string $salt, int $iterations = EncryptionHelper::PBKDF2_ITERATIONS): UserKey
     {
         return $this->user_key->create([
             'users' => $userId,
             'public_key' => $publicKey,
             'private_key' => $privateKey,
             'salt' => $salt,
+            'iterations' => $iterations,
         ]);
     }
 

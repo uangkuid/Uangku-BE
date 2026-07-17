@@ -12,9 +12,11 @@ class EncryptionHelperTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        putenv('MAIN_SALT_KEY=test_salt_key_67890');
-        putenv('MAIN_SYSTEM_KEY=test_system_key_12345');
-        putenv('MAIN_BLIND_INDEX_KEY=test_blind_index_key_abcde');
+        // >= 32 chars: AppServiceProvider::assertMinimumPepperLength() rejects
+        // a shorter-but-set value at boot.
+        putenv('MAIN_SALT_KEY=test_salt_key_67890_extended_32ch');
+        putenv('MAIN_SYSTEM_KEY=test_system_key_12345_extended_32c');
+        putenv('MAIN_BLIND_INDEX_KEY=test_blind_index_key_abcde_ext32c');
     }
 
     public function test_aes_gcm_encrypt_decrypt_round_trip(): void
@@ -93,34 +95,30 @@ class EncryptionHelperTest extends TestCase
     {
         $ikm = random_bytes(32);
 
-        $authKey = EncryptionHelper::hkdf($ikm, 'uangku-auth-v1');
-        $encKey = EncryptionHelper::hkdf($ikm, 'uangku-enc-v1');
+        $authKey = EncryptionHelper::hkdf($ikm, EncryptionHelper::INFO_AUTH);
+        $secretKey = EncryptionHelper::hkdf($ikm, EncryptionHelper::INFO_SECRET_KEY);
 
         $this->assertEquals(32, strlen($authKey));
-        $this->assertNotEquals($authKey, $encKey);
+        $this->assertNotEquals($authKey, $secretKey);
     }
 
     /**
-     * Simulates the client-side 2SKD derivation to prove the resulting
-     * unlockKey requires BOTH the password and the secret key: flipping
-     * either factor alone must change the derived key.
+     * Proves the resulting unlockKey requires BOTH the password and the
+     * secret key: flipping either factor alone must change the derived key.
+     * Calls the canonical EncryptionHelper::deriveUnlockKey() directly — a
+     * hand-written copy of the derivation steps here is exactly what caused
+     * the seeder to silently diverge from the real contract (see
+     * faq-backend.md Blocker #1).
      */
     public function test_two_secret_key_derivation_requires_both_factors(): void
     {
         $salt = random_bytes(16);
-        $deriveUnlockKey = function (string $password, string $secretKey) use ($salt): string {
-            $kdfPass = EncryptionHelper::pbkdf2($password, $salt, 1000, 32);
-            $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'user-salt');
-
-            return $kdfPass ^ $kdfSecret;
-        };
-
         $correctPassword = 'CorrectHorse123!';
         $correctSecret = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
 
-        $reference = $deriveUnlockKey($correctPassword, $correctSecret);
-        $wrongPassword = $deriveUnlockKey('WrongPassword!', $correctSecret);
-        $wrongSecret = $deriveUnlockKey($correctPassword, 'UANGKU-000000-000000-00000-00000-00000');
+        $reference = EncryptionHelper::deriveUnlockKey($correctPassword, $correctSecret, $salt, 1000);
+        $wrongPassword = EncryptionHelper::deriveUnlockKey('WrongPassword!', $correctSecret, $salt, 1000);
+        $wrongSecret = EncryptionHelper::deriveUnlockKey($correctPassword, 'UANGKU-000000-000000-00000-00000-00000', $salt, 1000);
 
         $this->assertNotEquals($reference, $wrongPassword);
         $this->assertNotEquals($reference, $wrongSecret);
@@ -135,6 +133,24 @@ class EncryptionHelperTest extends TestCase
         $this->assertNotEquals($authKey, $hashed);
         $this->assertTrue(EncryptionHelper::validateSecret($authKey, $hashed));
         $this->assertFalse(EncryptionHelper::validateSecret('wrong-auth-key', $hashed));
+    }
+
+    /**
+     * Regression test for the bcrypt 72-byte truncation bug: before the HMAC
+     * pre-hash fix, a MAIN_SALT_KEY >= 72 bytes made bcrypt's input
+     * `$pepper.$secret.$pepper` exceed 72 bytes, so bcrypt silently dropped
+     * the secret out of the hash entirely — ANY value (including empty)
+     * validated. See faq-backend.md Finding B.
+     */
+    public function test_hash_secret_rejects_wrong_secret_even_with_long_pepper(): void
+    {
+        putenv('MAIN_SALT_KEY='.str_repeat('A', 88));
+
+        $hashed = EncryptionHelper::hashSecret('123456');
+
+        $this->assertTrue(EncryptionHelper::validateSecret('123456', $hashed));
+        $this->assertFalse(EncryptionHelper::validateSecret('000000', $hashed));
+        $this->assertFalse(EncryptionHelper::validateSecret('', $hashed));
     }
 
     public function test_blind_index_is_deterministic_and_case_insensitive(): void

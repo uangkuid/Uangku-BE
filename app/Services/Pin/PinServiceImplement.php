@@ -12,7 +12,6 @@ use App\Repositories\Pin\PinRepository;
 use App\Repositories\Redis\RedisRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\UserConfig\UserConfigRepository;
-use Illuminate\Support\Facades\Hash;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -192,7 +191,7 @@ class PinServiceImplement extends Service implements PinService
             throw new PinException('Forgot PIN session already exist');
         }
 
-        if (! Hash::check($authKey, $user->password)) {
+        if (! EncryptionHelper::validateSecret($authKey, $user->password)) {
             throw new AuthException('Invalid credentials');
         }
 

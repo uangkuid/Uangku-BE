@@ -66,7 +66,7 @@ All responses go through `BaseResponse` which returns:
 ```json
 { "status": 200, "message": "...", "data": {...} }
 ```
-When `IS_NEED_ENCRYPT=true` in `.env`, the `data` field is AES-256-CBC encrypted and returned as `{ "iv": "...", "data": "..." }`.
+Response-level encryption (the old `IS_NEED_ENCRYPT` flag) was removed entirely — see `BaseResponse.php`. Financial data is encrypted client-side under the Zero-Knowledge architecture instead (see `docs/encryption.md`).
 
 ### Authentication
 JWT via `php-open-source-saver/jwt-auth`. Authenticated routes use `auth:api` middleware. The token is issued on login and refreshed via `POST /api/auth/refresh-token`. Auth-adjacent flows (pre-register OTP, forgot/reset password, PIN setup) live under `routes/api.php`'s `auth`/`otp`/`pin` prefixes.
@@ -101,7 +101,7 @@ Tests use a real database (not SQLite in-memory — the `<!-- <env name="DB_DATA
 
 | Variable | Purpose |
 |---|---|
-| `IS_NEED_ENCRYPT` | Enable AES response encryption |
-| `MAIN_SECRET_KEY` | AES encryption key |
-| `MAIN_SALT_KEY` | Salt for key derivation |
+| `MAIN_SALT_KEY` | Pepper for `bcrypt(authKey)` and `bcrypt(PIN)` (must be >= 32 chars, see `docs/encryption.md` §4) |
+| `MAIN_SYSTEM_KEY` | Server key for the one deliberate ZK exception: email (AES-256-GCM) |
+| `MAIN_BLIND_INDEX_KEY` | HMAC key for the email blind index (lookup without decrypting) |
 | `JWT_SECRET` | JWT signing secret |

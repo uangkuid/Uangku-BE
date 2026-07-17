@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\UserKey;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,6 +19,7 @@ class UserKeyFactory extends Factory
             'public_key' => base64_encode('fake-public-key'),
             'private_key' => base64_encode('fake-wrapped-private-key'),
             'salt' => base64_encode(random_bytes(16)),
+            'iterations' => EncryptionHelper::PBKDF2_ITERATIONS,
             'hashed_pin' => null,
         ];
     }

@@ -30,13 +30,12 @@ if [ ! -f ".env" ]; then
     php artisan key:generate
 fi
 
-# Set testing environment variables if not already set
-if [ -z "$MAIN_SECRET_KEY" ]; then
-    export MAIN_SECRET_KEY="test_secret_key_12345"
-fi
-
+# Set testing environment variables if not already set.
+# Must be >= 32 chars: AppServiceProvider::assertMinimumPepperLength() rejects
+# a shorter-but-set value at boot. MAIN_SECRET_KEY was removed with the old
+# IS_NEED_ENCRYPT response-encryption scheme and no longer exists.
 if [ -z "$MAIN_SALT_KEY" ]; then
-    export MAIN_SALT_KEY="test_salt_key_67890"
+    export MAIN_SALT_KEY="test_salt_key_67890_extended_32ch"
 fi
 
 echo -e "${GREEN}Environment ready!${NC}"

@@ -5,8 +5,8 @@ namespace Tests\Feature\Api;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use App\Models\UserKey;
+use App\Services\Auth\AuthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
@@ -14,16 +14,17 @@ class AuthControllerTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Simulates the client-side 2SKD derivation (see docs/encryption.md)
-     * so tests can register/login without a real client.
+     * Simulates the client-side 2SKD derivation (see docs/encryption.md) so
+     * tests can register/login without a real client. Delegates to the
+     * canonical EncryptionHelper::deriveAuthKey() — never reimplement the
+     * derivation steps here, that duplication is exactly what caused the
+     * seeder to silently diverge from the real contract (faq-backend.md
+     * Blocker #1). Uses 1000 iterations for speed; test vectors separately
+     * cover the real 600.000-iteration count.
      */
     private function deriveAuthKey(string $password, string $secretKey, string $salt): string
     {
-        $kdfPass = EncryptionHelper::pbkdf2($password, base64_decode($salt), 1000, 32);
-        $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'user-salt');
-        $unlockKey = $kdfPass ^ $kdfSecret;
-
-        return base64_encode(EncryptionHelper::hkdf($unlockKey, 'uangku-auth-v1', 32));
+        return EncryptionHelper::deriveAuthKey($password, $secretKey, base64_decode($salt), 1000);
     }
 
     public function test_pre_register_requires_email(): void
@@ -40,11 +41,14 @@ class AuthControllerTest extends TestCase
 
     public function test_pre_register_with_valid_email(): void
     {
+        // A unique email avoids colliding with the Redis OTP session other
+        // test files key under the same OtpType::Register + email — Redis
+        // isn't reset by RefreshDatabase, unlike the DB.
         $response = $this->postJson('/api/auth/pre-register', [
-            'email' => 'test@example.com',
+            'email' => fake()->unique()->safeEmail(),
         ]);
 
-        $this->assertTrue(in_array($response->status(), [200, 400, 422, 500]));
+        $response->assertStatus(200);
     }
 
     public function test_register_requires_all_fields(): void
@@ -216,7 +220,7 @@ class AuthControllerTest extends TestCase
         // The only thing persisted about credentials is a bcrypt hash of the
         // authKey — neither the raw password nor the raw secret key appear
         // anywhere in the stored row.
-        $this->assertTrue(Hash::check($authKey, $user->password));
+        $this->assertTrue(EncryptionHelper::validateSecret($authKey, $user->password));
         $this->assertStringNotContainsString($password, $user->password);
         $this->assertStringNotContainsString($secretKey, $user->password);
     }
@@ -230,13 +234,17 @@ class AuthControllerTest extends TestCase
 
     public function test_forgot_password_with_valid_email(): void
     {
-        User::factory()->forEmail('test@example.com')->create();
+        // A unique email avoids colliding with the Redis OTP session other
+        // test files key under the same OtpType::ForgotPassword + email —
+        // Redis isn't reset by RefreshDatabase, unlike the DB.
+        $email = fake()->unique()->safeEmail();
+        User::factory()->forEmail($email)->create();
 
         $response = $this->postJson('/api/auth/forgot-password', [
-            'email' => 'test@example.com',
+            'email' => $email,
         ]);
 
-        $this->assertTrue(in_array($response->status(), [200, 400, 422, 500]));
+        $response->assertStatus(200);
     }
 
     public function test_reset_password_requires_all_fields(): void
@@ -272,5 +280,107 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/auth/change-password');
 
         $response->assertStatus(401);
+    }
+
+    /**
+     * Crosses the ACTUAL register() code path (not the factory shortcut every
+     * other test in this file uses) with the ACTUAL login() code path, both
+     * driven by the canonical derivation function. This is the one test that
+     * would have caught Blocker #1 — the seeder's hand-written derivation used
+     * to silently diverge from the documented contract while every other test
+     * here (which builds users via User::factory()->withAuthKey(), bypassing
+     * register() entirely) stayed green regardless. See faq-backend.md.
+     */
+    public function test_register_then_login_round_trips_through_the_real_service(): void
+    {
+        $authService = app(AuthService::class);
+
+        $password = 'CorrectHorse123!';
+        $secretKey = 'UANGKU-ABC123-DEF456-GHI78-JKL90-MNO12';
+        $rawSalt = random_bytes(16);
+        $authKey = EncryptionHelper::deriveAuthKey($password, $secretKey, $rawSalt, 1000);
+
+        $authService->register(
+            name: 'Round Trip User',
+            email: 'round-trip@example.com',
+            authKey: $authKey,
+            salt: base64_encode($rawSalt),
+            publicKey: base64_encode('fake-public-key'),
+            wrappedPrivateKey: 'fake-ciphertext',
+            otp: '000000',
+            uuid: '00000000-0000-0000-0000-000000000000',
+            isSeeder: true,
+            iterations: 1000,
+        );
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'round-trip@example.com',
+            'auth_key' => $authKey,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['data' => ['token', 'refresh_token', 'public_key', 'wrapped_private_key']]);
+    }
+
+    /**
+     * The decoy salt for an unregistered email must be indistinguishable from
+     * a real one — not just deterministic. A real salt is random_bytes(16)
+     * (arbitrary bytes). Before the Finding A fix, the decoy was built from
+     * hash_hmac() without the raw-bytes flag, so it always decoded to ASCII
+     * hex characters only ([0-9a-f]) — a ~2^-64 chance for a real salt to
+     * look the same, i.e. a near-perfect enumeration oracle. The old test
+     * here only checked determinism, which the bug still satisfied — a
+     * broken property can be perfectly deterministic. See faq-backend.md
+     * Finding A.
+     */
+    public function test_salt_decoy_is_indistinguishable_from_a_real_salt(): void
+    {
+        $response = $this->postJson('/api/auth/salt', ['email' => 'never-registered@example.com']);
+        $response->assertStatus(200);
+
+        $decoded = base64_decode($response->json('data.salt'), true);
+        $this->assertNotFalse($decoded);
+        $this->assertSame(16, strlen($decoded));
+
+        $allHexAscii = true;
+        for ($i = 0; $i < strlen($decoded); $i++) {
+            $byte = ord($decoded[$i]);
+            $isHexDigitByte = ($byte >= 0x30 && $byte <= 0x39) || ($byte >= 0x61 && $byte <= 0x66);
+            if (! $isHexDigitByte) {
+                $allHexAscii = false;
+                break;
+            }
+        }
+
+        $this->assertFalse(
+            $allHexAscii,
+            'Decoy salt decodes to bytes restricted to [0-9a-f] ASCII — distinguishable from a real random salt.'
+        );
+    }
+
+    public function test_salt_returns_the_iterations_used_at_registration(): void
+    {
+        $user = User::factory()->forEmail('custom-iterations@example.com')->create();
+        UserKey::factory()->create([
+            'users' => $user->id,
+            'salt' => base64_encode(random_bytes(16)),
+            'iterations' => 750000,
+        ]);
+
+        $response = $this->postJson('/api/auth/salt', ['email' => 'custom-iterations@example.com']);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.iterations', 750000);
+    }
+
+    public function test_salt_decoy_iterations_is_always_the_global_default(): void
+    {
+        // A per-email decoy iteration count would itself become a second
+        // enumeration oracle, so the decoy path must always report the
+        // global default regardless of what any real account uses.
+        $response = $this->postJson('/api/auth/salt', ['email' => 'still-unregistered@example.com']);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.iterations', EncryptionHelper::PBKDF2_ITERATIONS);
     }
 }

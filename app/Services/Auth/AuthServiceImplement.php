@@ -15,7 +15,6 @@ use App\Repositories\Redis\RedisRepository;
 use App\Repositories\S3\S3Repository;
 use App\Repositories\User\UserRepository;
 use Exception;
-use Illuminate\Support\Facades\Hash;
 use LaravelEasyRepository\Service;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Random\RandomException;
@@ -55,7 +54,8 @@ class AuthServiceImplement extends Service implements AuthService
         string $wrappedPrivateKey,
         string $otp,
         string $uuid,
-        bool $isSeeder = false
+        bool $isSeeder = false,
+        int $iterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): array {
         $blindIndex = EncryptionHelper::blindIndex($email);
         $encryptedEmail = EncryptionHelper::encryptEmail($email);
@@ -89,7 +89,7 @@ class AuthServiceImplement extends Service implements AuthService
             'name' => $name,
             'email' => $encryptedEmail,
             'blind_index' => $blindIndex,
-            'password' => Hash::make($authKey),
+            'password' => EncryptionHelper::hashSecret($authKey),
             'email_verified_at' => now(),
         ]);
 
@@ -98,6 +98,7 @@ class AuthServiceImplement extends Service implements AuthService
             publicKey: $publicKey,
             privateKey: $wrappedPrivateKey,
             salt: $salt,
+            iterations: $iterations,
         );
 
         $accessToken = JWTAuth::fromUser($user);
@@ -159,21 +160,31 @@ class AuthServiceImplement extends Service implements AuthService
     {
         $blindIndex = EncryptionHelper::blindIndex($email);
         $user = $this->mainRepository->getUserByBlindIndex($blindIndex);
+        $salt = null;
+        $iterations = EncryptionHelper::PBKDF2_ITERATIONS;
 
         if ($user !== null) {
             $userKey = $this->mainRepository->getUserKey($user->id);
             $salt = $userKey?->salt;
+            $iterations = $userKey?->iterations ?? $iterations;
         }
 
         if (empty($salt)) {
             // Deterministic per-email decoy so repeated lookups of the same
-            // unknown email are indistinguishable from a real account.
-            $salt = base64_encode(substr(hash_hmac('sha256', "decoy-salt:{$blindIndex}", env('MAIN_BLIND_INDEX_KEY', '')), 0, 16));
+            // unknown email are indistinguishable from a real account. The
+            // trailing `true` is load-bearing: without it, hash_hmac() returns
+            // hex ASCII text, so a decoy always base64-decodes to bytes in
+            // [0-9a-f] while a real salt (random_bytes) almost never does —
+            // a near-perfect enumeration oracle. See faq-backend.md Finding A.
+            $salt = base64_encode(substr(hash_hmac('sha256', "decoy-salt:{$blindIndex}", env('MAIN_BLIND_INDEX_KEY'), true), 0, 16));
+            // Decoy always reports the global default — a per-email decoy
+            // iteration count would itself become a second enumeration oracle.
+            $iterations = EncryptionHelper::PBKDF2_ITERATIONS;
         }
 
         return [
             'salt' => $salt,
-            'iterations' => EncryptionHelper::PBKDF2_ITERATIONS,
+            'iterations' => $iterations,
         ];
     }
 
@@ -186,7 +197,7 @@ class AuthServiceImplement extends Service implements AuthService
         $blindIndex = EncryptionHelper::blindIndex($email);
         $user = $this->mainRepository->getUserByBlindIndex($blindIndex);
 
-        if ($user == null || ! Hash::check($authKey, $user->password)) {
+        if ($user == null || ! EncryptionHelper::validateSecret($authKey, $user->password)) {
             throw new AuthException('Wrong email or credentials!');
         }
 
@@ -257,7 +268,8 @@ class AuthServiceImplement extends Service implements AuthService
         string $newAuthKey,
         string $newWrappedPrivateKey,
         string $otp,
-        string $uuid
+        string $uuid,
+        int $newIterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): User {
         $otpKey = OtpType::ChangePassword;
         $user = JWTAuth::setToken($token)->toUser();
@@ -269,7 +281,7 @@ class AuthServiceImplement extends Service implements AuthService
             throw new AuthException('Change credentials session expired please try again!');
         }
 
-        if (! Hash::check($oldAuthKey, $user->password)) {
+        if (! EncryptionHelper::validateSecret($oldAuthKey, $user->password)) {
             throw new AuthException('Wrong current password or secret key!');
         }
 
@@ -291,10 +303,11 @@ class AuthServiceImplement extends Service implements AuthService
             throw new AuthException('User key not found!');
         }
 
-        $user->password = Hash::make($newAuthKey);
+        $user->password = EncryptionHelper::hashSecret($newAuthKey);
         $user->save();
 
         $userKey->salt = $newSalt;
+        $userKey->iterations = $newIterations;
         $userKey->private_key = $newWrappedPrivateKey;
         $userKey->save();
 
@@ -333,7 +346,8 @@ class AuthServiceImplement extends Service implements AuthService
         string $newPublicKey,
         string $newWrappedPrivateKey,
         string $otp,
-        string $uuid
+        string $uuid,
+        int $newIterations = EncryptionHelper::PBKDF2_ITERATIONS
     ): User {
         $otpKey = OtpType::ForgotPassword;
         $isExist = $this->redisRepository->getRedis("{$otpKey->value}:{$email}");
@@ -365,7 +379,7 @@ class AuthServiceImplement extends Service implements AuthService
         // password, so recovery necessarily replaces the key material with a
         // brand new keypair. Data encrypted under the old key is unreadable
         // afterwards — this is the same limitation every E2EE product has.
-        $user->password = Hash::make($newAuthKey);
+        $user->password = EncryptionHelper::hashSecret($newAuthKey);
         $user->save();
 
         $userKey = $this->mainRepository->getUserKey($user->id);
@@ -376,11 +390,13 @@ class AuthServiceImplement extends Service implements AuthService
                 publicKey: $newPublicKey,
                 privateKey: $newWrappedPrivateKey,
                 salt: $newSalt,
+                iterations: $newIterations,
             );
         } else {
             $userKey->public_key = $newPublicKey;
             $userKey->private_key = $newWrappedPrivateKey;
             $userKey->salt = $newSalt;
+            $userKey->iterations = $newIterations;
             $userKey->save();
         }
 
