@@ -532,8 +532,19 @@ Greenfield → migrasi diedit langsung (tanpa dual-read/backward-compat shim).
   wrapping & rotasi.
 - `app/Services/Wallet/WalletService(Implement).php` — berhenti enkripsi server-side.
 - `app/Services/Pin/PinServiceImplement.php` — fix bug OTP-tidak-diverifikasi di `createPin`; `forgotPin` kini pakai
-  `authKey`.
+  `authKey`, di-peppered lewat `EncryptionHelper::hashSecret/validateSecret()` sama seperti authKey login.
 - `app/Repositories/UserSession/UserSessionRepositoryImplement.php` — refresh token di-hash SHA-256.
+- `app/Providers/AppServiceProvider.php::boot()` — guard startup: `MAIN_SALT_KEY`/`MAIN_SYSTEM_KEY`/
+  `MAIN_BLIND_INDEX_KEY` harus ≥ 32 karakter kalau sudah di-set (tidak menolak yang kosong/unset, supaya
+  tidak merusak `migrate --force` di CI yang jalan sebelum env var testing tersedia) — lihat §4 catatan
+  verifier hash.
+- `database/migrations/2026_07_17_150000_add_iterations_to_user_keys_table.php` — kolom
+  `user_keys.iterations` (default 600.000), dasar §11 `iterations` per-user.
+- `app/Console/Commands/GenerateKdfVectors.php` (`php artisan uangku:kdf-vectors`) — generator test
+  vectors Set A-E; belum pernah dijalankan atas DB dev nyata & commit hasilnya (§15).
+- `docs/faq-backend-response.md` — balasan terstruktur ke review tim Mobile yang memicu semua perubahan
+  di [PR #188](https://github.com/uangkuid/Uangku-BE/pull/188); referensi berguna untuk histori keputusan (mis. kenapa
+  literal `'user-salt'` diganti per-user raw salt di §4.2).
 - `app/Http/Resources/BaseResponse.php`, `PaginationResponse.php` — enkripsi respons (`IS_NEED_ENCRYPT`) dihapus total.
 - `.env.example` — `MAIN_SYSTEM_KEY`, `MAIN_BLIND_INDEX_KEY` baru; `MAIN_SECRET_KEY`/`MAIN_STATIC_IV` dihapus (
   obsolete).
@@ -566,18 +577,24 @@ Greenfield → migrasi diedit langsung (tanpa dual-read/backward-compat shim).
 - [x] Full suite (`php artisan test`, termasuk test family/wallet yang butuh koneksi DB nyata) dijalankan di CI
   (`.github/workflows/tests.yml`) pada [PR #187](https://github.com/uangkuid/Uangku-BE/pull/187), sudah merged ke
   `main`.
-- [ ] `./vendor/bin/pint` bersih di semua file yang disentuh oleh perubahan Blocker #1/Temuan A/Temuan B.
+- [x] `./vendor/bin/pint` bersih di semua file yang disentuh oleh perubahan Blocker #1/Temuan A/Temuan B
+  ([PR #188](https://github.com/uangkuid/Uangku-BE/pull/188), merged).
 
 **Properti lintas-implementasi (yang benar-benar dijanjikan kontrak §4.2 & §6 — WAJIB sebelum dianggap selesai):**
 
-- [ ] Seeder dan test suite memanggil **satu** fungsi kanonik (`EncryptionHelper::deriveUnlockKey()`/
+- [x] Seeder dan test suite memanggil **satu** fungsi kanonik (`EncryptionHelper::deriveUnlockKey()`/
   `deriveAuthKey()`) untuk derivasi 2SKD, tidak menuliskan ulang langkahnya masing-masing — Blocker #1
-  secara konstruksi tidak bisa terulang kalau ini dipenuhi.
-- [ ] Test decoy salt mengecek **indistinguishability** (byte hasil `base64_decode` tidak melulu
-  `[0-9a-f]`), bukan hanya determinisme — Temuan A.
-- [ ] Test regresi: PIN salah tetap ditolak walau `MAIN_SALT_KEY` panjang (mis. 88 karakter) — Temuan B.
-- [ ] Test vectors (`docs/test-vectors/kdf-vectors.json`) di-generate dari `EncryptionHelper` dan
-  di-commit ke repo.
+  secara konstruksi tidak bisa terulang kalau ini dipenuhi. `UserSeeder.php` dan
+  `AuthControllerTest::deriveAuthKey()` sudah memanggil fungsi kanonik ini per [PR #188](https://github.com/uangkuid/Uangku-BE/pull/188).
+- [x] Test decoy salt mengecek **indistinguishability** (byte hasil `base64_decode` tidak melulu
+  `[0-9a-f]`), bukan hanya determinisme — Temuan A. Lihat
+  `AuthControllerTest::test_salt_decoy_is_indistinguishable_from_a_real_salt()`.
+- [x] Test regresi: PIN/authKey salah tetap ditolak walau pepper (`MAIN_SALT_KEY`) panjang (88 karakter) —
+  Temuan B. Lihat `EncryptionHelperTest::test_hash_secret_rejects_wrong_secret_even_with_long_pepper()`.
+- [ ] Test vectors (`docs/test-vectors/kdf-vectors.json`) di-generate dari `EncryptionHelper` (via
+  `php artisan uangku:kdf-vectors`, ditambahkan di [PR #188](https://github.com/uangkuid/Uangku-BE/pull/188))
+  dan di-commit ke repo — command-nya sudah ada, tapi output belum di-generate dari DB dev nyata &
+  di-commit (butuh Set D otentik, bukan fallback sintetik).
 - [ ] **Test vectors byte-identik lintas KMP/Vue** — **JANGAN dicentang** sampai ada klien nyata (KMP
   atau Vue) yang benar-benar menjalankan vector itu dan melaporkan hasilnya cocok. Ini satu-satunya
   baris yang benar-benar menangkap kelas bug Blocker #1 — centang manual tanpa validasi klien nyata
