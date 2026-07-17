@@ -37,6 +37,11 @@ class EncryptionHelper
      */
     public const PBKDF2_ITERATIONS = 600000;
 
+    /** HKDF `info` domain-separation labels for the 2SKD contract (docs/encryption.md §4.2). */
+    public const INFO_SECRET_KEY = 'uangku-secretkey-v1';
+
+    public const INFO_AUTH = 'uangku-auth-v1';
+
     // =========================================================================
     // AES-256-GCM (AEAD) — the only symmetric primitive used server-side.
     // =========================================================================
@@ -106,6 +111,35 @@ class EncryptionHelper
     public static function hkdf(string $ikm, string $info, int $length = 32, string $salt = ''): string
     {
         return hash_hkdf('sha256', $ikm, $length, $info, $salt);
+    }
+
+    // =========================================================================
+    // Canonical 2SKD derivation (docs/encryption.md §4.2). This is the ONLY
+    // place the derivation steps may be written — the seeder and the test
+    // suite must call these functions, never re-implement the steps, or the
+    // three copies can silently diverge (see faq-backend.md Blocker #1).
+    // =========================================================================
+
+    /**
+     * @param  string  $rawSalt  16 raw bytes — already base64_decode()'d from user_keys.salt.
+     *                           Used as BOTH the PBKDF2 salt and the HKDF salt for kdfSecret.
+     */
+    public static function deriveUnlockKey(string $password, string $secretKey, string $rawSalt, int $iterations = self::PBKDF2_ITERATIONS): string
+    {
+        $kdfPass = self::pbkdf2($password, $rawSalt, $iterations, 32);
+        $kdfSecret = self::hkdf($secretKey, self::INFO_SECRET_KEY, 32, $rawSalt);
+
+        return $kdfPass ^ $kdfSecret;
+    }
+
+    /** @param  string  $rawSalt  16 raw bytes — see deriveUnlockKey(). */
+    public static function deriveAuthKey(string $password, string $secretKey, string $rawSalt, int $iterations = self::PBKDF2_ITERATIONS): string
+    {
+        return base64_encode(self::hkdf(
+            self::deriveUnlockKey($password, $secretKey, $rawSalt, $iterations),
+            self::INFO_AUTH,
+            32
+        ));
     }
 
     // =========================================================================
@@ -190,12 +224,7 @@ class EncryptionHelper
      */
     public static function hashSecret(string $secret): string
     {
-        $pepper = env('MAIN_SALT_KEY');
-        if (empty($pepper)) {
-            throw new EncryptionException('MAIN_SALT_KEY is not configured.');
-        }
-
-        return Hash::make($pepper.$secret.$pepper);
+        return Hash::make(self::pepperedInput($secret));
     }
 
     /**
@@ -203,11 +232,24 @@ class EncryptionHelper
      */
     public static function validateSecret(string $secret, string $hashedSecret): bool
     {
+        return Hash::check(self::pepperedInput($secret), $hashedSecret);
+    }
+
+    /**
+     * HMAC-SHA256 the secret with the pepper first, so the bcrypt input is
+     * always a fixed 44-char base64 string regardless of pepper length.
+     * Without this, a MAIN_SALT_KEY of 72+ bytes silently truncates the
+     * secret out of the bcrypt input entirely — see faq-backend.md Finding B.
+     *
+     * @throws EncryptionException
+     */
+    private static function pepperedInput(string $secret): string
+    {
         $pepper = env('MAIN_SALT_KEY');
         if (empty($pepper)) {
             throw new EncryptionException('MAIN_SALT_KEY is not configured.');
         }
 
-        return Hash::check($pepper.$secret.$pepper, $hashedSecret);
+        return base64_encode(hash_hmac('sha256', $secret, $pepper, true));
     }
 }

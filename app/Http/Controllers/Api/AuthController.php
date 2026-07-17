@@ -6,6 +6,7 @@ use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
+use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
@@ -71,6 +72,7 @@ class AuthController extends Controller
                     new OA\Property(property: 'otp', type: 'string', example: '123456'),
                     new OA\Property(property: 'uuid', type: 'string'),
                     new OA\Property(property: 'salt', type: 'string', description: 'Client-generated KDF salt'),
+                    new OA\Property(property: 'iterations', type: 'integer', nullable: true, description: 'PBKDF2 iterations used with salt (defaults to the server minimum if omitted)'),
                     new OA\Property(property: 'auth_key', type: 'string', description: 'Client-derived authentication key (never the raw password)'),
                     new OA\Property(property: 'public_key', type: 'string', description: 'Client-generated RSA public key'),
                     new OA\Property(property: 'wrapped_private_key', type: 'string', description: 'RSA private key wrapped under the unlockKey'),
@@ -98,6 +100,7 @@ class AuthController extends Controller
             'otp' => 'required|min:6|max:6',
             'uuid' => 'required',
             'salt' => 'required|string',
+            'iterations' => 'nullable|integer|min:100000',
             'auth_key' => 'required|string',
             'public_key' => 'required|string',
             'wrapped_private_key' => 'required|string',
@@ -122,6 +125,7 @@ class AuthController extends Controller
                 wrappedPrivateKey: $request->wrapped_private_key,
                 otp: $request->otp,
                 uuid: $request->uuid,
+                iterations: $request->integer('iterations') ?: EncryptionHelper::PBKDF2_ITERATIONS,
             );
 
             $user = $registerResult['user'];
@@ -569,6 +573,7 @@ class AuthController extends Controller
                 properties: [
                     new OA\Property(property: 'old_auth_key', type: 'string'),
                     new OA\Property(property: 'new_salt', type: 'string'),
+                    new OA\Property(property: 'new_iterations', type: 'integer', nullable: true, description: 'PBKDF2 iterations used with new_salt (defaults to the server minimum if omitted)'),
                     new OA\Property(property: 'new_auth_key', type: 'string'),
                     new OA\Property(property: 'new_wrapped_private_key', type: 'string'),
                     new OA\Property(property: 'otp', type: 'string', example: '123456'),
@@ -587,6 +592,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'old_auth_key' => 'required|string',
             'new_salt' => 'required|string',
+            'new_iterations' => 'nullable|integer|min:100000',
             'new_auth_key' => 'required|string',
             'new_wrapped_private_key' => 'required|string',
             'otp' => 'required|min:6|max:6',
@@ -605,7 +611,8 @@ class AuthController extends Controller
                 newAuthKey: $request->new_auth_key,
                 newWrappedPrivateKey: $request->new_wrapped_private_key,
                 otp: $request->otp,
-                uuid: $request->uuid
+                uuid: $request->uuid,
+                newIterations: $request->integer('new_iterations') ?: EncryptionHelper::PBKDF2_ITERATIONS,
             );
 
             $this->userSessionService->revokeAllSession($user);
@@ -701,6 +708,7 @@ class AuthController extends Controller
                     new OA\Property(property: 'otp', type: 'string', example: '123456'),
                     new OA\Property(property: 'uuid', type: 'string'),
                     new OA\Property(property: 'new_salt', type: 'string'),
+                    new OA\Property(property: 'new_iterations', type: 'integer', nullable: true, description: 'PBKDF2 iterations used with new_salt (defaults to the server minimum if omitted)'),
                     new OA\Property(property: 'new_auth_key', type: 'string'),
                     new OA\Property(property: 'new_public_key', type: 'string'),
                     new OA\Property(property: 'new_wrapped_private_key', type: 'string'),
@@ -720,6 +728,7 @@ class AuthController extends Controller
             'otp' => 'required|min:6|max:6',
             'uuid' => 'required',
             'new_salt' => 'required|string',
+            'new_iterations' => 'nullable|integer|min:100000',
             'new_auth_key' => 'required|string',
             'new_public_key' => 'required|string',
             'new_wrapped_private_key' => 'required|string',
@@ -737,7 +746,8 @@ class AuthController extends Controller
                 newPublicKey: $request->new_public_key,
                 newWrappedPrivateKey: $request->new_wrapped_private_key,
                 otp: $request->otp,
-                uuid: $request->uuid
+                uuid: $request->uuid,
+                newIterations: $request->integer('new_iterations') ?: EncryptionHelper::PBKDF2_ITERATIONS,
             );
 
             $this->userSessionService->revokeAllSession($user);

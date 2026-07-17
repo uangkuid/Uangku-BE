@@ -87,9 +87,10 @@ DAN secret key** milik user, data finansial tak bisa dibuka — kompromi salah s
 ```mermaid
 flowchart TD
     PW["Password user"] --> PBKDF2["PBKDF2-HMAC-SHA256(password, salt, 600k iter, 32B)"]
-    SALT["Salt acak per-user (16B, disimpan server, dibagikan via /auth/salt)"] --> PBKDF2
+    SALT["Salt acak per-user (16B RAW, disimpan server, dibagikan via /auth/salt)"] --> PBKDF2
+    SALT --> HKDFSECRET
     PBKDF2 --> KDFPASS["kdfPass (32B)"]
-    SECRET["Secret Key client-generated: UANGKU-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX<br/>(TIDAK PERNAH dikirim ke server)"] --> HKDFSECRET["HKDF-SHA256(secretKey, info=uangku-secretkey-v1)"]
+    SECRET["Secret Key client-generated: UANGKU-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX<br/>(TIDAK PERNAH dikirim ke server)"] --> HKDFSECRET["HKDF-SHA256(secretKey, salt=SAME 16B raw salt, info=uangku-secretkey-v1)"]
     HKDFSECRET --> KDFSECRET["kdfSecret (32B)"]
     KDFPASS --> XOR["unlockKey = kdfPass XOR kdfSecret"]
     KDFSECRET --> XOR
@@ -123,13 +124,24 @@ flowchart TD
 
 | Fungsi              | Algoritma          | Parameter                                                                       | Dipakai di                                                                                                                |
 |---------------------|--------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Password stretching | PBKDF2-HMAC-SHA256 | 600.000 iterasi (`EncryptionHelper::PBKDF2_ITERATIONS`), output 32B             | Klien                                                                                                                     |
-| Domain separation   | HKDF-SHA256        | `info` = `uangku-secretkey-v1` / `uangku-auth-v1` / `uangku-enc-v1`, output 32B | Klien (+ server: `EncryptionHelper::hkdf()` untuk test vectors)                                                           |
+| Password stretching | PBKDF2-HMAC-SHA256 | Iterasi per-user (lihat §11), default 600.000 (`EncryptionHelper::PBKDF2_ITERATIONS`), output 32B | Klien                                                                                                    |
+| Domain separation   | HKDF-SHA256        | `info` = `uangku-secretkey-v1` / `uangku-auth-v1`, output 32B                   | Klien (+ server: `EncryptionHelper::hkdf()` untuk test vectors)                                                           |
 | Enkripsi simetris   | AES-256-GCM        | IV 12 byte acak, tag 16 byte                                                    | Klien (wrap private key, enkripsi data finansial) + Server (`EncryptionHelper::aesGcmEncrypt/Decrypt`, HANYA untuk email) |
-| Enkripsi asimetris  | RSA-OAEP-SHA256    | modulus 4096-bit                                                                | Klien saja (server tidak lagi generate/encrypt/decrypt RSA sama sekali)                                                   |
+| Enkripsi asimetris  | RSA-OAEP-SHA256    | modulus 4096-bit — **plaintext maks. 446 byte** (`512 − 2×32 − 2`); field yang lebih besar (mis. `wrapped_private_key`) WAJIB hybrid envelope §4.1, tidak bisa RSA langsung | Klien saja (server tidak lagi generate/encrypt/decrypt RSA sama sekali)                          |
 | Blind index (email) | HMAC-SHA256        | kunci = `MAIN_BLIND_INDEX_KEY`                                                  | Server (`EncryptionHelper::blindIndex()`)                                                                                 |
-| Verifier hash       | bcrypt             | pepper = `MAIN_SALT_KEY`                                                        | Server (`EncryptionHelper::hashSecret/validateSecret()` — authKey & PIN)                                                  |
+| Verifier hash       | bcrypt atas HMAC-SHA256(secret, pepper) | pepper = `MAIN_SALT_KEY` (≥ 32 karakter, divalidasi saat boot)    | Server (`EncryptionHelper::hashSecret/validateSecret()` — authKey **dan** PIN, keduanya sama-sama peppered)              |
 | Random              | CSPRNG             | —                                                                               | Klien & server (`random_bytes`)                                                                                           |
+
+**Catatan `uangku-enc-v1`:** label ini pernah muncul di draft awal tabel `info` HKDF tapi **tidak
+pernah dipakai di kontrak server** — tidak ada endpoint atau flow di §5–§10 yang menyebutnya, dan
+tidak ada referensi di `app/`. Kalau klien butuh HKDF terpisah untuk enkripsi database lokal
+(never touches the server), itu boleh dipakai **client-only** dengan salt/output yang klien tentukan
+sendiri — tapi itu di luar kontrak §4.2 ini, jadi tidak didaftarkan sebagai primitif server-facing.
+
+**Catatan verifier hash:** bcrypt memotong input di 72 byte secara diam-diam. `hashSecret()`/
+`validateSecret()` men-HMAC-SHA256 secret dengan pepper dulu (output tetap 44 karakter base64)
+sebelum masuk ke bcrypt, supaya truncation itu tidak pernah bisa terjadi — lihat implementasi di
+`app/Helpers/EncryptionHelper.php`.
 
 ### 4.1 Format ciphertext AES-256-GCM (server-side, email only)
 
@@ -155,22 +167,38 @@ berikut untuk field besar:
 ### 4.2 Kontrak derivasi kunci (WAJIB identik di semua klien)
 
 ```
-kdfPass   = PBKDF2-HMAC-SHA256(NFC(password), salt, iterations=600000, dkLen=32)
-kdfSecret = HKDF-SHA256(ikm=secretKey, salt="user-salt", info="uangku-secretkey-v1", L=32)
+rawSalt   = base64_decode(salt)   // 16 byte MENTAH — lihat catatan di bawah
+kdfPass   = PBKDF2-HMAC-SHA256(NFC(password), rawSalt, iterations, dkLen=32)
+kdfSecret = HKDF-SHA256(ikm=secretKey, salt=rawSalt, info="uangku-secretkey-v1", L=32)
 unlockKey = kdfPass XOR kdfSecret
 authKey   = base64(HKDF-SHA256(ikm=unlockKey, info="uangku-auth-v1", L=32))
 ```
 
-`iterations` didapat dari `POST /auth/salt` (parameter-driven, bisa dinaikkan tanpa memecah klien lama).
+**HKDF salt = 16 byte MENTAH, bukan base64-nya.** `salt` datang dari `/auth/salt` sebagai base64;
+klien harus `base64_decode()` dulu, lalu memakai hasilnya (16 byte raw) sebagai salt untuk **kedua**
+operasi — PBKDF2 (kdfPass) dan HKDF (kdfSecret). Ini bukan literal `'user-salt'` — itu adalah salt
+per-user yang sesungguhnya, sudah acak dan unik per akun sejak awal. Percobaan pertama kontrak ini
+sempat menggunakan literal `'user-salt'` sebagai placeholder, yang namanya ambigu dan pernah memicu
+implementasi keliru di seeder (menaruh email di situ, bukan salt) — lihat §15 dan riwayat proyek.
+Kontrak final tidak punya string ambigu semacam itu lagi: `salt` selalu berarti 16 byte acak
+per-user, titik.
 
-**Referensi implementasi PHP** (dipakai server untuk simulasi klien di seeder/test — lihat
-`database/seeders/UserSeeder.php` dan `tests/Feature/Api/AuthControllerTest.php::deriveAuthKey()`):
+`iterations` didapat dari `POST /auth/salt` — **per-user**, bukan konstanta global (lihat §11). Ini
+memungkinkan menaikkan default untuk akun baru tanpa mengubah apa yang dipakai akun lama.
+
+**Referensi implementasi PHP** (satu-satunya tempat langkah-langkah ini boleh ditulis — seeder dan
+test WAJIB memanggil fungsi ini, bukan menuliskan ulang langkahnya; lihat
+`app/Helpers/EncryptionHelper.php::deriveUnlockKey()`/`deriveAuthKey()`):
 
 ```php
-$kdfPass   = EncryptionHelper::pbkdf2($password, $salt, EncryptionHelper::PBKDF2_ITERATIONS, 32);
-$kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'user-salt');
-$unlockKey = $kdfPass ^ $kdfSecret;
-$authKey   = base64_encode(EncryptionHelper::hkdf($unlockKey, 'uangku-auth-v1', 32));
+$unlockKey = EncryptionHelper::deriveUnlockKey($password, $secretKey, $rawSalt, $iterations);
+$authKey   = EncryptionHelper::deriveAuthKey($password, $secretKey, $rawSalt, $iterations);
+
+// Internally:
+// $kdfPass   = EncryptionHelper::pbkdf2($password, $rawSalt, $iterations, 32);
+// $kdfSecret = EncryptionHelper::hkdf($secretKey, EncryptionHelper::INFO_SECRET_KEY, 32, $rawSalt);
+// $unlockKey = $kdfPass ^ $kdfSecret;
+// $authKey   = base64_encode(EncryptionHelper::hkdf($unlockKey, EncryptionHelper::INFO_AUTH, 32));
 ```
 
 ---
@@ -191,7 +219,7 @@ sequenceDiagram
     C ->> C: (pub, priv) = RSA-OAEP-4096 keypair
     C ->> C: wrapped_private_key = AES-GCM(unlockKey, priv)
     C ->> C: tampilkan secretKey SEKALI ke user (simpan/backup — opsional BIP39)
-    C ->> S: POST /auth/register { name, email, otp, uuid,<br/>salt, auth_key, public_key, wrapped_private_key,<br/>wallet_name?, wallet_amount?, start_date_month? }
+    C ->> S: POST /auth/register { name, email, otp, uuid,<br/>salt, iterations?, auth_key, public_key, wrapped_private_key,<br/>wallet_name?, wallet_amount?, start_date_month? }
     S ->> S: verifikasi OTP
     S ->> S: blind_index = HMAC(email)
     S ->> S: email_ciphertext = AES-GCM(system_key, email)
@@ -216,10 +244,10 @@ sequenceDiagram
     C ->> S: POST /auth/salt { email }
     alt email terdaftar
         S ->> DB: cari via blind_index(email)
-        S ->> C: { salt (real), iterations }
+        S ->> C: { salt (real), iterations (milik user itu) }
     else email tak dikenal
-        S ->> S: salt = HMAC(MAIN_BLIND_INDEX_KEY, "decoy-salt:"+blind_index) — deterministik
-        S ->> C: { salt (decoy), iterations }
+        S ->> S: salt = HMAC(MAIN_BLIND_INDEX_KEY, "decoy-salt:"+blind_index, raw bytes) — deterministik
+        S ->> C: { salt (decoy), iterations (default global) }
     end
 
     C ->> C: unlockKey, authKey = deriveKeys(password, secretKey, salt)
@@ -256,7 +284,7 @@ terkonsolidasi:
 `POST /auth/pre-change-password` (mulai sesi OTP) → `POST /auth/change-password`:
 
 ```
-{ old_auth_key, new_salt, new_auth_key, new_wrapped_private_key, otp, uuid }
+{ old_auth_key, new_salt, new_iterations?, new_auth_key, new_wrapped_private_key, otp, uuid }
 ```
 
 Klien **masih punya** `unlockKey` lama (sedang login) → bisa dekripsi `private_key` lama & re-wrap dengan `unlockKey`
@@ -265,7 +293,7 @@ baru. **Tidak ada data yang hilang.**
 ### 7.2 Lupa password (`forgot-password` / `reset-password`)
 
 ```
-{ email, otp, uuid, new_salt, new_auth_key, new_public_key, new_wrapped_private_key }
+{ email, otp, uuid, new_salt, new_iterations?, new_auth_key, new_public_key, new_wrapped_private_key }
 ```
 
 Karena klien **tidak bisa** membuka `wrapped_private_key` lama tanpa password lama, pemulihan ini **mengganti seluruh
@@ -302,6 +330,29 @@ menerima `$name`/`$amount` sebagai ciphertext client dan menyimpannya apa adanya
 `wallet_name`/`wallet_amount` opsional (ciphertext) untuk wallet default; bila kosong, klien buat wallet belakangan
 lewat `POST /wallet`.
 
+**Envelope wajib untuk SEMUA field finansial, tanpa pengecualian.** Setiap field yang masuk kategori
+"data finansial" — `wallet.name`, `wallet.amount`, `transaction.amount`, `transaction.note`, dan
+`wallet_name`/`wallet_amount` opsional di `POST /auth/register` — **wajib** memakai hybrid envelope
+`{v, ek, ct}` dari §4.1, tidak pernah RSA-OAEP langsung. Alasannya bukan cuma konsistensi: RSA-OAEP-4096
+mentok di 446 byte plaintext (§4), dan nama wallet + emoji bisa mendekati batas itu. Aturan "semua field
+finansial = envelope, tanpa pengecualian" jauh lebih sulit disalahimplementasikan daripada "envelope
+kecuali field X" — klien tidak perlu mengingat daftar pengecualian.
+
+**Bentuk kanonik plaintext numerik (sebelum dienkripsi).** Vue dan mobile harus setuju byte-for-byte
+tentang bentuk plaintext sebelum enkripsi, karena hasil dekripsi di klien lain akan di-parse ulang dari
+string itu:
+
+- **String integer minor-unit** — tanpa titik/koma pemisah ribuan, tanpa simbol mata uang, tanpa desimal
+  terpisah (rupiah tidak punya sen yang dipakai produk ini, jadi minor unit = rupiah itu sendiri).
+- Nilai negatif diawali `-` (mis. pengeluaran yang disimpan sebagai negatif, kalau desain klien butuh itu).
+- Muat di signed 64-bit integer (`Long`/`bigint`), tidak butuh presisi arbitrary.
+- Contoh: Rp150.000,00 → plaintext `"15000000"` bila field-nya minor-unit sen; kalau produk ini
+  memang tidak punya konsep sen dan `wallet_amount` adalah rupiah utuh, plaintext-nya `"150000"`.
+  **Test vector di `docs/test-vectors/kdf-vectors.json` (Set A) menyertakan contoh literal — pakai itu
+  sebagai acuan pasti**, teks di atas hanya menjelaskan aturan bentuknya.
+- Field tanggal (`start_date_month`, dsb.) yang dienkripsi: ISO-8601 (`YYYY-MM-DD`), plaintext string,
+  envelope yang sama seperti field finansial lain.
+
 **Keterbatasan yang diketahui (didokumentasikan, bukan disembunyikan):**
 
 - **Pencarian transaksi** (`note LIKE '%search%'`) tidak berfungsi atas ciphertext — hanya cocok bila klien
@@ -320,7 +371,7 @@ sequenceDiagram
     participant M as Member baru (klien)
     Note over O: Buat family — keypair digenerate KLIEN
     O ->> O: (famPub, famPriv) = keypair
-    O ->> O: wrapped_own = RSA-OAEP(owner.pub, famPriv)
+    O ->> O: wrapped_own = HybridEnvelope(owner.pub, famPriv)
     O ->> S: POST /family { name(ciphertext), public_key, wrapped_private_key }
     S ->> S: family_keys{public_key} + family_member_keys{owner, wrapped_own}
     Note over M: Join family — membership granted, key belum ada (pending)
@@ -329,7 +380,7 @@ sequenceDiagram
     Note over O: Owner mem-fetch member yang belum punya kunci
     O ->> S: GET /family/{id}/pending-keys
     S ->> O: [{ user_id, public_key }]
-    O ->> O: wrapped_for_member = RSA-OAEP(member.pub, famPriv)
+    O ->> O: wrapped_for_member = HybridEnvelope(member.pub, famPriv)
     O ->> S: POST /family/{id}/member-key { user_id, wrapped_private_key }
     M ->> S: GET /family/{id}/my-key (poll)
     S ->> M: { public_key, wrapped_private_key, key_status: "granted" }
@@ -347,6 +398,14 @@ Note over M: Eks-member tak bisa lagi fetch kunci baru<br/>(salinan lama di devi
 **Skema:** `family_keys(id, family, public_key)` — HANYA public key, tanpa private key/secret key bersama.
 `family_member_keys(id, family, users, wrapped_private_key)` — **satu baris per member**, di-wrap ke public key
 masing-masing. Tidak ada lagi konsep "family secret key" yang dibagikan manusia-ke-manusia.
+
+**Kenapa `HybridEnvelope`, bukan RSA-OAEP langsung:** `wrapped_own`/`wrapped_for_member` membungkus
+`famPriv`, yaitu **private key RSA-4096** dalam bentuk PKCS#8 PEM — sekitar 3.200+ byte. RSA-OAEP-4096
+hanya bisa mengenkripsi maksimum 446 byte plaintext (§4) — RSA-OAEP langsung atas private key ini
+**mustahil secara matematis** di implementasi manapun, bukan keterbatasan bahasa/library tertentu.
+`FamilyServiceImplement` menyimpan `wrapped_private_key` sepenuhnya opaque dan tidak pernah melakukan
+RSA sendiri, jadi klien tinggal pakai hybrid envelope §4.1 di sini — strukturnya sama dengan enkripsi
+data finansial di §8, jadi helper-nya bisa dipakai ulang.
 
 **Implementasi:** `FamilyServiceImplement` (`createFamily`, `responseInvitation`, `getPendingMembers`, `grantMemberKey`,
 `getMyMemberKey`, `rotateKey`, `revokeMember`), `FamilyController`, endpoint di `routes/api.php`.
@@ -382,14 +441,14 @@ flowchart LR
 | Endpoint                                | Request                                                                                                                        | Response                                                                      |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
 | `POST /auth/pre-register`               | `{ email }`                                                                                                                    | OTP terkirim                                                                  |
-| `POST /auth/register`                   | `{ name, email, otp, uuid, salt, auth_key, public_key, wrapped_private_key, wallet_name?, wallet_amount?, start_date_month? }` | `{ id, token, refresh_token }`                                                |
-| `POST /auth/salt`                       | `{ email }` (throttle 20/menit)                                                                                                | `{ salt, iterations }`                                                        |
+| `POST /auth/register`                   | `{ name, email, otp, uuid, salt, iterations?, auth_key, public_key, wrapped_private_key, wallet_name?, wallet_amount?, start_date_month? }` | `{ id, token, refresh_token }`                                   |
+| `POST /auth/salt`                       | `{ email }` (throttle 20/menit)                                                                                                | `{ salt, iterations }` (iterations milik user itu; default global untuk decoy) |
 | `POST /auth/login`                      | `{ email, auth_key }` (throttle 10/menit)                                                                                      | `{ id, name, avatar, token, refresh_token, public_key, wrapped_private_key }` |
 | `POST /auth/refresh-token`              | `{ refresh_token }`                                                                                                            | token baru                                                                    |
 | `POST /auth/pre-change-password`        | (auth)                                                                                                                         | mulai sesi OTP                                                                |
-| `POST /auth/change-password`            | `{ old_auth_key, new_salt, new_auth_key, new_wrapped_private_key, otp, uuid }`                                                 | ok                                                                            |
+| `POST /auth/change-password`            | `{ old_auth_key, new_salt, new_iterations?, new_auth_key, new_wrapped_private_key, otp, uuid }`                                | ok                                                                            |
 | `POST /auth/forgot-password`            | `{ email }`                                                                                                                    | mulai sesi OTP                                                                |
-| `POST /auth/reset-password`             | `{ email, otp, uuid, new_salt, new_auth_key, new_public_key, new_wrapped_private_key }`                                        | ok                                                                            |
+| `POST /auth/reset-password`             | `{ email, otp, uuid, new_salt, new_iterations?, new_auth_key, new_public_key, new_wrapped_private_key }`                       | ok                                                                            |
 | `POST /family`                          | `{ name, public_key, wrapped_private_key }`                                                                                    | family + key info                                                             |
 | `POST /family/join`                     | `{ invitation_id, family_id }`                                                                                                 | `{ public_key, wrapped_private_key?, key_status }`                            |
 | `GET /family/{id}/my-key`               | —                                                                                                                              | `{ public_key, wrapped_private_key?, key_status }`                            |
@@ -443,7 +502,15 @@ bebas ditentukan klien, lihat §4.1).
 
 ### 13.3 Kesamaan wajib
 
-- Encoding password: **UTF-8 NFC**.
+- Encoding password: **UTF-8 NFC** — WAJIB, semua klien. PHP (`hash_pbkdf2`) **tidak** menormalisasi
+  apapun secara internal — byte password masuk apa adanya ke PBKDF2. Kalau satu klien mengirim NFD
+  (mis. macOS keyboard untuk `café` menghasilkan `e` + combining acute) dan klien lain mengirim NFC
+  (mis. Android keyboard menghasilkan U+00E9), `authKey` yang dihasilkan berbeda dan login gagal
+  permanen untuk password non-ASCII — tidak akan pernah muncul di test, hanya kena user asli.
+  Mobile (KMP) adalah klien pertama yang mengimplementasikan kontrak ini — normalisasi NFC wajib
+  dilakukan di sisi klien sebelum PBKDF2, bukan diasumsikan atau dilakukan server. Test vector
+  (`docs/test-vectors/kdf-vectors.json` Set A) menyertakan kasus NFC vs NFD eksplisit untuk
+  memverifikasi ini, bukan hanya diasumsikan benar.
 - Email normalize: lowercase + trim sebelum blind index (server melakukan ini di `EncryptionHelper::blindIndex`).
 - Verifikasi hasil klien terhadap test vectors sebelum integrasi (§4.2) — pastikan `authKey` byte-identik dengan
   referensi PHP.
@@ -478,14 +545,40 @@ Greenfield → migrasi diedit langsung (tanpa dual-read/backward-compat shim).
 
 ## 15. Checklist Verifikasi
 
-- [x] Unit test `EncryptionHelper` (16/16 pass): AES-GCM round-trip, tamper detection, PBKDF2/HKDF determinism, 2SKD
-  dual-factor requirement, blind index, email round-trip.
+> **Catatan penting soal cara membaca checklist ini:** sebelum review tim Mobile
+> (`faq-backend.md`, Juli 2026), item-item di bawah yang bercentang memberi rasa aman yang keliru —
+> keduanya membuktikan **self-consistency** (kode konsisten dengan dirinya sendiri), bukan
+> **konsistensi dengan kontrak** (kode konsisten dengan §4.2 yang didokumentasikan). Itulah persis
+> kelas bug yang menyebabkan Blocker #1: seeder dan test sama-sama hijau selamanya sambil memuat dua
+> derivasi yang tidak akan pernah bisa saling login. Checklist di bawah sudah ditandai ulang untuk
+> membedakan dua hal itu secara eksplisit.
+
+**Self-consistency (kode konsisten dengan dirinya sendiri — TIDAK membuktikan kontrak dipatuhi):**
+
+- [x] Unit test `EncryptionHelper`: AES-GCM round-trip, tamper detection, PBKDF2/HKDF determinism, blind index, email
+  round-trip.
 - [x] Test "server tak pernah menerima password/secret key mentah" (`AuthControllerTest`).
 - [x] Test dua-faktor: salah password saja ATAU salah secret key saja → login gagal (
-  `test_login_fails_when_only_*_factor_is_wrong`).
-- [x] `/auth/salt` mengembalikan salt deterministik untuk email tak dikenal (anti user-enumeration).
+  `test_login_fails_when_only_*_factor_is_wrong`) — ini membuktikan derivasi lokal di test konsisten
+  dengan dirinya sendiri, **bukan** bahwa derivasi itu sama dengan yang dipakai seeder atau klien nyata.
+- [x] `/auth/salt` mengembalikan salt **deterministik** untuk email tak dikenal — determinisme saja,
+  **bukan** indistinguishability (lihat baris di bawah untuk properti yang sebenarnya dijanjikan).
 - [x] Full suite (`php artisan test`, termasuk test family/wallet yang butuh koneksi DB nyata) dijalankan di CI
   (`.github/workflows/tests.yml`) pada [PR #187](https://github.com/uangkuid/Uangku-BE/pull/187), sudah merged ke
   `main`.
-- [ ] Test vectors byte-identik lintas KMP/Vue — perlu diverifikasi begitu klien mengimplementasikan §4.2.
-- [ ] `./vendor/bin/pint` bersih di semua file yang disentuh (sudah diverifikasi selama implementasi).
+- [ ] `./vendor/bin/pint` bersih di semua file yang disentuh oleh perubahan Blocker #1/Temuan A/Temuan B.
+
+**Properti lintas-implementasi (yang benar-benar dijanjikan kontrak §4.2 & §6 — WAJIB sebelum dianggap selesai):**
+
+- [ ] Seeder dan test suite memanggil **satu** fungsi kanonik (`EncryptionHelper::deriveUnlockKey()`/
+  `deriveAuthKey()`) untuk derivasi 2SKD, tidak menuliskan ulang langkahnya masing-masing — Blocker #1
+  secara konstruksi tidak bisa terulang kalau ini dipenuhi.
+- [ ] Test decoy salt mengecek **indistinguishability** (byte hasil `base64_decode` tidak melulu
+  `[0-9a-f]`), bukan hanya determinisme — Temuan A.
+- [ ] Test regresi: PIN salah tetap ditolak walau `MAIN_SALT_KEY` panjang (mis. 88 karakter) — Temuan B.
+- [ ] Test vectors (`docs/test-vectors/kdf-vectors.json`) di-generate dari `EncryptionHelper` dan
+  di-commit ke repo.
+- [ ] **Test vectors byte-identik lintas KMP/Vue** — **JANGAN dicentang** sampai ada klien nyata (KMP
+  atau Vue) yang benar-benar menjalankan vector itu dan melaporkan hasilnya cocok. Ini satu-satunya
+  baris yang benar-benar menangkap kelas bug Blocker #1 — centang manual tanpa validasi klien nyata
+  sama saja dengan checklist sebelumnya.

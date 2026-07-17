@@ -38,10 +38,14 @@ class UserSeeder extends Seeder
             $salt = random_bytes(16);
 
             // --- Simulated client-side 2SKD + keygen (see docs/encryption.md) ---
-            $stretched = EncryptionHelper::pbkdf2($password, $salt, EncryptionHelper::PBKDF2_ITERATIONS, 32);
-            $kdfSecret = EncryptionHelper::hkdf($secretKey, 'uangku-secretkey-v1', 32, 'admin@uangku.com');
-            $unlockKey = $stretched ^ $kdfSecret;
-            $authKey = base64_encode(EncryptionHelper::hkdf($unlockKey, 'uangku-auth-v1', 32));
+            // MUST call the canonical EncryptionHelper::derive*() functions, never
+            // reimplement the steps — a hand-written copy here is exactly what caused
+            // the seeder to silently diverge from the real contract (see
+            // faq-backend.md Blocker #1: this used to HKDF against the admin's email
+            // instead of the salt, so the seeded account was unloginnable by any
+            // client implementing the documented spec).
+            $unlockKey = EncryptionHelper::deriveUnlockKey($password, $secretKey, $salt);
+            $authKey = EncryptionHelper::deriveAuthKey($password, $secretKey, $salt);
 
             $keyPair = openssl_pkey_new([
                 'digest_alg' => 'sha256',

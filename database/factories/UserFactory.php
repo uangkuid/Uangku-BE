@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Helpers\EncryptionHelper;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -32,7 +31,7 @@ class UserFactory extends Factory
         return $this->emailAttributes(fake()->unique()->safeEmail()) + [
             'name' => fake()->name(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('test-auth-key'),
+            'password' => static::$password ??= EncryptionHelper::hashSecret('test-auth-key'),
             'remember_token' => Str::random(10),
         ];
     }
@@ -52,7 +51,7 @@ class UserFactory extends Factory
     public function withAuthKey(string $authKey): static
     {
         return $this->state(fn (array $attributes) => [
-            'password' => Hash::make($authKey),
+            'password' => EncryptionHelper::hashSecret($authKey),
         ]);
     }
 

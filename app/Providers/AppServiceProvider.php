@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Auth\CachedEloquentStaffProvider;
+use App\Exceptions\EncryptionException;
 use BezhanSalleh\LanguageSwitch\Events\LocaleChanged;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Support\Facades\FilamentColor;
@@ -30,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->assertMinimumPepperLength();
+
         Auth::provider('cached_eloquent', function ($app, array $config) {
             return new CachedEloquentStaffProvider($app['hash'], $config['model']);
         });
@@ -80,5 +83,28 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(LocaleChanged::class, function (LocaleChanged $event): void {
             Auth::guard('web')->user()?->update(['locale' => $event->locale]);
         });
+    }
+
+    /**
+     * A configured-but-too-short MAIN_SALT_KEY silently defeats PIN/authKey
+     * hashing (see docs/encryption.md §4 — a 72+ byte pepper used to truncate
+     * the secret entirely out of the bcrypt input before EncryptionHelper's
+     * HMAC pre-hash fix). Fail fast at boot rather than only when first used.
+     *
+     * Only rejects keys that ARE set but too weak — an unset key is left to
+     * the lazy `empty()` checks in EncryptionHelper, so commands that run
+     * before secrets are provisioned (e.g. `migrate` in a fresh CI env) don't
+     * break.
+     *
+     * @throws EncryptionException
+     */
+    private function assertMinimumPepperLength(): void
+    {
+        foreach (['MAIN_SALT_KEY', 'MAIN_SYSTEM_KEY', 'MAIN_BLIND_INDEX_KEY'] as $key) {
+            $value = env($key);
+            if (! empty($value) && strlen($value) < 32) {
+                throw new EncryptionException("{$key} must be at least 32 characters long.");
+            }
+        }
     }
 }

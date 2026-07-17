@@ -32,3 +32,7 @@ yarn-error.log
 **/caddy
 frankenphp
 frankenphp-worker.php
+
+# Working docs for the 2SKD contract fix (not repo artifacts)
+/plan.md
+/handoff.md
