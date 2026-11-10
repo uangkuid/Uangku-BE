@@ -42,7 +42,7 @@ services:
 
   minio:
     container_name: minio
-    image: pgsty/minio:RELEASE.2026-06-18T00-00-00Z
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: always
     ports:
       - '9000:9000'
