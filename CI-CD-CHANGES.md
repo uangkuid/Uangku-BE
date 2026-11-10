@@ -62,9 +62,9 @@ The workflow builds multi-architecture images (AMD64 + ARM64) for all trigger ty
 
 ### For Development Workflow
 1. Push to `main` branch → Builds multi-architecture image (AMD64 + ARM64) with `dev` tag
-2. Use `docker-compose-dev.yaml` to run the latest dev build:
+2. Use `docker-compose-dev.yaml` to run the latest dev build on the dev server (for a local desktop use `docker compose -f docker-compose-desktop.yaml up --build`):
    ```bash
-   docker-compose -f docker-compose-dev.yaml up
+   docker compose -f docker-compose-dev.yaml up -d
    ```
 
 ### For Production Release
@@ -77,7 +77,7 @@ The workflow builds multi-architecture images (AMD64 + ARM64) for all trigger ty
 3. Images will be tagged as `latest` and `v1.0.0`
 4. Use `docker-compose.yaml` to run production:
    ```bash
-   docker-compose up
+   docker compose up -d
    ```
 
 ## Benefits

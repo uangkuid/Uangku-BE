@@ -1,30 +1,37 @@
-version: "3.8"
-
 services:
   api:
     container_name: api
     image: oratakashi/uangku-be:latest
     entrypoint: php artisan octane:frankenphp
+    restart: unless-stopped
     ports:
       - "80:8000"
     depends_on:
-      - mariadb
-      - redis
-      - minio
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
     networks:
-      - uangku-network  # <-- Referensi network di bawah
+      - uangku-network
 
   mariadb:
     container_name: mariadb
     image: mariadb:latest
     restart: always
     ports:
-      - 3306:3306
+      - "3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
       MARIADB_ROOT_HOST: '%'
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     volumes:
-      - ~/mysql:/var/lib/mysql
+      - /home/oratakashi/mysql:/var/lib/mysql
     networks:
       - uangku-network
 
@@ -33,10 +40,17 @@ services:
     image: redis:latest
     restart: always
     ports:
-      - '6379:6379'
+      - "6379:6379"
     command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     volumes:
-      - ~/redis:/data
+      - /home/oratakashi/redis:/data
     networks:
       - uangku-network
 
@@ -45,17 +59,20 @@ services:
     image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: always
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - "9000:9000"
+      - "9001:9001"
     networks:
       - uangku-network
     volumes:
-      - ~/minio:/bitnami/minio/data
+      - /home/oratakashi/minio:/bitnami/minio/data
     environment:
       - MINIO_ROOT_USER=${MINIO_USERNAME}
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
       - MINIO_DEFAULT_BUCKETS=${AWS_BUCKET}
+      - MINIO_ADDRESS=:9000
+      - MINIO_CONSOLE_ADDRESS=:9001
+    command: minio server /bitnami/minio/data
 
 networks:
-  uangku-network:  # <-- Ini bagian penting, jangan sampai typo
+  uangku-network:
     driver: bridge

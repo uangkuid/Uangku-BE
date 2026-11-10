@@ -1,18 +1,20 @@
-version: "3.8"
-
 services:
   api:
     container_name: api
     image: oratakashi/uangku-be:dev
     entrypoint: php artisan octane:frankenphp
+    restart: unless-stopped
     ports:
       - "80:8000"
     depends_on:
-      - mariadb
-      - redis
-      - minio
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
     networks:
-      - uangku-network  # <-- Referensi network di bawah
+      - uangku-network
     deploy:
       resources:
         limits:
@@ -27,42 +29,50 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
       MARIADB_ROOT_HOST: '%'
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - /home/oratakashi/mysql:/var/lib/mysql
+    networks:
+      - uangku-network
     deploy:
       resources:
         limits:
           memory: 128M
-    volumes:
-      - ~/mysql:/var/lib/mysql
-    networks:
-      - uangku-network
 
   redis:
     container_name: redis
     image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - /home/oratakashi/redis:/data
+    networks:
+      - uangku-network
     deploy:
       resources:
         limits:
           memory: 128M
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - ~/redis:/data
-    networks:
-      - uangku-network
 
   minio:
     container_name: minio
     image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: always
     ports:
-      - '9000:9000'
-      - '9001:9001'
-    deploy:
-      resources:
-        limits:
-          memory: 128M
+      - "9000:9000"
+      - "9001:9001"
     networks:
       - uangku-network
     volumes:
@@ -74,7 +84,11 @@ services:
       - MINIO_ADDRESS=:9000
       - MINIO_CONSOLE_ADDRESS=:9001
     command: minio server /bitnami/minio/data
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
 networks:
-  uangku-network:  # <-- Ini bagian penting, jangan sampai typo
+  uangku-network:
     driver: bridge

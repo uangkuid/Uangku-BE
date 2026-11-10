@@ -34,11 +34,14 @@ php artisan db:seed
 # Regenerate Filament Shield permissions for the admin panel (also run by DatabaseSeeder)
 php artisan shield:generate --all --panel=staffsus --option=permissions
 
-# Start via Docker (development)
-docker-compose -f docker-compose-dev.yaml up
+# Start via Docker (desktop dev, mac/Ubuntu — builds locally, named volumes)
+docker compose -f docker-compose-desktop.yaml up --build
 
-# Start via Docker (production)
-docker-compose up
+# Start via Docker (dev server — image :dev, hardcoded /home/oratakashi paths)
+docker compose -f docker-compose-dev.yaml up -d
+
+# Start via Docker (production server — image :latest)
+docker compose up -d
 ```
 
 ## Architecture
