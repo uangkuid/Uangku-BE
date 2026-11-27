@@ -316,8 +316,8 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         // set validation
-        $validator = Validator::make($request->all(), [
-            'refresh_token' => 'required',
+        $validator = Validator::make($request->post(), [
+            'refresh_token' => 'required|string',
         ]);
 
         // if validation fails
@@ -327,11 +327,11 @@ class AuthController extends Controller
 
         try {
 
-            $this->userSessionService->revokeSession($request->refresh_token);
+            $this->userSessionService->revokeSession($request->post('refresh_token'));
 
             $logout = $this->authService->logout(
                 token: $request->bearerToken(),
-                refreshToken: $request->refresh_token
+                refreshToken: $request->post('refresh_token')
             );
 
             if ($logout) {
@@ -385,7 +385,7 @@ class AuthController extends Controller
     )]
     public function refreshToken(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->post(), [
             'refresh_token' => 'required|string',
         ]);
 
@@ -396,7 +396,7 @@ class AuthController extends Controller
 
         try {
             $tokens = $this->userSessionService->rotateSession(
-                refreshToken: $request->refresh_token,
+                refreshToken: $request->post('refresh_token'),
                 accessToken: $request->bearerToken()
             );
 

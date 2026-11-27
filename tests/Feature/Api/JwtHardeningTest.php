@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use PHPOpenSourceSaver\JWTAuth\Http\Parser\AuthHeaders;
 use Tests\TestCase;
 
 class JwtHardeningTest extends TestCase
@@ -263,6 +264,44 @@ class JwtHardeningTest extends TestCase
 
         $this->assertSame([hash('sha256', $rotated)], DB::table('user_seasons')->pluck('refresh_token_hash')->all());
         $this->assertStringNotContainsString($rotated, json_encode(DB::table('user_seasons')->get()));
+    }
+
+    public function test_only_the_authorization_header_parser_is_registered(): void
+    {
+        $chain = array_map('get_class', $this->app['tymon.jwt.parser']->getChain());
+
+        $this->assertSame([AuthHeaders::class], $chain);
+    }
+
+    public function test_token_in_query_string_is_ignored(): void
+    {
+        $access = JWTAuth::fromUser(User::factory()->create());
+
+        $this->send('GET', "/api/user?token={$access}")->assertStatus(401);
+    }
+
+    public function test_token_in_request_body_is_ignored(): void
+    {
+        $access = JWTAuth::fromUser(User::factory()->create());
+
+        $this->send('PUT', '/api/user', ['token' => $access])->assertStatus(401);
+    }
+
+    public function test_token_in_cookie_is_ignored(): void
+    {
+        $access = JWTAuth::fromUser(User::factory()->create());
+
+        $this->withCredentials()
+            ->withUnencryptedCookie('token', $access)
+            ->getJson('/api/user')
+            ->assertStatus(401);
+    }
+
+    public function test_refresh_token_is_not_read_from_the_query_string(): void
+    {
+        $refresh = $this->issueSession(User::factory()->create());
+
+        $this->send('POST', "/api/auth/refresh-token?refresh_token={$refresh}")->assertStatus(400);
     }
 
     private function issueSession(User $user): string
