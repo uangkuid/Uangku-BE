@@ -11,7 +11,7 @@ class UserSeasons extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'refresh_token',
+        'refresh_token_hash',
         'users'
     ];
 }

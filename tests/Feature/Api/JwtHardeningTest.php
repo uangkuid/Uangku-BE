@@ -5,11 +5,14 @@ namespace Tests\Feature\Api;
 use App\Enums\UserStatus;
 use App\Helpers\TokenHelper;
 use App\Models\User;
+use App\Models\UserKey;
 use App\Models\UserSeasons;
 use App\Services\UserSession\UserSessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -240,6 +243,26 @@ class JwtHardeningTest extends TestCase
         }
 
         $this->refresh('not-a-jwt')->assertStatus(429);
+    }
+
+    public function test_only_the_hash_of_a_refresh_token_is_stored(): void
+    {
+        $authKey = 'client-derived-auth-key';
+        $user = User::factory()->forEmail('hash-only@example.com')->withAuthKey($authKey)->create();
+        UserKey::factory()->create(['users' => $user->id]);
+
+        $login = $this->send('POST', '/api/auth/login', [
+            'email' => 'hash-only@example.com',
+            'auth_key' => $authKey,
+        ])->assertStatus(200)->json('data.refresh_token');
+
+        $this->assertFalse(Schema::hasColumn('user_seasons', 'refresh_token'));
+        $this->assertSame([hash('sha256', $login)], DB::table('user_seasons')->pluck('refresh_token_hash')->all());
+
+        $rotated = $this->refresh($login)->assertStatus(200)->json('data.refresh_token');
+
+        $this->assertSame([hash('sha256', $rotated)], DB::table('user_seasons')->pluck('refresh_token_hash')->all());
+        $this->assertStringNotContainsString($rotated, json_encode(DB::table('user_seasons')->get()));
     }
 
     private function issueSession(User $user): string
