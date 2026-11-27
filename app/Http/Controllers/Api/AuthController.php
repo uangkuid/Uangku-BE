@@ -297,20 +297,23 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/auth/logout',
         summary: 'Logout',
-        description: 'Revokes the given refresh token and blacklists the current access token.',
+        description: 'Revokes the given refresh token and blacklists it together with the current access token. '
+            .'Requires an access token (typ=access) in the Authorization header; a refresh token is rejected there. '
+            .'The refresh token must belong to the same user, otherwise nothing is revoked.',
         security: [['bearerAuth' => []]],
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['refresh_token'],
-                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+                properties: [new OA\Property(property: 'refresh_token', type: 'string', description: 'Read from the request body only')]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Logout successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
             new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
-            new OA\Response(response: 401, description: 'Invalid/expired session', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Missing/invalid access token, or invalid, expired or revoked refresh token', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Refresh token belongs to another user, or account suspended/banned', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 500, description: 'Logout failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
@@ -380,20 +383,25 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/auth/refresh-token',
         summary: 'Refresh access token',
-        description: 'Revokes the given refresh token and session, then issues a new access + refresh token pair.',
-        security: [['bearerAuth' => []]],
+        description: 'Exchanges a refresh token (typ=refresh) for a new access + refresh token pair, revoking the '
+            .'old session and blacklisting the old refresh token. No access token is required; if a valid access '
+            .'token of the same user is sent in the Authorization header it is blacklisted too. Each refresh token '
+            .'works exactly once: presenting an already used one revokes ALL sessions of the user, so clients must '
+            .'not run refreshes in parallel and must always store the newest token. Rate limited to 20 requests/min.',
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['refresh_token'],
-                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+                properties: [new OA\Property(property: 'refresh_token', type: 'string', description: 'Read from the request body only')]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Refresh token successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
             new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
-            new OA\Response(response: 401, description: 'Refresh token expired or invalid', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Refresh token expired, invalid, revoked or reused', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Account suspended/banned', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 429, description: 'Too many requests'),
             new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
