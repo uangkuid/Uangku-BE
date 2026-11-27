@@ -4,6 +4,7 @@ namespace App\Repositories\UserSession;
 
 use App\Models\UserSeasons;
 use LaravelEasyRepository\Implementations\Eloquent;
+use SensitiveParameter;
 
 class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepository
 {
@@ -21,13 +22,14 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
     }
 
     /**
-     * Store only a SHA-256 hash of the refresh token — a DB leak no longer
-     * hands out live, usable bearer tokens.
+     * Callers pass the plaintext `refresh_token`; only its SHA-256 hash is
+     * stored, so a DB leak does not hand out usable tokens.
      */
     public function create($data)
     {
         if (isset($data['refresh_token'])) {
-            $data['refresh_token'] = hash('sha256', $data['refresh_token']);
+            $data['refresh_token_hash'] = $this->hash($data['refresh_token']);
+            unset($data['refresh_token']);
         }
 
         return $this->model->create($data);
@@ -38,21 +40,20 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
      *
      * @param  string  $refreshToken
      */
-    public function isRefreshTokenExist($refreshToken): bool
+    public function isRefreshTokenExist(#[SensitiveParameter] $refreshToken): bool
     {
-        return $this->model->where('refresh_token', hash('sha256', $refreshToken))->exists();
+        return $this->model->where('refresh_token_hash', $this->hash($refreshToken))->exists();
     }
 
     /**
-     * Get the user session by refresh token and user ID.
+     * Atomically consume one session.
      */
-    public function getByUserIdAndRefreshToken(string $userId, string $refreshToken): ?UserSeasons
+    public function deleteByUserIdAndRefreshToken(string $userId, #[SensitiveParameter] string $refreshToken): bool
     {
         return $this->model
-            ->select('id', 'users', 'refresh_token')
             ->where('users', $userId)
-            ->where('refresh_token', hash('sha256', $refreshToken))
-            ->first();
+            ->where('refresh_token_hash', $this->hash($refreshToken))
+            ->delete() > 0;
     }
 
     /**
@@ -63,5 +64,10 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
         return $this->model
             ->where('users', $userId)
             ->delete();
+    }
+
+    private function hash(#[SensitiveParameter] string $refreshToken): string
+    {
+        return hash('sha256', $refreshToken);
     }
 }

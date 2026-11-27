@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubCategory extends Model
 {
@@ -17,8 +16,9 @@ class SubCategory extends Model
         'name',
         'categories',
         'users',
-        'families'
+        'families',
     ];
+
     protected $defaultSelect = [
         'id',
         'name',
@@ -26,7 +26,7 @@ class SubCategory extends Model
         'users',
         'families',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function newQuery(): Builder
@@ -39,11 +39,13 @@ class SubCategory extends Model
         return parent::newQueryWithoutScopes()->select($this->defaultSelect);
     }
 
-    public function category(): BelongsTo {
+    public function category(): BelongsTo
+    {
         return $this->belongsTo(Category::class, 'categories');
     }
 
-    public function user(): BelongsTo {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'users');
     }
 

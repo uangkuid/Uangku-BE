@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\TokenType;
 use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -107,6 +108,9 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
+            // Default type for every token issued for a user. The refresh token
+            // overrides this through inline claims (see TokenHelper).
+            'typ' => TokenType::Access->value,
             'data' => [
                 'user_id' => $this->id,
             ],

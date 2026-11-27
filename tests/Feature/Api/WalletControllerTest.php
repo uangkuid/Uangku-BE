@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class WalletControllerTest extends TestCase
 {
@@ -19,7 +19,7 @@ class WalletControllerTest extends TestCase
     public function test_store_wallet_requires_authentication(): void
     {
         $response = $this->postJson('/api/wallet', [
-            'name' => 'Test Wallet'
+            'name' => 'Test Wallet',
         ]);
 
         $response->assertStatus(401);
@@ -49,7 +49,7 @@ class WalletControllerTest extends TestCase
     public function test_update_wallet_requires_authentication(): void
     {
         $response = $this->putJson('/api/wallet/1', [
-            'name' => 'Updated Wallet'
+            'name' => 'Updated Wallet',
         ]);
 
         $response->assertStatus(401);
@@ -58,7 +58,7 @@ class WalletControllerTest extends TestCase
     public function test_update_wallet_status_requires_authentication(): void
     {
         $response = $this->postJson('/api/wallet/1/status', [
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $response->assertStatus(401);
@@ -67,7 +67,7 @@ class WalletControllerTest extends TestCase
     public function test_add_wallet_member_requires_authentication(): void
     {
         $response = $this->postJson('/api/wallet/1/member', [
-            'user_id' => 1
+            'user_id' => 1,
         ]);
 
         $response->assertStatus(401);

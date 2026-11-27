@@ -2,9 +2,8 @@
 
 namespace App\Filament\Resources\StaffAccounts\Pages;
 
-use Filament\Actions\DeleteAction;
 use App\Filament\Resources\StaffAccounts\StaffAccountResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditStaffAccount extends EditRecord

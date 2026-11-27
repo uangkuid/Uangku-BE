@@ -19,35 +19,35 @@ class TransactionResource extends JsonResource
 
         if ($this->sub_categories) {
             $subCategory = [
-                "id" => $this->sub_categories,
-                "name" => $this->sub_category_name,
+                'id' => $this->sub_categories,
+                'name' => $this->sub_category_name,
             ];
         }
 
         $icon = null;
 
-        if (!empty($this->category_icon)) {
-            $icon = app(S3Repository::class)->getData("category", $this->category_icon);
+        if (! empty($this->category_icon)) {
+            $icon = app(S3Repository::class)->getData('category', $this->category_icon);
         }
 
         return [
-            "id" => $this->id,
-            "users" => $this->users,
-            "categories" => [
-                "id" => $this->categories,
-                "name" => $this->category_name,
-                "icon" => $icon,
+            'id' => $this->id,
+            'users' => $this->users,
+            'categories' => [
+                'id' => $this->categories,
+                'name' => $this->category_name,
+                'icon' => $icon,
             ],
-            "transaction_type" => [
-                "id" => $this->transaction_type_id,
-                "name" => $this->transaction_type_name
+            'transaction_type' => [
+                'id' => $this->transaction_type_id,
+                'name' => $this->transaction_type_name,
             ],
-            "amount" => $this->amount,
-            "note" => $this->note,
-            "sub_categories" => $subCategory,
-            "wallet" => [
-                "id" => $this->wallet_id    ,
-                "name" => $this->wallet_name,
+            'amount' => $this->amount,
+            'note' => $this->note,
+            'sub_categories' => $subCategory,
+            'wallet' => [
+                'id' => $this->wallet_id,
+                'name' => $this->wallet_name,
             ],
             'created_at' => optional($this->created_at)->timezone('Asia/Jakarta')->toIso8601String(),
             'updated_at' => optional($this->updated_at)->timezone('Asia/Jakarta')->toIso8601String(),

@@ -10,67 +10,49 @@ use LaravelEasyRepository\BaseService;
 
 interface GeneralService extends BaseService
 {
-
     /**
      * Get a list of all categories
-     * @param int $perPage
-     * @param string|null $transaction_type
-     * @return AnonymousResourceCollection
      */
-    function getCategory(int $perPage = 10, ?string $transaction_type = null): AnonymousResourceCollection;
+    public function getCategory(int $perPage = 10, ?string $transaction_type = null): AnonymousResourceCollection;
 
     /**
      * Get a list of all subcategories by category id
-     * @param string $id
-     * @param string $token
-     * @param int $perPage
-     * @return AnonymousResourceCollection
+     *
      * @throws UserException
      */
-    function getSubCategory(string $id, string $token, int $perPage = 10): AnonymousResourceCollection;
+    public function getSubCategory(string $id, string $token, int $perPage = 10): AnonymousResourceCollection;
 
     /**
      * Create a new subcategory
-     * @param string $name
-     * @param string $id
-     * @param string $token
-     * @param string|null $familyId
-     * @return SubCategory
+     *
      * @throws GeneralException
      * @throws UserException
      */
-    function createSubCategory(string $name, string $id, string $token, ?string $familyId): SubCategory;
+    public function createSubCategory(string $name, string $id, string $token, ?string $familyId): SubCategory;
 
     /**
      * Update an existing subcategory
-     * @param string $name
-     * @param string $id
-     * @param string $token
-     * @return SubCategory
+     *
      * @throws GeneralException
      * @throws UserException
      */
-    function updateSubCategory(string $name, string $id, string $token): SubCategory;
+    public function updateSubCategory(string $name, string $id, string $token): SubCategory;
 
     /**
      * Delete a subcategory
-     * @param string $id
-     * @param string $token
-     * @return void
+     *
      * @throws GeneralException
      * @throws UserException
      */
-    function deleteSubCategory(string $id, string $token): void;
+    public function deleteSubCategory(string $id, string $token): void;
 
     /**
      * Get feature status
-     * @return array
      */
-    function getFeatureStatus():array;
+    public function getFeatureStatus(): array;
 
     /**
      * Get system configuration
-     * @return array
      */
-    function getSystemConfig(): array;
+    public function getSystemConfig(): array;
 }

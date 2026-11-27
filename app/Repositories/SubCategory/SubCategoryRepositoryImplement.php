@@ -2,17 +2,18 @@
 
 namespace App\Repositories\SubCategory;
 
+use App\Models\SubCategory;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
-use App\Models\SubCategory;
 
-class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepository{
-
+class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected SubCategory $model;
 
     public function __construct(SubCategory $model)
@@ -39,12 +40,8 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
 
     /**
      * Get all subcategories by category id with pagination
-     * @param string $id
-     * @param string $userId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getSubCategory(string $id, string $userId, int $perPage = 10): LengthAwarePaginator
+    public function getSubCategory(string $id, string $userId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
             ->with([
@@ -59,13 +56,8 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
 
     /**
      * Check if a subcategory name already exists for a given category and user
-     * @param string $name
-     * @param string $userId
-     * @param string $categoryId
-     * @param string|null $familyId
-     * @return bool
      */
-    function isExistWithName(string $name, string $userId, string $categoryId, ?string $familyId = null): bool
+    public function isExistWithName(string $name, string $userId, string $categoryId, ?string $familyId = null): bool
     {
         return $this->model
             ->select('id')
@@ -82,11 +74,8 @@ class SubCategoryRepositoryImplement extends Eloquent implements SubCategoryRepo
 
     /**
      * Check if a subcategory exists by id for a given user
-     * @param string $userId
-     * @param string $id
-     * @return bool
      */
-    function isExist(string $userId, string $id): bool
+    public function isExist(string $userId, string $id): bool
     {
         return $this->model
             ->select('id')

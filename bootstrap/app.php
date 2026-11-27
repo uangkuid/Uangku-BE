@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccessToken;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\FamilyAdminMiddleware;
 use App\Http\Middleware\FamilyMiddleware;
@@ -27,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureUserIsActive::class,
         ]);
         $middleware->trustProxies(at: '*');
+
+        // Wajib dipasang bersama setiap `auth:api` (dijaga oleh JwtHardeningTest).
+        $middleware->alias([
+            'token.access' => EnsureAccessToken::class,
+        ]);
 
         $middleware->appendToGroup('family', [
             FamilyMiddleware::class,

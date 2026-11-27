@@ -2,16 +2,17 @@
 
 namespace App\Repositories\Family;
 
-use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\Family;
+use LaravelEasyRepository\Implementations\Eloquent;
 
-class FamilyRepositoryImplement extends Eloquent implements FamilyRepository{
-
+class FamilyRepositoryImplement extends Eloquent implements FamilyRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected Family $model;
 
     public function __construct(Family $model)
@@ -23,10 +24,8 @@ class FamilyRepositoryImplement extends Eloquent implements FamilyRepository{
 
     /**
      * Get a family by its ID
-     * @param string $familyId
-     * @return Family|null
      */
-    function getFamilyDetail(string $familyId): ?Family
+    public function getFamilyDetail(string $familyId): ?Family
     {
         return $this->model
             ->select('id', 'name', 'avatar', 'created_by')

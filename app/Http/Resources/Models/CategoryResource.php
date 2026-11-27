@@ -17,8 +17,8 @@ class CategoryResource extends JsonResource
     {
         $icon = null;
 
-        if (!empty($this->icon)) {
-            $icon = app(S3Repository::class)->getData("category", $this->icon);
+        if (! empty($this->icon)) {
+            $icon = app(S3Repository::class)->getData('category', $this->icon);
         }
 
         return [

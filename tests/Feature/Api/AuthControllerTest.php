@@ -261,9 +261,16 @@ class AuthControllerTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_refresh_token_requires_authentication(): void
+    public function test_refresh_token_requires_a_refresh_token(): void
     {
         $response = $this->postJson('/api/auth/refresh-token');
+
+        $response->assertStatus(400);
+    }
+
+    public function test_refresh_token_rejects_an_invalid_token(): void
+    {
+        $response = $this->postJson('/api/auth/refresh-token', ['refresh_token' => 'not-a-jwt']);
 
         $response->assertStatus(401);
     }

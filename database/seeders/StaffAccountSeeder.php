@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\StaffAccount;
 use App\Services\Staff\StaffService;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -21,9 +20,9 @@ class StaffAccountSeeder extends Seeder
 
         DB::transaction(function () use ($staffService) {
             $staff = $staffService->register(
-                name: "Administrator",
-                email: "admin@uangku.com",
-                password: "Password123",
+                name: 'Administrator',
+                email: 'admin@uangku.com',
+                password: 'Password123',
             );
 
             $superAdmin = Role::findOrCreate('super_admin', 'web');

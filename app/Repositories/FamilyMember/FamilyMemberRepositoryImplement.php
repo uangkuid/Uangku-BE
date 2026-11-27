@@ -5,21 +5,22 @@ namespace App\Repositories\FamilyMember;
 use App\Enums\FamilyMemberStatus;
 use App\Enums\RoleFamily;
 use App\Exceptions\GeneralException;
+use App\Models\FamilyMember;
 use App\Models\Wallet;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Implementations\Eloquent;
-use App\Models\FamilyMember;
-use function Laravel\Prompts\select;
 
-class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository{
-
+class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected FamilyMember $model;
+
     protected Wallet $wallet;
 
     public function __construct(
@@ -34,10 +35,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Check if the user is already a family
-     * @param string $userId
-     * @return bool
      */
-    function isAlreadyFamily(string $userId): bool
+    public function isAlreadyFamily(string $userId): bool
     {
         return $this->model
             ->select('id')
@@ -47,11 +46,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Get a family member using Family id
-     * @param string $familyId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
+    public function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
@@ -63,14 +59,11 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Check if the user has access to the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasAccess(string $userId, string $familyId): bool
+    public function isHasAccess(string $userId, string $familyId): bool
     {
         return $this->model
-            ->select("id")
+            ->select('id')
             ->where('user', $userId)
             ->where('family', $familyId)
             ->where('status', FamilyMemberStatus::Active)
@@ -79,11 +72,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Check if the user has admin access to the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasAdmin(string $userId, string $familyId): bool
+    public function isHasAdmin(string $userId, string $familyId): bool
     {
         return $this->model
             ->select('id')
@@ -95,11 +85,9 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Check if the user has joined the family before
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasJoinedBefore(string $userId, string $familyId): bool {
+    public function isHasJoinedBefore(string $userId, string $familyId): bool
+    {
         return $this->model
             ->select('id')
             ->where('user', $userId)
@@ -110,11 +98,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Get a family admin using family id
-     * @param string $familyId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
+    public function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
@@ -126,11 +111,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Grant admin access to a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function grantAdmin(string $userId, string $familyId): bool
+    public function grantAdmin(string $userId, string $familyId): bool
     {
         return $this->model
             ->where('user', $userId)
@@ -138,14 +120,10 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
             ->update(['role' => RoleFamily::Admin->value]);
     }
 
-
     /**
      * Grant access to a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function grantAccess(string $userId, string $familyId): bool
+    public function grantAccess(string $userId, string $familyId): bool
     {
         return $this->model
             ->where('user', $userId)
@@ -155,11 +133,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Revoke member access from a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function revokeMember(string $userId, string $familyId): bool
+    public function revokeMember(string $userId, string $familyId): bool
     {
         return $this->model
             ->where('user', $userId)
@@ -169,11 +144,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Check if the user is the owner of the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isFamilyOwner(string $userId, string $familyId): bool
+    public function isFamilyOwner(string $userId, string $familyId): bool
     {
         return $this->model
             ->select('id')
@@ -185,11 +157,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Revoke admin access from a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function revokeAdmin(string $userId, string $familyId): bool
+    public function revokeAdmin(string $userId, string $familyId): bool
     {
         return $this->model
             ->where('user', $userId)
@@ -199,11 +168,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Leave from family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function leaveFamily(string $userId, string $familyId): bool
+    public function leaveFamily(string $userId, string $familyId): bool
     {
         return $this->model
             ->where('user', $userId)
@@ -213,10 +179,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Get a family member using user id
-     * @param string $userId
-     * @return FamilyMember|null
      */
-    function getDetailFromUser(string $userId): ?FamilyMember
+    public function getDetailFromUser(string $userId): ?FamilyMember
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
@@ -226,10 +190,8 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Get a family member summary using family id
-     * @param string $familyId
-     * @return Collection
      */
-    function getFamilyMemberSummary(string $familyId): Collection
+    public function getFamilyMemberSummary(string $familyId): Collection
     {
         return $this->model
             ->select('id', 'user', 'family', 'role', 'created_at', 'updated_at')
@@ -243,17 +205,15 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
 
     /**
      * Get a family member using wallet id
-     * @param string $walletId
-     * @param int $perPage
-     * @return LengthAwarePaginator
+     *
      * @throws GeneralException
      */
-    function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator
+    public function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator
     {
         // Validasi wallet existence + ambil family_id
         $wallet = $this->wallet->select('families')->find($walletId);
 
-        if (!$wallet || !$wallet->families) {
+        if (! $wallet || ! $wallet->families) {
             throw new GeneralException('Wallet not found on this family');
         }
 
@@ -265,7 +225,7 @@ class FamilyMemberRepositoryImplement extends Eloquent implements FamilyMemberRe
                 'family_members.role',
                 'family_members.status',
                 'family_members.created_at',
-                'family_members.updated_at'
+                'family_members.updated_at',
             ])
             ->leftJoin('wallet_accesses', function ($join) use ($walletId) {
                 $join->on('wallet_accesses.users', '=', 'family_members.user')

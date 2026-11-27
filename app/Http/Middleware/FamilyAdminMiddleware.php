@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FamilyAdminMiddleware
 {
-
     protected FamilyService $familyService;
 
     public function __construct(FamilyService $familyService)
@@ -21,7 +20,7 @@ class FamilyAdminMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -31,7 +30,7 @@ class FamilyAdminMiddleware
         if ($isExist) {
             return $next($request);
         } else {
-            return response()->json(new BaseResponse(403, "You not have permission admin access on family!"), 403);
+            return response()->json(new BaseResponse(403, 'You not have permission admin access on family!'), 403);
         }
     }
 }

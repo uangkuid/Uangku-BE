@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\FeatureStatuses\Pages;
 
 use App\Filament\Resources\FeatureStatuses\FeatureStatusResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateFeatureStatus extends CreateRecord

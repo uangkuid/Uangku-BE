@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\SubCategory;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class SubCategorySeeder extends Seeder
@@ -18,7 +17,7 @@ class SubCategorySeeder extends Seeder
         $bonus = Category::where('name', 'Bonus')->first();
         $admin = User::where('name', 'Administrator')->first();
 
-        if($bonus == null || $admin == null) {
+        if ($bonus == null || $admin == null) {
             return;
         }
 

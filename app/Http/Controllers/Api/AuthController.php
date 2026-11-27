@@ -6,10 +6,10 @@ use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
+use App\Exceptions\SessionOwnershipException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
-use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\UserConfig\UserConfigService;
 use App\Services\UserSession\UserSessionService;
@@ -23,7 +23,6 @@ use Illuminate\Support\Facades\Validator;
 use OpenApi\Attributes as OA;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -297,28 +296,31 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/auth/logout',
         summary: 'Logout',
-        description: 'Revokes the given refresh token and blacklists the current access token.',
+        description: 'Revokes the given refresh token and blacklists it together with the current access token. '
+            .'Requires an access token (typ=access) in the Authorization header; a refresh token is rejected there. '
+            .'The refresh token must belong to the same user, otherwise nothing is revoked.',
         security: [['bearerAuth' => []]],
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['refresh_token'],
-                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+                properties: [new OA\Property(property: 'refresh_token', type: 'string', description: 'Read from the request body only')]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Logout successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
             new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
-            new OA\Response(response: 401, description: 'Invalid/expired session', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Missing/invalid access token, or invalid, expired or revoked refresh token', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Refresh token belongs to another user, or account suspended/banned', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 500, description: 'Logout failed', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function logout(Request $request): JsonResponse
     {
         // set validation
-        $validator = Validator::make($request->all(), [
-            'refresh_token' => 'required',
+        $validator = Validator::make($request->post(), [
+            'refresh_token' => 'required|string',
         ]);
 
         // if validation fails
@@ -328,11 +330,12 @@ class AuthController extends Controller
 
         try {
 
-            $this->userSessionService->revokeSession($request->refresh_token);
+            // Checks ownership first: nothing is revoked for someone else's token.
+            $this->userSessionService->revokeSession($request->user(), $request->post('refresh_token'));
 
             $logout = $this->authService->logout(
                 token: $request->bearerToken(),
-                refreshToken: $request->refresh_token
+                refreshToken: $request->post('refresh_token')
             );
 
             if ($logout) {
@@ -353,10 +356,22 @@ class AuthController extends Controller
                     500
                 );
             }
+        } catch (SessionOwnershipException $e) {
+            Log::warning('Failed to logout '.$e->getMessage(), ['user_id' => $request->user()->id]);
+
+            return response()->json(new BaseResponse(403, $e->getMessage(), null), 403);
         } catch (SessionException $e) {
             Log::error('Failed to logout '.$e->getMessage());
 
             return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (TokenExpiredException $e) {
+            Log::error('Failed to logout '.$e->getMessage());
+
+            return response()->json(new BaseResponse(401, 'Refresh token expired'), 401);
+        } catch (JWTException $e) {
+            Log::error('Failed to logout '.$e->getMessage());
+
+            return response()->json(new BaseResponse(401, 'Invalid refresh token'), 401);
         } catch (Exception $e) {
             Log::error('Failed to logout '.$e->getMessage());
 
@@ -367,27 +382,32 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/auth/refresh-token',
         summary: 'Refresh access token',
-        description: 'Revokes the given refresh token and session, then issues a new access + refresh token pair.',
-        security: [['bearerAuth' => []]],
+        description: 'Exchanges a refresh token (typ=refresh) for a new access + refresh token pair, revoking the '
+            .'old session and blacklisting the old refresh token. No access token is required; if a valid access '
+            .'token of the same user is sent in the Authorization header it is blacklisted too. Each refresh token '
+            .'works exactly once: presenting an already used one revokes ALL sessions of the user, so clients must '
+            .'not run refreshes in parallel and must always store the newest token. Rate limited to 20 requests/min.',
         tags: ['Auth'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['refresh_token'],
-                properties: [new OA\Property(property: 'refresh_token', type: 'string')]
+                properties: [new OA\Property(property: 'refresh_token', type: 'string', description: 'Read from the request body only')]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Refresh token successful', content: new OA\JsonContent(ref: '#/components/schemas/BaseResponse')),
             new OA\Response(response: 400, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
-            new OA\Response(response: 401, description: 'Refresh token expired or invalid', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Refresh token expired, invalid, revoked or reused', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Account suspended/banned', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 429, description: 'Too many requests'),
             new OA\Response(response: 500, description: 'Server error', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
     public function refreshToken(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'refresh_token' => 'required',
+        $validator = Validator::make($request->post(), [
+            'refresh_token' => 'required|string',
         ]);
 
         // if validation fails
@@ -396,42 +416,12 @@ class AuthController extends Controller
         }
 
         try {
-            $revokedUser = $this->userSessionService->revokeSession($request->refresh_token);
-
-            // Revoke all token access
-            $logout = $this->authService->logout(
-                token: $request->bearerToken(),
-                refreshToken: $request->refresh_token
+            $tokens = $this->userSessionService->rotateSession(
+                refreshToken: $request->post('refresh_token'),
+                accessToken: $request->bearerToken()
             );
 
-            $newAccessToken = auth()->login($revokedUser);
-            $newRefreshToken = $this->generateRefreshToken($revokedUser);
-
-            // Save to user seasons
-            $this->userSessionService->create([
-                'refresh_token' => $newRefreshToken,
-                'users' => $revokedUser->id,
-            ]);
-
-            if ($logout) {
-                return response()->json(new BaseResponse(
-                    200,
-                    'Refresh token successful',
-                    [
-                        'token' => $newAccessToken,
-                        'refresh_token' => $newRefreshToken,
-                    ]
-                ), 200);
-            } else {
-                return response()->json(
-                    new BaseResponse(
-                        500,
-                        'Logout failed',
-                        null
-                    ),
-                    500
-                );
-            }
+            return response()->json(new BaseResponse(200, 'Refresh token successful', $tokens), 200);
         } catch (TokenExpiredException $e) {
             Log::error('Failed to refresh token '.$e->getMessage());
 
@@ -444,23 +434,15 @@ class AuthController extends Controller
             Log::error('Failed to refresh token '.$e->getMessage());
 
             return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (AuthException $e) {
+            Log::error('Failed to refresh token '.$e->getMessage());
+
+            return response()->json(new BaseResponse(403, $e->getMessage(), null), 403);
         } catch (Exception $e) {
             Log::error('Failed to refresh token '.$e->getMessage());
 
             return response()->json(new BaseResponse(500, 'Failed to refresh token '.$e->getMessage(), null), 500);
         }
-    }
-
-    protected function generateRefreshToken(User $user)
-    {
-        // Set TTL untuk refresh token menjadi lebih panjang (misalnya 7 hari)
-        // Set masa berlaku refresh token secara manual (contoh: 7 hari)
-        $customClaims = ['exp' => now()->addDays(7)->timestamp];
-
-        // Buat refresh token dengan masa berlaku yang lebih panjang
-        $refreshToken = JWTAuth::claims($customClaims)->fromUser($user);
-
-        return $refreshToken;
     }
 
     #[OA\Post(

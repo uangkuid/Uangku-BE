@@ -15,7 +15,7 @@ class WalletAccess extends Model
         'users',
         'wallets',
         'is_active',
-        'role'
+        'role',
     ];
 
     public function wallet(): BelongsTo

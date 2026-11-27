@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\StaffAccounts\Pages;
 
 use App\Filament\Resources\StaffAccounts\StaffAccountResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateStaffAccount extends CreateRecord

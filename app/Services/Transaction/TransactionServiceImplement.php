@@ -2,10 +2,8 @@
 
 namespace App\Services\Transaction;
 
-use App\Exceptions\EncryptionException;
 use App\Exceptions\FamilyException;
 use App\Exceptions\GeneralException;
-use App\Helpers\EncryptionHelper;
 use App\Http\Resources\Models\TransactionResource;
 use App\Models\Transaction;
 use App\Repositories\FamilyKey\FamilyKeyRepository;
@@ -21,31 +19,36 @@ use LaravelEasyRepository\Service;
 
 class TransactionServiceImplement extends Service implements TransactionService
 {
-
     /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
     protected TransactionRepository $mainRepository;
+
     protected FamilyMemberRepository $familyMemberRepository;
+
     protected WalletAccessRepository $walletAccessRepository;
+
     protected SubCategoryRepository $subCategoryRepository;
+
     protected UserRepository $userRepository;
+
     protected FamilyKeyRepository $familyKeyRepository;
+
     protected WalletSnapshotRepository $walletSnapshotRepository;
+
     protected WalletTransactionRepository $walletTransactionRepository;
 
     public function __construct(
-        TransactionRepository  $mainRepository,
+        TransactionRepository $mainRepository,
         FamilyMemberRepository $familyMemberRepository,
         WalletAccessRepository $walletAccessRepository,
-        SubCategoryRepository  $subCategoryRepository,
-        UserRepository         $userRepository,
-        FamilyKeyRepository    $familyKeyRepository,
+        SubCategoryRepository $subCategoryRepository,
+        UserRepository $userRepository,
+        FamilyKeyRepository $familyKeyRepository,
         WalletSnapshotRepository $walletSnapshotRepository,
         WalletTransactionRepository $walletTransactionRepository,
-    )
-    {
+    ) {
         $this->mainRepository = $mainRepository;
         $this->familyMemberRepository = $familyMemberRepository;
         $this->walletAccessRepository = $walletAccessRepository;
@@ -58,21 +61,11 @@ class TransactionServiceImplement extends Service implements TransactionService
 
     /**
      * Create a new transaction.
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $walletId
-     * @param string $transactionTypeId
-     * @param string $amount
-     * @param string|null $snapshotId
-     * @param string|null $description
-     * @param string|null $family
-     * @param string|null $subCategoryId
-     * @param string|null $transactionId
-     * @return Transaction
+     *
      * @throws FamilyException
      * @throws GeneralException
      */
-    function createTransaction(
+    public function createTransaction(
         string $userId,
         string $categoryId,
         string $walletId,
@@ -83,15 +76,14 @@ class TransactionServiceImplement extends Service implements TransactionService
         ?string $family = null,
         ?string $subCategoryId = null,
         ?string $transactionId = null
-    ): Transaction
-    {
+    ): Transaction {
         if ($family != null) {
             $isExist = $this->familyMemberRepository->isHasAccess(
                 userId: $userId,
                 familyId: $family
             );
 
-            if (!$isExist) {
+            if (! $isExist) {
                 throw new FamilyException("You don't have access to this family");
             }
         }
@@ -109,7 +101,7 @@ class TransactionServiceImplement extends Service implements TransactionService
         $isHasSnapshot = $this->walletSnapshotRepository->isHasSnapshot($walletId);
 
         if ($snapshotId == null && $isHasSnapshot) {
-            throw new GeneralException("Wallet Snapshot is required for this wallet");
+            throw new GeneralException('Wallet Snapshot is required for this wallet');
         }
 
         $this->validateSnapshot(
@@ -131,18 +123,10 @@ class TransactionServiceImplement extends Service implements TransactionService
 
     /**
      * Update an existing transaction.
-     * @param string $id
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $walletId
-     * @param string $amount
-     * @param string $snapshotId
-     * @param string|null $description
-     * @param string|null $subCategoryId
-     * @return void
+     *
      * @throws GeneralException
      */
-    function updateTransaction(
+    public function updateTransaction(
         string $id,
         string $userId,
         string $categoryId,
@@ -150,9 +134,8 @@ class TransactionServiceImplement extends Service implements TransactionService
         string $amount,
         string $snapshotId,
         ?string $description = null,
-        string $subCategoryId = null,
-    ): void
-    {
+        ?string $subCategoryId = null,
+    ): void {
         /**
          * Validate Sub Category Access
          */
@@ -180,17 +163,17 @@ class TransactionServiceImplement extends Service implements TransactionService
 
     /**
      * Validate Sub Category Access
+     *
      * @throws GeneralException
      */
     private function validateSubCategoryAccess(
         string $subCategoryId,
         string $userId,
-    ): void
-    {
+    ): void {
         $subCategory = $this->subCategoryRepository->find($subCategoryId);
 
         if ($subCategory == null) {
-            throw new GeneralException("Sub category not found");
+            throw new GeneralException('Sub category not found');
         }
 
         $isSubCategoryFamily = $subCategory->families != null;
@@ -201,8 +184,8 @@ class TransactionServiceImplement extends Service implements TransactionService
                 familyId: $subCategory->families,
             );
 
-            if (!$isFamilyAccess) {
-                throw new GeneralException("You do not have access to this family");
+            if (! $isFamilyAccess) {
+                throw new GeneralException('You do not have access to this family');
             }
         }
 
@@ -210,20 +193,20 @@ class TransactionServiceImplement extends Service implements TransactionService
 
         if ($isSubCategoryPersonal) {
             if ($subCategory->users != $userId) {
-                throw new GeneralException("You do not have access to this sub category");
+                throw new GeneralException('You do not have access to this sub category');
             }
         }
     }
 
     /**
      * Validate Last Snapshot
+     *
      * @throws GeneralException
      */
     private function validateSnapshot(
         string $walletId,
         ?string $snapshotId,
-    ): void
-    {
+    ): void {
 
         if ($snapshotId == null) {
             return; // No snapshot validation needed
@@ -231,33 +214,28 @@ class TransactionServiceImplement extends Service implements TransactionService
 
         $lastSnapshot = $this->walletSnapshotRepository->getLastSnapshot($walletId);
         if ($lastSnapshot == null) {
-            throw new GeneralException("Wallet Snapshot not found");
+            throw new GeneralException('Wallet Snapshot not found');
         }
 
         if ($lastSnapshot->id != $snapshotId) {
-            throw new GeneralException("Wallet Snapshot is not valid, please get latest snapshot");
+            throw new GeneralException('Wallet Snapshot is not valid, please get latest snapshot');
         }
     }
 
     /**
      * Get a transaction by its ID.
-     * @param string $id
-     * @return Transaction|null
      */
-    function getDetailTransaction(string $id): ?Transaction
+    public function getDetailTransaction(string $id): ?Transaction
     {
         return $this->mainRepository->getDetailTransaction($id);
     }
 
     /**
      * Delete a transaction.
-     * @param string $id
-     * @param string $walletId
-     * @param string $snapshotId
-     * @return void
+     *
      * @throws GeneralException
      */
-    function deleteTransaction(string $id, string $walletId, string $snapshotId,): void
+    public function deleteTransaction(string $id, string $walletId, string $snapshotId): void
     {
         $this->validateSnapshot(
             walletId: $walletId,
@@ -269,18 +247,8 @@ class TransactionServiceImplement extends Service implements TransactionService
 
     /**
      * Get a paginated list of transactions for a user.
-     * @param string $userId
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $familyId
-     * @param string|null $search
-     * @param string|null $categoryId
-     * @param string|null $transactionTypeId
-     * @param string|null $walletId
-     * @param int $perPage
-     * @return AnonymousResourceCollection
      */
-    function getTransactionPaging(string $userId, string $startDate, string $endDate, ?string $familyId = null, ?string $search = null, ?string $categoryId = null, ?string $transactionTypeId = null, ?string $walletId = null, int $perPage = 10): AnonymousResourceCollection
+    public function getTransactionPaging(string $userId, string $startDate, string $endDate, ?string $familyId = null, ?string $search = null, ?string $categoryId = null, ?string $transactionTypeId = null, ?string $walletId = null, int $perPage = 10): AnonymousResourceCollection
     {
         $paginator = $this->walletTransactionRepository->getTransactionPaging(
             userId: $userId,

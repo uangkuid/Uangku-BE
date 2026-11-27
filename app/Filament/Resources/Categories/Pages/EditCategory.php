@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources\Categories\Pages;
 
-use Filament\Actions\DeleteAction;
 use App\Filament\Resources\Categories\CategoryResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Support\Facades\Log;
 
 class EditCategory extends EditRecord
 {
@@ -21,9 +19,10 @@ class EditCategory extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (!empty($data['icon'])) {
+        if (! empty($data['icon'])) {
             $data['icon'] = preg_replace('/^category\//', '', $data['icon']);
         }
+
         return $data;
     }
 

@@ -56,7 +56,7 @@ app/
 ├── Repositories/           # DB queries (interface + Implement per domain)
 ├── Models/                 # Eloquent models, all extend BaseModel
 ├── Http/Resources/         # BaseResponse wraps all API responses
-├── Http/Middleware/        # Route guards: family, wallet, wallet-admin, family-admin, session, transaction
+├── Http/Middleware/        # Route guards: token.access, family, wallet, wallet-admin, family-admin, session, transaction
 ├── Helpers/                # EncryptionHelper, TokenHelper (static utility classes)
 ├── Enums/                  # RoleWallet, RoleFamily, FamilyMemberStatus, UserStatus, WalletStatus, WalletType, OtpType, RedisKey
 ├── Exceptions/              # AuthException, EncryptionException, FamilyException, GeneralException, PinException, SecurityException, SessionException, UserException
@@ -72,7 +72,15 @@ All responses go through `BaseResponse` which returns:
 Response-level encryption (the old `IS_NEED_ENCRYPT` flag) was removed entirely — see `BaseResponse.php`. Financial data is encrypted client-side under the Zero-Knowledge architecture instead (see `docs/encryption.md`).
 
 ### Authentication
-JWT via `php-open-source-saver/jwt-auth`. Authenticated routes use `auth:api` middleware. The token is issued on login and refreshed via `POST /api/auth/refresh-token`. Auth-adjacent flows (pre-register OTP, forgot/reset password, PIN setup) live under `routes/api.php`'s `auth`/`otp`/`pin` prefixes.
+JWT via `php-open-source-saver/jwt-auth` (HS256). Login/register return an access token (`jwt.ttl`, 60 min) and a refresh token (`jwt.refresh_token_ttl_days`, 7 days; unrelated to the library's `jwt.refresh_ttl`). Auth-adjacent flows (pre-register OTP, forgot/reset password, PIN setup) live under `routes/api.php`'s `auth`/`otp`/`pin` prefixes.
+
+- **Token type (`typ` claim)** — both tokens are signed with the same secret and told apart only by `typ`: `access` (default, from `User::getJWTCustomClaims()`) or `refresh` (`TokenHelper::generateRefreshToken()`). Tokens without `typ` are rejected.
+- **Protected routes** — always use `['auth:api', 'token.access']` together. `auth:api` alone accepts a refresh token; `JwtHardeningTest` fails if a route lacks `token.access`.
+- **Token source** — `Authorization: Bearer` only (parser chain set in `AppServiceProvider`). Query string, body, route params and cookies are ignored. `logout`/`refresh-token` take `refresh_token` from the request body.
+- **Refresh** — `POST /api/auth/refresh-token` is deliberately outside `auth:api` (throttled), the Bearer token is optional. Tokens rotate on every use; a correctly signed refresh token with no session revokes **all** sessions of that user. Because the guard is bypassed, `UserSessionService::rotateSession()` checks suspended/banned status itself.
+- **Logout** — requires an access token; the refresh token's `sub` must match it (403 otherwise).
+- **At rest** — `user_seasons.refresh_token_hash` holds SHA-256 of the refresh token. Pass plaintext to the repository (it hashes); never store or log it.
+- `JWTAuth::claims()` is sticky on the instance: reset it (`JWTAuth::claims([])`) after issuing a token with inline claims.
 
 ### Encryption System
 `EncryptionHelper` is central to security. Key patterns:

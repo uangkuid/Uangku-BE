@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\StaffAccount;
 use Illuminate\Support\Str;
 
 return [
@@ -116,7 +117,7 @@ return [
     */
 
     'serializable_classes' => [
-        App\Models\StaffAccount::class,
+        StaffAccount::class,
     ],
 
 ];

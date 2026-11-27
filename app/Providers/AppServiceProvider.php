@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use PHPOpenSourceSaver\JWTAuth\Http\Parser\AuthHeaders;
 use Spatie\Color\Hex;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->assertMinimumPepperLength();
+        $this->restrictJwtSourcesToBearerHeader();
 
         Auth::provider('cached_eloquent', function ($app, array $config) {
             return new CachedEloquentStaffProvider($app['hash'], $config['model']);
@@ -83,6 +85,20 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(LocaleChanged::class, function (LocaleChanged $event): void {
             Auth::guard('web')->user()?->update(['locale' => $event->locale]);
         });
+    }
+
+    /**
+     * The library also reads tokens from the query string, request body, route
+     * parameters and cookies. Query strings end up in access logs, browser
+     * history and Referer headers, so only `Authorization: Bearer` is allowed.
+     *
+     * Runs after the package provider has added its own parsers. The parser is
+     * a singleton resolved at boot, so under Octane this holds for the whole
+     * life of the worker.
+     */
+    private function restrictJwtSourcesToBearerHeader(): void
+    {
+        $this->app['tymon.jwt.parser']->setChain([new AuthHeaders]);
     }
 
     /**

@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WalletAdminMiddleware
 {
-
     protected UserService $userService;
+
     protected WalletService $walletService;
 
     public function __construct(UserService $userService, WalletService $walletService)
@@ -24,7 +24,7 @@ class WalletAdminMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -34,13 +34,13 @@ class WalletAdminMiddleware
         if ($id != null && $id != '') {
             $isExist = $this->walletService->isHasAdminAccess(walletId: $id, userId: $user->id);
 
-            if (!$isExist) {
-                return response()->json(new BaseResponse(403, "You do not have admin access to this wallet!"), 403);
+            if (! $isExist) {
+                return response()->json(new BaseResponse(403, 'You do not have admin access to this wallet!'), 403);
             }
 
             return $next($request);
         } else {
-            return response()->json(new BaseResponse(400, "Wallet ID is required!"), 400);
+            return response()->json(new BaseResponse(400, 'Wallet ID is required!'), 400);
         }
     }
 }

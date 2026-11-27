@@ -3,9 +3,7 @@
 namespace App\Filament\Resources\SystemConfigs\Pages;
 
 use App\Filament\Resources\SystemConfigs\SystemConfigResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Log;
 
 class CreateSystemConfig extends CreateRecord
 {

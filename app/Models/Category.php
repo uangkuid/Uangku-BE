@@ -11,18 +11,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Category extends BaseModel
 {
     use HasFactory, HasUuids;
+
     protected $fillable = [
         'name',
         'transaction_types',
-        'icon'
+        'icon',
     ];
+
     protected $defaultSelect = [
         'id',
         'name',
         'icon',
         'transaction_types',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     public function newQuery(): Builder

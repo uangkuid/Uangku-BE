@@ -44,6 +44,9 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('register', 'store');
     Route::post('salt', 'salt')->middleware('throttle:20,1');
     Route::post('login', 'login')->middleware('throttle:10,1');
+    // Outside auth:api on purpose: it is used once the access token has expired.
+    // The prefix gives it its own rate-limit bucket.
+    Route::post('refresh-token', 'refreshToken')->middleware('throttle:20,1,refresh-token');
 
     Route::post('forgot-password', 'forgotPassword');
     Route::post('reset-password', 'resetPassword');
@@ -51,9 +54,8 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     /**
      * Private API for authenticated users
      */
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware(['auth:api', 'token.access'])->group(function () {
         Route::post('logout', 'logout');
-        Route::post('refresh-token', 'refreshToken');
 
         Route::post('pre-change-password', 'preChangePassword');
         Route::post('change-password', 'changePassword');
@@ -79,14 +81,14 @@ Route::controller(OtpController::class)->prefix('otp')->group(function () {
     Route::post('send/register', 'sendRegister');
     Route::post('send/forgot-password', 'sendForgotPassword');
 
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware(['auth:api', 'token.access'])->group(function () {
         Route::post('send/change-password', 'sendChangePassword');
         Route::post('send/pin', 'sendPin');
         Route::post('send/forgot-pin', 'sendForgotPin');
     });
 });
 
-Route::controller(UserController::class)->prefix('user')->middleware('auth:api')->group(function () {
+Route::controller(UserController::class)->prefix('user')->middleware(['auth:api', 'token.access'])->group(function () {
     Route::get('/', 'getProfile');
     Route::put('/', 'updateProfile');
     Route::put('date', 'updateDate');
@@ -97,7 +99,7 @@ Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'getCategories');
 });
 
-Route::controller(SubCategoryController::class)->middleware('auth:api')->group(function () {
+Route::controller(SubCategoryController::class)->middleware(['auth:api', 'token.access'])->group(function () {
     Route::get('categories/{id}', 'getSubCategories');
     Route::post('categories/{id}', 'store');
     Route::put('categories/{categoryId}/{id}', 'update');
@@ -106,10 +108,10 @@ Route::controller(SubCategoryController::class)->middleware('auth:api')->group(f
 
 Route::controller(TransactionTypeController::class)->group(function () {
     Route::get('transaction-type', 'index');
-    Route::middleware('auth:api')->group(function () {});
+    Route::middleware(['auth:api', 'token.access'])->group(function () {});
 });
 
-Route::controller(FamilyController::class)->prefix('family')->middleware('auth:api')->group(function () {
+Route::controller(FamilyController::class)->prefix('family')->middleware(['auth:api', 'token.access'])->group(function () {
     Route::post('/', 'store');
 
     Route::post('join', 'responseInvitation');
@@ -136,7 +138,7 @@ Route::controller(FamilyController::class)->prefix('family')->middleware('auth:a
     });
 });
 
-Route::controller(WalletController::class)->middleware(['auth:api'])->group(function () {
+Route::controller(WalletController::class)->middleware(['auth:api', 'token.access'])->group(function () {
     Route::get('wallet', 'index');
     Route::post('wallet', 'store');
 
@@ -155,7 +157,7 @@ Route::controller(WalletController::class)->middleware(['auth:api'])->group(func
     });
 });
 
-Route::controller(TransactionController::class)->middleware(['auth:api'])->group(function () {
+Route::controller(TransactionController::class)->middleware(['auth:api', 'token.access'])->group(function () {
     Route::get('transaction', 'index');
 
     Route::middleware('wallet')->group(function () {

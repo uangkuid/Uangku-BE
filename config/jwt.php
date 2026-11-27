@@ -1,5 +1,8 @@
 <?php
 
+use PHPOpenSourceSaver\JWTAuth\Providers\Auth\Illuminate;
+use PHPOpenSourceSaver\JWTAuth\Providers\JWT\Lcobucci;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -109,6 +112,21 @@ return [
     */
 
     'refresh_ttl' => env('JWT_REFRESH_TTL', 20160),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh Token Lifetime (days)
+    |--------------------------------------------------------------------------
+    |
+    | Lifetime of the application's own refresh token (`typ: refresh`), issued
+    | next to every access token. This is NOT `refresh_ttl` above, which is the
+    | library's window (in minutes) for refreshing an expired token and also
+    | bounds how long blacklist entries are kept. Keep this value shorter than
+    | that window.
+    |
+    */
+
+    'refresh_token_ttl_days' => (int) env('JWT_REFRESH_TOKEN_TTL_DAYS', 7),
 
     /*
     |--------------------------------------------------------------------------
@@ -273,7 +291,7 @@ return [
         |
         */
 
-        'jwt' => PHPOpenSourceSaver\JWTAuth\Providers\JWT\Lcobucci::class,
+        'jwt' => Lcobucci::class,
 
         /*
         |--------------------------------------------------------------------------
@@ -284,7 +302,7 @@ return [
         |
         */
 
-        'auth' => PHPOpenSourceSaver\JWTAuth\Providers\Auth\Illuminate::class,
+        'auth' => Illuminate::class,
 
         /*
         |--------------------------------------------------------------------------

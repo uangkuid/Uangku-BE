@@ -4,7 +4,4 @@ namespace App\Repositories\General;
 
 use LaravelEasyRepository\Repository;
 
-interface GeneralRepository extends Repository{
-
-
-}
+interface GeneralRepository extends Repository {}

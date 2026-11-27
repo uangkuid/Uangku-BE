@@ -12,9 +12,9 @@ class UserConfig extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-       'users',
-       'is_pin_enabled',
-       'start_date_month'
+        'users',
+        'is_pin_enabled',
+        'start_date_month',
     ];
 
     /**
@@ -27,7 +27,8 @@ class UserConfig extends Model
         'users',
     ];
 
-    public function users(): BelongsTo {
+    public function users(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'users', 'id');
     }
 }

@@ -46,7 +46,7 @@ erDiagram
     user_seasons {
         id uuid PK
         users uuid FK
-        refresh_token text
+        refresh_token_hash char
         created_at timestamp
         updated_at timestamp
     }
@@ -338,7 +338,7 @@ This table contains the refresh token for the user session, which is used for au
 |---------------|---------|-------|------------------------------------------|
 | id            | uuid    | PK    | Unique identifier for the user session  |
 | users         | uuid    | FK    | Foreign key referencing the users table |
-| refresh_token | text    |       | Refresh token for the user session      |
+| refresh_token_hash | char(64) | UK | SHA-256 hash of the session's refresh token |
 
 ### User Config Table
 
