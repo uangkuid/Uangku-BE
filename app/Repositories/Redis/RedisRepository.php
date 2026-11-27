@@ -4,10 +4,11 @@ namespace App\Repositories\Redis;
 
 use LaravelEasyRepository\Repository;
 
-interface RedisRepository extends Repository{
+interface RedisRepository extends Repository
+{
+    public function storeRedis($key, $value, $expire = 0);
 
-    function storeRedis($key, $value, $expire = 0);
+    public function getRedis($key): ?string;
 
-    function getRedis($key): ?string;
-    function deleteRedis($key);
+    public function deleteRedis($key);
 }

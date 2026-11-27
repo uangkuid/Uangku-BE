@@ -27,9 +27,9 @@ class GenerateRSAKeys extends Command
     {
         // Konfigurasi untuk pembuatan kunci
         $config = [
-            "digest_alg" => "sha512",
-            "private_key_bits" => 2048,
-            "private_key_type" => OPENSSL_KEYTYPE_RSA,
+            'digest_alg' => 'sha512',
+            'private_key_bits' => 2048,
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
         ];
 
         // Membuat pasangan kunci
@@ -40,11 +40,11 @@ class GenerateRSAKeys extends Command
 
         // Ekstrak kunci publik
         $publicKeyDetails = openssl_pkey_get_details($res);
-        $publicKey = $publicKeyDetails["key"];
+        $publicKey = $publicKeyDetails['key'];
 
-        $this->info("===== PRIVATE KEY =====");
+        $this->info('===== PRIVATE KEY =====');
         $this->line(base64_encode($privateKey)); // pakai line untuk plain text
-        $this->info("===== PUBLIC KEY =====");
+        $this->info('===== PUBLIC KEY =====');
         $this->line(base64_encode($publicKey));
 
     }

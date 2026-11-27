@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('access');
             $table->uuid('transaction_type');
             $table->uuid('transaction_id');
-            $table->text("amount");
+            $table->text('amount');
             $table->uuid('updated_by');
             $table->uuid('deleted_by')->nullable();
             $table->timestamps();

@@ -23,7 +23,6 @@ use Illuminate\Support\Facades\Validator;
 use OpenApi\Attributes as OA;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {

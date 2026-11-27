@@ -14,7 +14,7 @@ class FamilyMember extends BaseModel
         'user',
         'family',
         'role',
-        'status'
+        'status',
     ];
 
     public function family(): BelongsTo

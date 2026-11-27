@@ -17,7 +17,7 @@ class WalletMemberResource extends JsonResource
     {
         $avatar = null;
 
-        if (!empty($this->user->avatar)) {
+        if (! empty($this->user->avatar)) {
             $avatar = app(S3Repository::class)->getData("avatar/{$this->user->id}", $this->user->avatar);
         }
 

@@ -2,9 +2,8 @@
 
 namespace App\Filament\Resources\FeatureStatuses\Pages;
 
-use Filament\Actions\DeleteAction;
 use App\Filament\Resources\FeatureStatuses\FeatureStatusResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,6 +26,7 @@ class EditFeatureStatus extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['updated_by'] = Auth::id();
+
         return $data;
     }
 }

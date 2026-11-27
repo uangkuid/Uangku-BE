@@ -12,6 +12,6 @@ class UserSeasons extends Model
 
     protected $fillable = [
         'refresh_token_hash',
-        'users'
+        'users',
     ];
 }

@@ -6,19 +6,12 @@ use App\Models\WalletTransaction;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
-interface WalletTransactionRepository extends Repository{
-
+interface WalletTransactionRepository extends Repository
+{
     /**
      * Create a new wallet transaction.
-     * @param string $accessId
-     * @param string $walletId
-     * @param string $amount
-     * @param string $transactionType
-     * @param string $transactionId
-     * @param string $userId
-     * @return WalletTransaction
      */
-    function createTransaction(
+    public function createTransaction(
         string $accessId,
         string $walletId,
         string $amount,
@@ -29,18 +22,8 @@ interface WalletTransactionRepository extends Repository{
 
     /**
      * Get a paginated list of transactions for a user.
-     * @param string $userId
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $familyId
-     * @param string|null $search
-     * @param string|null $categoryId
-     * @param string|null $transactionTypeId
-     * @param string|null $walletId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getTransactionPaging(
+    public function getTransactionPaging(
         string $userId,
         string $startDate,
         string $endDate,
@@ -54,12 +37,8 @@ interface WalletTransactionRepository extends Repository{
 
     /**
      * Update an existing wallet transaction.
-     * @param string $id
-     * @param string $amount
-     * @param string $userId
-     * @return void
      */
-    function updateTransaction(
+    public function updateTransaction(
         string $id,
         string $amount,
         string $userId
@@ -67,30 +46,23 @@ interface WalletTransactionRepository extends Repository{
 
     /**
      * Get detail wallet transactions
-     * @param string $id
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransaction(
+    public function getDetailWalletTransaction(
         string $id
     ): ?WalletTransaction;
 
     /**
      * Delete a wallet transaction by its ID.
-     * @param string $id
-     * @param string $userId
-     * @return void
      */
-    function deleteTransaction(
+    public function deleteTransaction(
         string $id,
         string $userId
     ): void;
 
     /**
      * Get detailed wallet transaction by transaction ID.
-     * @param string $transactionId
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransactionByTransactionId(
+    public function getDetailWalletTransactionByTransactionId(
         string $transactionId
     ): ?WalletTransaction;
 }

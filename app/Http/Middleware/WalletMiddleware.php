@@ -11,25 +11,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WalletMiddleware
 {
-
     protected WalletService $walletService;
+
     protected UserService $userService;
 
-    /**
-     * @param WalletService $walletService
-     * @param UserService $userService
-     */
     public function __construct(WalletService $walletService, UserService $userService)
     {
         $this->walletService = $walletService;
         $this->userService = $userService;
     }
 
-
     /**
      * Handle an incoming request.
      *
-     * @param Closure(Request):Response $next
+     * @param  Closure(Request):Response  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -40,8 +35,8 @@ class WalletMiddleware
         if ($id != null && $id != '') {
             $isExist = $this->walletService->isHasAccess(walletId: $id, userId: $user->id);
 
-            if (!$isExist) {
-                return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
+            if (! $isExist) {
+                return response()->json(new BaseResponse(403, 'You not authorized to do this action!'), 403);
             }
 
             // Jika ada, lanjutkan ke request berikutnya
@@ -53,14 +48,14 @@ class WalletMiddleware
         if ($id != null && $id != '') {
             $isExist = $this->walletService->isHasAccess(walletId: $id, userId: $user->id);
 
-            if (!$isExist) {
-                return response()->json(new BaseResponse(403, "You not authorized to do this action!"), 403);
+            if (! $isExist) {
+                return response()->json(new BaseResponse(403, 'You not authorized to do this action!'), 403);
             }
 
             // Jika ada, lanjutkan ke request berikutnya
             return $next($request);
         }
 
-        return response()->json(new BaseResponse(400, "Wallet ID is required!"), 400);
+        return response()->json(new BaseResponse(400, 'Wallet ID is required!'), 400);
     }
 }

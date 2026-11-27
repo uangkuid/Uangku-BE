@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class GeneralControllerTest extends TestCase
 {
@@ -17,7 +17,7 @@ class GeneralControllerTest extends TestCase
             ->assertJsonStructure([
                 'status',
                 'message',
-                'data'
+                'data',
             ]);
     }
 
@@ -29,7 +29,7 @@ class GeneralControllerTest extends TestCase
             ->assertJsonStructure([
                 'status',
                 'message',
-                'data'
+                'data',
             ]);
     }
 
@@ -40,7 +40,7 @@ class GeneralControllerTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'status' => 404,
-                'message' => 'Data not found'
+                'message' => 'Data not found',
             ]);
     }
 }

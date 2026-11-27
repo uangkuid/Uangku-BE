@@ -2,8 +2,8 @@
 
 namespace App\Enums;
 
-enum RoleWallet : string
+enum RoleWallet: string
 {
-    case Admin = "Admin";
-    case Member = "Member";
+    case Admin = 'Admin';
+    case Member = 'Member';
 }

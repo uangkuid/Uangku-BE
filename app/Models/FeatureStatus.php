@@ -17,7 +17,8 @@ class FeatureStatus extends Model
         'updated_by',
     ];
 
-    public function staffs(): BelongsTo {
+    public function staffs(): BelongsTo
+    {
         return $this->belongsTo(StaffAccount::class, 'updated_by');
     }
 }

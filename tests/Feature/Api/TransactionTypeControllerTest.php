@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class TransactionTypeControllerTest extends TestCase
 {
@@ -17,7 +17,7 @@ class TransactionTypeControllerTest extends TestCase
             ->assertJsonStructure([
                 'status',
                 'message',
-                'data'
+                'data',
             ]);
     }
 }

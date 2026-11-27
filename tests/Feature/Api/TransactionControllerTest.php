@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class TransactionControllerTest extends TestCase
 {
@@ -21,7 +21,7 @@ class TransactionControllerTest extends TestCase
         $response = $this->postJson('/api/transaction', [
             'wallet_id' => 1,
             'amount' => 10000,
-            'description' => 'Test Transaction'
+            'description' => 'Test Transaction',
         ]);
 
         $response->assertStatus(401);
@@ -31,7 +31,7 @@ class TransactionControllerTest extends TestCase
     {
         $response = $this->putJson('/api/transaction/1', [
             'amount' => 15000,
-            'description' => 'Updated Transaction'
+            'description' => 'Updated Transaction',
         ]);
 
         $response->assertStatus(401);

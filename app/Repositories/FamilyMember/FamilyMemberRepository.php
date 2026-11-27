@@ -8,123 +8,82 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelEasyRepository\Repository;
 
-interface FamilyMemberRepository extends Repository{
-
+interface FamilyMemberRepository extends Repository
+{
     /**
      * Check if the user is already a family
-     * @param string $userId
-     * @return bool
      */
-    function isAlreadyFamily(string $userId): bool;
+    public function isAlreadyFamily(string $userId): bool;
 
     /**
      * Get a family member using Family id
-     * @param string $familyId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
+    public function getFamilyMemberPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Get a family admin using family id
-     * @param string $familyId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
-    function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
+    public function getFamilyAdminPaging(string $familyId, int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Check if the user has access to the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasAccess(string $userId, string $familyId): bool;
+    public function isHasAccess(string $userId, string $familyId): bool;
 
     /**
      * Check if the user has admin access to the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasAdmin(string $userId, string $familyId): bool;
+    public function isHasAdmin(string $userId, string $familyId): bool;
 
     /**
      * Check if the user has joined the family before
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isHasJoinedBefore(string $userId, string $familyId): bool;
+    public function isHasJoinedBefore(string $userId, string $familyId): bool;
 
     /**
      * Grant admin access to a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function grantAdmin(string $userId, string $familyId): bool;
+    public function grantAdmin(string $userId, string $familyId): bool;
 
     /**
      * Grant access to a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function grantAccess(string $userId, string $familyId): bool;
+    public function grantAccess(string $userId, string $familyId): bool;
 
     /**
      * Revoke member access from a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function revokeMember(string $userId, string $familyId): bool;
+    public function revokeMember(string $userId, string $familyId): bool;
 
     /**
      * Check if the user is the owner of the family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function isFamilyOwner(string $userId, string $familyId): bool;
+    public function isFamilyOwner(string $userId, string $familyId): bool;
 
     /**
      * Revoke admin access from a user
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function revokeAdmin(string $userId, string $familyId): bool;
+    public function revokeAdmin(string $userId, string $familyId): bool;
 
     /**
      * Leave from family
-     * @param string $userId
-     * @param string $familyId
-     * @return bool
      */
-    function leaveFamily(string $userId, string $familyId): bool;
+    public function leaveFamily(string $userId, string $familyId): bool;
 
     /**
      * Get a family member using user id
-     * @param string $userId
-     * @return FamilyMember|null
      */
-    function getDetailFromUser(string $userId): ?FamilyMember;
+    public function getDetailFromUser(string $userId): ?FamilyMember;
 
     /**
      * Get a family member summary using family id
-     * @param string $familyId
-     * @return Collection
      */
-    function getFamilyMemberSummary(string $familyId): Collection;
+    public function getFamilyMemberSummary(string $familyId): Collection;
 
     /**
      * Get a family member using wallet id
-     * @param string $walletId
-     * @param int $perPage
-     * @return LengthAwarePaginator
+     *
      * @throws GeneralException
      */
-    function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator;
+    public function getMemberNotJoinWallet(string $walletId, int $perPage = 10): LengthAwarePaginator;
 }

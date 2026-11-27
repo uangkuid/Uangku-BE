@@ -9,26 +9,16 @@ use App\Models\Transaction;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use LaravelEasyRepository\BaseService;
 
-interface TransactionService extends BaseService{
-
+interface TransactionService extends BaseService
+{
     /**
      * Create a new transaction.
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $walletId
-     * @param string $transactionTypeId
-     * @param string $amount
-     * @param string|null $snapshotId
-     * @param string|null $description
-     * @param string|null $family
-     * @param string|null $subCategoryId
-     * @param string|null $transactionId
-     * @return Transaction
+     *
      * @throws EncryptionException
      * @throws FamilyException
      * @throws GeneralException
      */
-    function createTransaction(
+    public function createTransaction(
         string $userId,
         string $categoryId,
         string $walletId,
@@ -43,17 +33,10 @@ interface TransactionService extends BaseService{
 
     /**
      * Update an existing transaction.
-     * @param string $id
-     * @param string $userId
-     * @param string $categoryId
-     * @param string $walletId
-     * @param string $amount
-     * @param string $snapshotId
-     * @param string|null $description
-     * @param string|null $subCategoryId
+     *
      * @return void
      */
-    function updateTransaction(
+    public function updateTransaction(
         string $id,
         string $userId,
         string $categoryId,
@@ -61,26 +44,20 @@ interface TransactionService extends BaseService{
         string $amount,
         string $snapshotId,
         ?string $description = null,
-        string $subCategoryId = null,
+        ?string $subCategoryId = null,
     );
 
     /**
      * Get a transaction by its ID.
-     * @param string $id
-     * @return Transaction|null
      */
-    function getDetailTransaction(
+    public function getDetailTransaction(
         string $id
     ): ?Transaction;
 
     /**
      * Delete a transaction.
-     * @param string $id
-     * @param string $walletId
-     * @param string $snapshotId
-     * @return void
      */
-    function deleteTransaction(
+    public function deleteTransaction(
         string $id,
         string $walletId,
         string $snapshotId,
@@ -88,18 +65,8 @@ interface TransactionService extends BaseService{
 
     /**
      * Get a paginated list of transactions for a user.
-     * @param string $userId
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $familyId
-     * @param string|null $search
-     * @param string|null $categoryId
-     * @param string|null $transactionTypeId
-     * @param string|null $walletId
-     * @param int $perPage
-     * @return AnonymousResourceCollection
      */
-    function getTransactionPaging(
+    public function getTransactionPaging(
         string $userId,
         string $startDate,
         string $endDate,

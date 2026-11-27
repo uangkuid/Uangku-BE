@@ -4,7 +4,7 @@ namespace App\Repositories\FeatureStatus;
 
 use LaravelEasyRepository\Repository;
 
-interface FeatureStatusRepository extends Repository{
-
-    function getFeatureStatus(): array;
+interface FeatureStatusRepository extends Repository
+{
+    public function getFeatureStatus(): array;
 }

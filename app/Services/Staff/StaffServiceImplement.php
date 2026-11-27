@@ -8,7 +8,6 @@ use LaravelEasyRepository\Service;
 
 class StaffServiceImplement extends Service implements StaffService
 {
-
     protected StaffAccountRepository $staffAccountRepository;
 
     public function __construct(StaffAccountRepository $staffAccountRepository)
@@ -18,18 +17,14 @@ class StaffServiceImplement extends Service implements StaffService
 
     /**
      * Register a new staff account.
-     * @param string $name
-     * @param string $email
-     * @param string $password
-     * @return array
+     *
      * @throws UserException
      */
-    function register(
+    public function register(
         string $name,
         string $email,
         string $password
-    ): array
-    {
+    ): array {
         $isExist = $this->staffAccountRepository->isNameExist($name);
 
         if ($isExist) {

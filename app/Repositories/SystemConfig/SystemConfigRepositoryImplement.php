@@ -2,16 +2,17 @@
 
 namespace App\Repositories\SystemConfig;
 
-use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\SystemConfig;
+use LaravelEasyRepository\Implementations\Eloquent;
 
-class SystemConfigRepositoryImplement extends Eloquent implements SystemConfigRepository{
-
+class SystemConfigRepositoryImplement extends Eloquent implements SystemConfigRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected SystemConfig $model;
 
     public function __construct(SystemConfig $model)
@@ -23,9 +24,8 @@ class SystemConfigRepositoryImplement extends Eloquent implements SystemConfigRe
 
     /**
      * Get the system configuration.
-     * @return array
      */
-    function getSystemConfig(): array
+    public function getSystemConfig(): array
     {
         return $this->model->all()->toArray();
     }

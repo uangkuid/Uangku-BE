@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TransactionType;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -16,10 +15,10 @@ class TransactionTypeSeeder extends Seeder
     {
         DB::transaction(function () {
             TransactionType::create([
-                'name' => 'Income'
+                'name' => 'Income',
             ]);
             TransactionType::create([
-                'name' => 'Spending'
+                'name' => 'Spending',
             ]);
         });
     }

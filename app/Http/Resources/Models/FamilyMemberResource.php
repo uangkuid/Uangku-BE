@@ -16,7 +16,7 @@ class FamilyMemberResource extends JsonResource
     {
         $avatar = null;
 
-        if (!empty($this->users->avatar)) {
+        if (! empty($this->users->avatar)) {
             $avatar = app(S3Repository::class)->getData("avatar/{$this->users->id}", $this->users->avatar);
         }
 

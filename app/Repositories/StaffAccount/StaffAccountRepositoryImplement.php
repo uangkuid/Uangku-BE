@@ -2,16 +2,17 @@
 
 namespace App\Repositories\StaffAccount;
 
-use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\StaffAccount;
+use LaravelEasyRepository\Implementations\Eloquent;
 
-class StaffAccountRepositoryImplement extends Eloquent implements StaffAccountRepository{
-
+class StaffAccountRepositoryImplement extends Eloquent implements StaffAccountRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected StaffAccount $model;
 
     public function __construct(StaffAccount $model)
@@ -23,10 +24,8 @@ class StaffAccountRepositoryImplement extends Eloquent implements StaffAccountRe
 
     /**
      * Check if a staff account with the given name exists.
-     * @param string $name
-     * @return bool
      */
-    function isNameExist(string $name): bool
+    public function isNameExist(string $name): bool
     {
         return $this->model
             ->select('id')

@@ -10,7 +10,6 @@ class FamilyInvitation extends Model
 {
     use HasFactory, HasUuids;
 
-
     protected $fillable = [
         'family',
         'inviter_id',

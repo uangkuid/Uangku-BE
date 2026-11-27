@@ -7,7 +7,6 @@ use App\Models\Wallet;
 use App\Policies\TransactionPolicy;
 use App\Policies\WalletPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {

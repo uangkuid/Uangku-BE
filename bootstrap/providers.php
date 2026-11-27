@@ -1,7 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\AuthServiceProvider;
+use App\Providers\Filament\StaffsusPanelProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\AuthServiceProvider::class,
-    App\Providers\Filament\StaffsusPanelProvider::class,
+    AppServiceProvider::class,
+    AuthServiceProvider::class,
+    StaffsusPanelProvider::class,
 ];

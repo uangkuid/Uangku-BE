@@ -2,20 +2,20 @@
 
 namespace App\Services\Notification;
 
-use LaravelEasyRepository\Service;
 use App\Repositories\Notification\NotificationRepository;
+use LaravelEasyRepository\Service;
 
-class NotificationServiceImplement extends Service implements NotificationService{
-
-     /**
+class NotificationServiceImplement extends Service implements NotificationService
+{
+    /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
-     protected NotificationRepository $mainRepository;
+    protected NotificationRepository $mainRepository;
 
     public function __construct(NotificationRepository $mainRepository)
     {
-      $this->mainRepository = $mainRepository;
+        $this->mainRepository = $mainRepository;
     }
 
     // Define your custom methods :)

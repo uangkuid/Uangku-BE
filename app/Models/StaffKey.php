@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class StaffKey extends Model
 {
-
     use HasFactory, HasUuids;
 
     /**

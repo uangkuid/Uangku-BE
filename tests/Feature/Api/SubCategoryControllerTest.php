@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class SubCategoryControllerTest extends TestCase
 {
@@ -19,7 +19,7 @@ class SubCategoryControllerTest extends TestCase
     public function test_store_sub_category_requires_authentication(): void
     {
         $response = $this->postJson('/api/categories/1', [
-            'name' => 'Test SubCategory'
+            'name' => 'Test SubCategory',
         ]);
 
         $response->assertStatus(401);
@@ -28,7 +28,7 @@ class SubCategoryControllerTest extends TestCase
     public function test_update_sub_category_requires_authentication(): void
     {
         $response = $this->putJson('/api/categories/1/1', [
-            'name' => 'Updated SubCategory'
+            'name' => 'Updated SubCategory',
         ]);
 
         $response->assertStatus(401);

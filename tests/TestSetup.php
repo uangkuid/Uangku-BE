@@ -33,7 +33,7 @@
 
 // Running Tests
 // ============
-// 
+//
 // 1. Install dependencies (if not already done):
 //    composer install
 //

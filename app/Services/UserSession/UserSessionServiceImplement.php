@@ -18,13 +18,13 @@ use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use SensitiveParameter;
 
-class UserSessionServiceImplement extends Service implements UserSessionService{
-
-     /**
+class UserSessionServiceImplement extends Service implements UserSessionService
+{
+    /**
      * don't change $this->mainRepository variable name
      * because used in extends service class
      */
-     protected UserSessionRepository $mainRepository;
+    protected UserSessionRepository $mainRepository;
 
     protected UserRepository $userRepository;
 
@@ -145,10 +145,10 @@ class UserSessionServiceImplement extends Service implements UserSessionService{
 
     /**
      * Revoke all sessions for a user.
-     * @param User $user
+     *
      * @return void
      */
-    function revokeAllSession(User $user)
+    public function revokeAllSession(User $user)
     {
         $this->mainRepository->deleteAllSession($user->id);
     }

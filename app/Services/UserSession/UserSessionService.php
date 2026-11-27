@@ -12,7 +12,6 @@ use SensitiveParameter;
 
 interface UserSessionService extends BaseService
 {
-
     /**
      * Revoke one of the user's own sessions by refresh token.
      *
@@ -45,8 +44,8 @@ interface UserSessionService extends BaseService
 
     /**
      * Revoke all sessions for a user.
-     * @param User $user
+     *
      * @return void
      */
-    function revokeAllSession(User $user);
+    public function revokeAllSession(User $user);
 }

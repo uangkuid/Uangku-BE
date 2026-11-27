@@ -9,10 +9,10 @@ use LaravelEasyRepository\Implementations\Eloquent;
 
 class WalletTransactionRepositoryImplement extends Eloquent implements WalletTransactionRepository
 {
-
     /**
      * Model class to be used in this repository for the common methods inside Eloquent
      * Don't remove or change $this->model variable name
+     *
      * @property Model|mixed $model;
      */
     protected WalletTransaction $model;
@@ -24,23 +24,15 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
 
     /**
      * Create a new wallet transaction.
-     * @param string $accessId
-     * @param string $walletId
-     * @param string $amount
-     * @param string $transactionType
-     * @param string $transactionId
-     * @param string $userId
-     * @return WalletTransaction
      */
-    function createTransaction(
+    public function createTransaction(
         string $accessId,
         string $walletId,
         string $amount,
         string $transactionType,
         string $transactionId,
         string $userId
-    ): WalletTransaction
-    {
+    ): WalletTransaction {
 
         return $this->model->create([
             'access' => $accessId,
@@ -48,36 +40,29 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
             'amount' => $amount,
             'transaction_type' => $transactionType,
             'transaction_id' => $transactionId,
-            'updated_by' => $userId
+            'updated_by' => $userId,
         ]);
     }
 
     /**
      * Update an existing wallet transaction.
-     * @param string $id
-     * @param string $amount
-     * @param string $userId
-     * @return void
      */
-    function updateTransaction(
+    public function updateTransaction(
         string $id,
         string $amount,
         string $userId
-    ): void
-    {
+    ): void {
         $this->model->where('id', $id)
             ->update([
                 'amount' => $amount,
-                'updated_by' => $userId
+                'updated_by' => $userId,
             ]);
     }
 
     /**
      * Get detail wallet transactions
-     * @param string $id
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransaction(string $id): ?WalletTransaction
+    public function getDetailWalletTransaction(string $id): ?WalletTransaction
     {
         return $this->model
             ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
@@ -87,11 +72,8 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
 
     /**
      * Delete a wallet transaction by its ID.
-     * @param string $id
-     * @param string $userId
-     * @return void
      */
-    function deleteTransaction(string $id, string $userId): void
+    public function deleteTransaction(string $id, string $userId): void
     {
         $this->model->where('id', $id)->update([
             'deleted_at' => now(),
@@ -101,10 +83,8 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
 
     /**
      * Get detailed wallet transaction by transaction ID.
-     * @param string $transactionId
-     * @return WalletTransaction|null
      */
-    function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
+    public function getDetailWalletTransactionByTransactionId(string $transactionId): ?WalletTransaction
     {
         return $this->model
             ->select('id', 'access', 'wallets', 'amount', 'transaction_type', 'created_at', 'updated_at')
@@ -114,16 +94,6 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
 
     /**
      * Get a paginated list of transactions for a user.
-     * @param string $userId
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $familyId
-     * @param string|null $search
-     * @param string|null $categoryId
-     * @param string|null $transactionTypeId
-     * @param string|null $walletId
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
     public function getTransactionPaging(
         string $userId,
@@ -140,7 +110,7 @@ class WalletTransactionRepositoryImplement extends Eloquent implements WalletTra
         $endDate = Carbon::parse($endDate)->endOfDay();
         $query = $this->model
             ->select([
-//                'wallet_transactions.*',
+                //                'wallet_transactions.*',
                 'transactions.id',
                 'transactions.users',
                 'transactions.categories',

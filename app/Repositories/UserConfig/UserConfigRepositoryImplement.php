@@ -2,16 +2,17 @@
 
 namespace App\Repositories\UserConfig;
 
-use LaravelEasyRepository\Implementations\Eloquent;
 use App\Models\UserConfig;
+use LaravelEasyRepository\Implementations\Eloquent;
 
-class UserConfigRepositoryImplement extends Eloquent implements UserConfigRepository{
-
+class UserConfigRepositoryImplement extends Eloquent implements UserConfigRepository
+{
     /**
-    * Model class to be used in this repository for the common methods inside Eloquent
-    * Don't remove or change $this->model variable name
-    * @property Model|mixed $model;
-    */
+     * Model class to be used in this repository for the common methods inside Eloquent
+     * Don't remove or change $this->model variable name
+     *
+     * @property Model|mixed $model;
+     */
     protected UserConfig $model;
 
     public function __construct(UserConfig $model)
@@ -21,10 +22,6 @@ class UserConfigRepositoryImplement extends Eloquent implements UserConfigReposi
 
     // Write something awesome :)
 
-    /**
-     * @param string $userId
-     * @return ?UserConfig
-     */
     public function getUserConfig(string $userId): ?UserConfig
     {
         return $this->model
@@ -33,11 +30,6 @@ class UserConfigRepositoryImplement extends Eloquent implements UserConfigReposi
             ->first();
     }
 
-    /**
-     * @param string $userId
-     * @param array $data
-     * @return bool
-     */
     public function updateUserConfig(string $userId, array $data): bool
     {
         $userConfig = $this->model
