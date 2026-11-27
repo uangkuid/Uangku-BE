@@ -26,6 +26,15 @@ interface UserSessionRepository extends Repository{
     ): ?UserSeasons;
 
     /**
+     * Atomically consume one session. Returns false when it no longer exists,
+     * e.g. because a concurrent request already rotated it.
+     */
+    public function deleteByUserIdAndRefreshToken(
+        string $userId,
+        string $refreshToken
+    ): bool;
+
+    /**
      * Delete all sessions for a user.
      * @param string $userId
      * @return bool

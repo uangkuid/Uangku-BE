@@ -7,7 +7,6 @@ use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
-use App\Helpers\TokenHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
 use App\Services\Auth\AuthService;
@@ -387,7 +386,7 @@ class AuthController extends Controller
     public function refreshToken(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'refresh_token' => 'required',
+            'refresh_token' => 'required|string',
         ]);
 
         // if validation fails
@@ -396,42 +395,12 @@ class AuthController extends Controller
         }
 
         try {
-            $revokedUser = $this->userSessionService->revokeSession($request->refresh_token);
-
-            // Revoke all token access
-            $logout = $this->authService->logout(
-                token: $request->bearerToken(),
-                refreshToken: $request->refresh_token
+            $tokens = $this->userSessionService->rotateSession(
+                refreshToken: $request->refresh_token,
+                accessToken: $request->bearerToken()
             );
 
-            $newAccessToken = auth()->login($revokedUser);
-            $newRefreshToken = TokenHelper::generateRefreshToken($revokedUser);
-
-            // Save to user seasons
-            $this->userSessionService->create([
-                'refresh_token' => $newRefreshToken,
-                'users' => $revokedUser->id,
-            ]);
-
-            if ($logout) {
-                return response()->json(new BaseResponse(
-                    200,
-                    'Refresh token successful',
-                    [
-                        'token' => $newAccessToken,
-                        'refresh_token' => $newRefreshToken,
-                    ]
-                ), 200);
-            } else {
-                return response()->json(
-                    new BaseResponse(
-                        500,
-                        'Logout failed',
-                        null
-                    ),
-                    500
-                );
-            }
+            return response()->json(new BaseResponse(200, 'Refresh token successful', $tokens), 200);
         } catch (TokenExpiredException $e) {
             Log::error('Failed to refresh token '.$e->getMessage());
 
@@ -444,6 +413,10 @@ class AuthController extends Controller
             Log::error('Failed to refresh token '.$e->getMessage());
 
             return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (AuthException $e) {
+            Log::error('Failed to refresh token '.$e->getMessage());
+
+            return response()->json(new BaseResponse(403, $e->getMessage(), null), 403);
         } catch (Exception $e) {
             Log::error('Failed to refresh token '.$e->getMessage());
 

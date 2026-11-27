@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Enums\UserStatus;
 use App\Helpers\TokenHelper;
 use App\Models\User;
+use App\Models\UserSeasons;
+use App\Services\UserSession\UserSessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Route;
@@ -99,6 +102,157 @@ class JwtHardeningTest extends TestCase
         }
 
         $this->assertGreaterThan(30, $checked);
+    }
+
+    public function test_refresh_works_without_a_bearer_token(): void
+    {
+        $user = User::factory()->create();
+        $old = $this->issueSession($user);
+
+        $response = $this->refresh($old);
+
+        $response->assertStatus(200)->assertJsonStructure(['data' => ['token', 'refresh_token']]);
+        $new = $response->json('data.refresh_token');
+        $this->assertNotSame($old, $new);
+        $this->assertSame('refresh', $this->claims($new)['typ']);
+        $this->assertSame('access', $this->claims($response->json('data.token'))['typ']);
+        $this->assertSame(1, UserSeasons::where('users', $user->id)->count());
+
+        // Both halves of the new pair work.
+        $this->send('GET', '/api/user', bearer: $response->json('data.token'))->assertStatus(200);
+        $this->refresh($new)->assertStatus(200);
+    }
+
+    public function test_refresh_works_with_an_expired_access_token(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+        $access = JWTAuth::fromUser($user);
+
+        $this->travel(config('jwt.ttl') + 5)->minutes();
+
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(401);
+        $this->refresh($refresh, bearer: $access)->assertStatus(200);
+    }
+
+    public function test_refresh_blacklists_the_bearer_access_token_sent_along(): void
+    {
+        $user = User::factory()->create();
+        $access = JWTAuth::fromUser($user);
+
+        $this->refresh($this->issueSession($user), bearer: $access)->assertStatus(200);
+
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(401);
+    }
+
+    public function test_refresh_leaves_another_users_access_token_alone(): void
+    {
+        $other = JWTAuth::fromUser(User::factory()->create());
+
+        $this->refresh($this->issueSession(User::factory()->create()), bearer: $other)->assertStatus(200);
+
+        $this->send('GET', '/api/user', bearer: $other)->assertStatus(200);
+    }
+
+    public function test_refresh_ignores_an_unusable_bearer_token(): void
+    {
+        $this->refresh($this->issueSession(User::factory()->create()), bearer: 'garbage')
+            ->assertStatus(200);
+    }
+
+    public function test_access_token_cannot_be_used_to_refresh(): void
+    {
+        $user = User::factory()->create();
+        $access = JWTAuth::fromUser($user);
+        // Even with a matching session row, the type alone must reject it.
+        app(UserSessionService::class)->create(['users' => $user->id, 'refresh_token' => $access]);
+
+        $this->refresh($access)->assertStatus(401);
+
+        $this->assertSame(1, UserSeasons::where('users', $user->id)->count());
+    }
+
+    public function test_reusing_a_rotated_refresh_token_revokes_every_session(): void
+    {
+        $user = User::factory()->create();
+        $bystander = User::factory()->create();
+        $stolen = $this->issueSession($user);
+        $otherDevice = $this->issueSession($user);
+        $this->issueSession($bystander);
+
+        $rotated = $this->refresh($stolen)->assertStatus(200)->json('data.refresh_token');
+
+        $this->refresh($stolen)->assertStatus(401);
+
+        $this->assertSame(0, UserSeasons::where('users', $user->id)->count());
+        $this->assertSame(1, UserSeasons::where('users', $bystander->id)->count());
+        $this->refresh($rotated)->assertStatus(401);
+        $this->refresh($otherDevice)->assertStatus(401);
+    }
+
+    public function test_expired_refresh_token_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+
+        $this->travel(config('jwt.refresh_token_ttl_days') * 24 + 1)->hours();
+
+        $this->refresh($refresh)
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Refresh token expired']);
+    }
+
+    public function test_refresh_token_with_a_forged_signature_revokes_nothing(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+        [$header, $payload] = explode('.', TokenHelper::generateRefreshToken($user));
+
+        $this->refresh("{$header}.{$payload}.forged-signature")->assertStatus(401);
+
+        $this->refresh($refresh)->assertStatus(200);
+    }
+
+    public function test_suspended_user_cannot_refresh(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+        $user->update(['status' => UserStatus::Suspended]);
+
+        $this->refresh($refresh)->assertStatus(403);
+
+        $this->assertSame(0, UserSeasons::where('users', $user->id)->count());
+    }
+
+    public function test_deleted_user_cannot_refresh(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+        $user->delete();
+
+        $this->refresh($refresh)->assertStatus(401);
+    }
+
+    public function test_refresh_token_endpoint_is_throttled(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->refresh('not-a-jwt')->assertStatus(401);
+        }
+
+        $this->refresh('not-a-jwt')->assertStatus(429);
+    }
+
+    private function issueSession(User $user): string
+    {
+        $refreshToken = TokenHelper::generateRefreshToken($user);
+        app(UserSessionService::class)->create(['users' => $user->id, 'refresh_token' => $refreshToken]);
+
+        return $refreshToken;
+    }
+
+    private function refresh(string $refreshToken, ?string $bearer = null): TestResponse
+    {
+        return $this->send('POST', '/api/auth/refresh-token', ['refresh_token' => $refreshToken], $bearer);
     }
 
     /**

@@ -44,6 +44,9 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('register', 'store');
     Route::post('salt', 'salt')->middleware('throttle:20,1');
     Route::post('login', 'login')->middleware('throttle:10,1');
+    // Outside auth:api on purpose: it is used once the access token has expired.
+    // The prefix gives it its own rate-limit bucket.
+    Route::post('refresh-token', 'refreshToken')->middleware('throttle:20,1,refresh-token');
 
     Route::post('forgot-password', 'forgotPassword');
     Route::post('reset-password', 'resetPassword');
@@ -53,7 +56,6 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
      */
     Route::middleware(['auth:api', 'token.access'])->group(function () {
         Route::post('logout', 'logout');
-        Route::post('refresh-token', 'refreshToken');
 
         Route::post('pre-change-password', 'preChangePassword');
         Route::post('change-password', 'changePassword');

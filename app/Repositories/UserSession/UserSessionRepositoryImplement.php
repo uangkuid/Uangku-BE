@@ -4,6 +4,7 @@ namespace App\Repositories\UserSession;
 
 use App\Models\UserSeasons;
 use LaravelEasyRepository\Implementations\Eloquent;
+use SensitiveParameter;
 
 class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepository
 {
@@ -53,6 +54,17 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
             ->where('users', $userId)
             ->where('refresh_token', hash('sha256', $refreshToken))
             ->first();
+    }
+
+    /**
+     * Atomically consume one session.
+     */
+    public function deleteByUserIdAndRefreshToken(string $userId, #[SensitiveParameter] string $refreshToken): bool
+    {
+        return $this->model
+            ->where('users', $userId)
+            ->where('refresh_token', hash('sha256', $refreshToken))
+            ->delete() > 0;
     }
 
     /**
