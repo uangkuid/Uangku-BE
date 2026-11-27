@@ -6,6 +6,7 @@ use App\Enums\RoleWallet;
 use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
+use App\Exceptions\SessionOwnershipException;
 use App\Helpers\EncryptionHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
@@ -327,7 +328,8 @@ class AuthController extends Controller
 
         try {
 
-            $this->userSessionService->revokeSession($request->post('refresh_token'));
+            // Checks ownership first: nothing is revoked for someone else's token.
+            $this->userSessionService->revokeSession($request->user(), $request->post('refresh_token'));
 
             $logout = $this->authService->logout(
                 token: $request->bearerToken(),
@@ -352,10 +354,22 @@ class AuthController extends Controller
                     500
                 );
             }
+        } catch (SessionOwnershipException $e) {
+            Log::warning('Failed to logout '.$e->getMessage(), ['user_id' => $request->user()->id]);
+
+            return response()->json(new BaseResponse(403, $e->getMessage(), null), 403);
         } catch (SessionException $e) {
             Log::error('Failed to logout '.$e->getMessage());
 
             return response()->json(new BaseResponse(401, $e->getMessage(), null), 401);
+        } catch (TokenExpiredException $e) {
+            Log::error('Failed to logout '.$e->getMessage());
+
+            return response()->json(new BaseResponse(401, 'Refresh token expired'), 401);
+        } catch (JWTException $e) {
+            Log::error('Failed to logout '.$e->getMessage());
+
+            return response()->json(new BaseResponse(401, 'Invalid refresh token'), 401);
         } catch (Exception $e) {
             Log::error('Failed to logout '.$e->getMessage());
 

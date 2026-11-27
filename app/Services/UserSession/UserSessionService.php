@@ -4,6 +4,7 @@ namespace App\Services\UserSession;
 
 use App\Exceptions\AuthException;
 use App\Exceptions\SessionException;
+use App\Exceptions\SessionOwnershipException;
 use App\Models\User;
 use LaravelEasyRepository\BaseService;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
@@ -13,12 +14,15 @@ interface UserSessionService extends BaseService
 {
 
     /**
-     * Revoke a user session by refresh token.
-     * @param string $refreshToken
-     * @return User : User revoked session
-     * @throws SessionException
+     * Revoke one of the user's own sessions by refresh token.
+     *
+     * @param  User  $user  the user authenticated by the access token
+     *
+     * @throws JWTException bad signature, expired, or not a refresh token
+     * @throws SessionOwnershipException the token belongs to another user; nothing is revoked
+     * @throws SessionException revoked or unknown token
      */
-    function revokeSession(string $refreshToken): User;
+    public function revokeSession(User $user, #[SensitiveParameter] string $refreshToken): void;
 
     /**
      * Exchange a refresh token for a new access + refresh token pair.

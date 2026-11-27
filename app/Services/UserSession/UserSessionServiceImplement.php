@@ -6,6 +6,7 @@ use App\Enums\TokenType;
 use App\Enums\UserStatus;
 use App\Exceptions\AuthException;
 use App\Exceptions\SessionException;
+use App\Exceptions\SessionOwnershipException;
 use App\Helpers\TokenHelper;
 use App\Models\User;
 use App\Repositories\User\UserRepository;
@@ -35,38 +36,20 @@ class UserSessionServiceImplement extends Service implements UserSessionService{
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Revoke a user session by refresh token.
-     * @param string $refreshToken
-     * @return User : User revoked session
-     * @throws SessionException
-     */
-    function revokeSession(string $refreshToken): User
+    public function revokeSession(User $user, #[SensitiveParameter] string $refreshToken): void
     {
-        $isExist = $this->mainRepository->isRefreshTokenExist($refreshToken);
+        $payload = TokenHelper::decode($refreshToken, TokenType::Refresh);
 
-        if (!$isExist) {
-            throw new SessionException("Invalid refresh token");
+        if ($payload->get('sub') !== $user->id) {
+            throw new SessionOwnershipException('Refresh token does not belong to this user');
         }
 
-        $user = JWTAuth::setToken($refreshToken)->toUser();
-
-        if (!$user) {
-            throw new SessionException("Invalid refresh token");
+        if (
+            TokenHelper::isBlacklisted($payload)
+            || ! $this->mainRepository->deleteByUserIdAndRefreshToken($user->id, $refreshToken)
+        ) {
+            throw new SessionException('Invalid refresh token');
         }
-
-        $userSession = $this->mainRepository->getByUserIdAndRefreshToken(
-            $user->id,
-            $refreshToken
-        );
-
-        if(!$userSession) {
-            throw new SessionException("Invalid refresh token");
-        }
-
-        $userSession->delete();
-
-        return $user;
     }
 
     public function rotateSession(

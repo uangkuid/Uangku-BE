@@ -46,18 +46,6 @@ class UserSessionRepositoryImplement extends Eloquent implements UserSessionRepo
     }
 
     /**
-     * Get the user session by refresh token and user ID.
-     */
-    public function getByUserIdAndRefreshToken(string $userId, #[SensitiveParameter] string $refreshToken): ?UserSeasons
-    {
-        return $this->model
-            ->select('id', 'users', 'refresh_token_hash')
-            ->where('users', $userId)
-            ->where('refresh_token_hash', $this->hash($refreshToken))
-            ->first();
-    }
-
-    /**
      * Atomically consume one session.
      */
     public function deleteByUserIdAndRefreshToken(string $userId, #[SensitiveParameter] string $refreshToken): bool

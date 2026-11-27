@@ -304,6 +304,65 @@ class JwtHardeningTest extends TestCase
         $this->send('POST', "/api/auth/refresh-token?refresh_token={$refresh}")->assertStatus(400);
     }
 
+    public function test_logout_revokes_both_tokens_of_the_user(): void
+    {
+        $user = User::factory()->create();
+        $refresh = $this->issueSession($user);
+        $access = JWTAuth::fromUser($user);
+
+        $this->logout($access, $refresh)->assertStatus(200);
+
+        $this->assertSame(0, UserSeasons::where('users', $user->id)->count());
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(401);
+        $this->refresh($refresh)->assertStatus(401);
+    }
+
+    public function test_logout_with_another_users_refresh_token_is_forbidden(): void
+    {
+        $attacker = User::factory()->create();
+        $victim = User::factory()->create();
+        $access = JWTAuth::fromUser($attacker);
+        $this->issueSession($attacker);
+        $victimRefresh = $this->issueSession($victim);
+
+        $this->logout($access, $victimRefresh)
+            ->assertStatus(403)
+            ->assertJson(['status' => 403, 'data' => null]);
+
+        // Nothing was revoked: both sessions and both tokens still work.
+        $this->assertSame(1, UserSeasons::where('users', $attacker->id)->count());
+        $this->assertSame(1, UserSeasons::where('users', $victim->id)->count());
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(200);
+        $this->refresh($victimRefresh)->assertStatus(200);
+    }
+
+    public function test_logout_rejects_an_access_token_as_refresh_token(): void
+    {
+        $user = User::factory()->create();
+        $access = JWTAuth::fromUser($user);
+
+        $this->logout($access, $access)->assertStatus(401);
+
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(200);
+    }
+
+    public function test_logout_rejects_an_unusable_refresh_token(): void
+    {
+        $user = User::factory()->create();
+        $access = JWTAuth::fromUser($user);
+        $withoutSession = TokenHelper::generateRefreshToken($user);
+
+        $this->logout($access, 'not-a-jwt')->assertStatus(401);
+        $this->logout($access, $withoutSession)->assertStatus(401);
+
+        $this->send('GET', '/api/user', bearer: $access)->assertStatus(200);
+    }
+
+    private function logout(string $accessToken, string $refreshToken): TestResponse
+    {
+        return $this->send('POST', '/api/auth/logout', ['refresh_token' => $refreshToken], $accessToken);
+    }
+
     private function issueSession(User $user): string
     {
         $refreshToken = TokenHelper::generateRefreshToken($user);
