@@ -112,6 +112,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Refresh Token Lifetime (days)
+    |--------------------------------------------------------------------------
+    |
+    | Lifetime of the application's own refresh token (`typ: refresh`), issued
+    | next to every access token. This is NOT `refresh_ttl` above, which is the
+    | library's window (in minutes) for refreshing an expired token and also
+    | bounds how long blacklist entries are kept. Keep this value shorter than
+    | that window.
+    |
+    */
+
+    'refresh_token_ttl_days' => (int) env('JWT_REFRESH_TOKEN_TTL_DAYS', 7),
+
+    /*
+    |--------------------------------------------------------------------------
     | JWT hashing algorithm
     |--------------------------------------------------------------------------
     |

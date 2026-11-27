@@ -7,9 +7,9 @@ use App\Exceptions\AuthException;
 use App\Exceptions\SecurityException;
 use App\Exceptions\SessionException;
 use App\Helpers\EncryptionHelper;
+use App\Helpers\TokenHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseResponse;
-use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\UserConfig\UserConfigService;
 use App\Services\UserSession\UserSessionService;
@@ -405,7 +405,7 @@ class AuthController extends Controller
             );
 
             $newAccessToken = auth()->login($revokedUser);
-            $newRefreshToken = $this->generateRefreshToken($revokedUser);
+            $newRefreshToken = TokenHelper::generateRefreshToken($revokedUser);
 
             // Save to user seasons
             $this->userSessionService->create([
@@ -449,18 +449,6 @@ class AuthController extends Controller
 
             return response()->json(new BaseResponse(500, 'Failed to refresh token '.$e->getMessage(), null), 500);
         }
-    }
-
-    protected function generateRefreshToken(User $user)
-    {
-        // Set TTL untuk refresh token menjadi lebih panjang (misalnya 7 hari)
-        // Set masa berlaku refresh token secara manual (contoh: 7 hari)
-        $customClaims = ['exp' => now()->addDays(7)->timestamp];
-
-        // Buat refresh token dengan masa berlaku yang lebih panjang
-        $refreshToken = JWTAuth::claims($customClaims)->fromUser($user);
-
-        return $refreshToken;
     }
 
     #[OA\Post(

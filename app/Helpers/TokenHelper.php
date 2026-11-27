@@ -2,28 +2,31 @@
 
 namespace App\Helpers;
 
+use App\Enums\TokenType;
 use App\Models\User;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class TokenHelper
 {
     /**
-     * Create a new class instance.
+     * Issue a long-lived refresh token (`typ: refresh`).
+     *
+     * Inline claims are merged after JWTSubject::getJWTCustomClaims() (see
+     * JWT::getClaimsArray), so `typ` here wins over the access default.
      */
-    public function __construct()
-    {
-        //
-    }
-
     public static function generateRefreshToken(User $user): string
     {
-        // Set TTL untuk refresh token menjadi lebih panjang (misalnya 7 hari)
-        // Set masa berlaku refresh token secara manual (contoh: 7 hari)
-        $customClaims = ['exp' => now()->addDays(7)->timestamp];
+        $ttlDays = (int) config('jwt.refresh_token_ttl_days');
 
-        // Buat refresh token dengan masa berlaku yang lebih panjang
-        $refreshToken = JWTAuth::claims($customClaims)->fromUser($user);
-
-        return $refreshToken;
+        try {
+            return JWTAuth::claims([
+                'typ' => TokenType::Refresh->value,
+                'exp' => now()->addDays($ttlDays)->timestamp,
+            ])->fromUser($user);
+        } finally {
+            // JWTAuth keeps inline claims on the instance. Without this reset
+            // the next token issued through it would also be a 7-day refresh token.
+            JWTAuth::claims([]);
+        }
     }
 }
